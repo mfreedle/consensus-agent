@@ -1,0 +1,11 @@
+/* Consensus Agent App Styles */
+.App {
+  text-align: left;
+}
+
+/* Remove default React logo animation */
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: none;
+  }
+}

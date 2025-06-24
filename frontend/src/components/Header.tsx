@@ -1,0 +1,65 @@
+import React from "react";
+import { Menu, LogOut } from "lucide-react";
+
+interface HeaderProps {
+  onToggleSidebar: () => void;
+  onLogout: () => void;
+  currentUser?: any;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  onToggleSidebar,
+  onLogout,
+  currentUser,
+}) => {
+  return (
+    <header className="bg-bg-dark-secondary border-b border-primary-teal/20 px-6 py-4 flex items-center justify-between">
+      {/* Left Section */}
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-lg hover:bg-primary-teal/10 transition-colors"
+        >
+          <Menu className="w-5 h-5 text-primary-cyan" />
+        </button>
+
+        {/* Logo and Title */}
+        <div className="flex items-center space-x-3">
+          <img src="/logo.svg" alt="Consensus Agent" className="w-8 h-8" />
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary-teal to-primary-cyan bg-clip-text text-transparent">
+            CONSENSUS AGENT
+          </h1>
+        </div>
+      </div>{" "}
+      {/* Right Section */}
+      <div className="flex items-center space-x-4">
+        {/* User Info */}
+        {currentUser && (
+          <div className="text-sm text-gray-300">
+            Welcome,{" "}
+            <span className="text-primary-cyan font-medium">
+              {currentUser.username}
+            </span>
+          </div>
+        )}
+
+        {/* Model Status Indicator */}
+        <div className="flex items-center space-x-2 px-3 py-1 bg-primary-teal/10 rounded-full">
+          <div className="w-2 h-2 bg-primary-green rounded-full animate-pulse"></div>
+          <span className="text-sm text-primary-cyan">Multi-LLM Active</span>
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={onLogout}
+          className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
+        </button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
