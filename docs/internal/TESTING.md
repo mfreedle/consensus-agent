@@ -75,7 +75,7 @@ This will test:
 
 ### 3.2 Expected Output
 
-```
+```text
 🚀 Starting Consensus Agent Backend Tests
 
 🔍 Testing configuration...
@@ -117,7 +117,7 @@ This will:
 
 ### 4.2 Expected Output
 
-```
+```text
 Setting up Consensus Agent backend...
 Created uploads directory
 Initializing database...
@@ -138,7 +138,7 @@ python dev.py
 
 ### 5.2 Expected Output
 
-```
+```text
 INFO:     Will watch for changes in these directories: ['/path/to/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process [12345] using WatchFiles
@@ -291,7 +291,7 @@ Copy the `access_token` from the login response and use it in the Authorization 
 
 #### 1. Import Errors
 
-```
+```text
 ModuleNotFoundError: No module named 'fastapi'
 ```
 
@@ -303,7 +303,7 @@ pip install -r requirements.txt
 
 #### 2. Database Errors
 
-```
+```text
 sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: users
 ```
 
@@ -315,7 +315,7 @@ python setup.py
 
 #### 3. API Key Errors
 
-```
+```textt
 OpenAI API error: Incorrect API key provided
 ```
 
@@ -323,7 +323,7 @@ OpenAI API error: Incorrect API key provided
 
 #### 4. Port Already in Use
 
-```
+```text
 OSError: [Errno 48] Address already in use
 ```
 

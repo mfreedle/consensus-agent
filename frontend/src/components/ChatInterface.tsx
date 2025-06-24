@@ -2,10 +2,14 @@ import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Upload, Bot, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { ConsensusResponse } from "../services/api";
+import { SocketMessage } from "../types";
 
 interface ChatInterfaceProps {
   sessionId: string | null;
   onSessionCreated: (sessionId: string) => void;
+  socketMessages?: SocketMessage[];
+  onSendSocketMessage?: (message: string) => boolean;
+  isSocketConnected?: boolean;
 }
 
 interface Message {
@@ -24,6 +28,9 @@ interface MessageForm {
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId,
   onSessionCreated,
+  socketMessages = [],
+  onSendSocketMessage,
+  isSocketConnected = false,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +94,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } else {
       setMessages([]);
     }
-  }, [sessionId]);
+  }, [sessionId]); // Add socket messages to the regular messages
+  useEffect(() => {
+    if (socketMessages.length > 0) {
+      const convertedMessages: Message[] = socketMessages.map(
+        (socketMsg, index) => ({
+          id: Date.now() + index,
+          role: socketMsg.role,
+          content: socketMsg.content,
+          timestamp: socketMsg.timestamp || new Date().toISOString(),
+          session_id:
+            typeof socketMsg.session_id === "string"
+              ? parseInt(socketMsg.session_id)
+              : socketMsg.session_id,
+          consensus: socketMsg.consensus as ConsensusResponse | undefined,
+        })
+      );
+
+      setMessages((prev) => {
+        // Avoid duplicates by checking if message content already exists
+        const existingContents = prev.map((msg) => msg.content);
+        const newMessages = convertedMessages.filter(
+          (msg) => !existingContents.includes(msg.content)
+        );
+        return [...prev, ...newMessages];
+      });
+    }
+  }, [socketMessages]);
 
   useEffect(() => {
     scrollToBottom();
@@ -96,6 +129,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
   const onSubmit = async (data: MessageForm) => {
     if (!data.message.trim()) return;
 
@@ -112,6 +146,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     reset();
 
     try {
+      // Try to send via Socket.IO first if connected
+      if (isSocketConnected && onSendSocketMessage) {
+        const socketSent = onSendSocketMessage(data.message);
+        if (socketSent) {
+          console.log("Message sent via Socket.IO");
+          // The response will come through socketMessages
+          return;
+        }
+      }
+
+      // Fallback to HTTP API or simulate for development
+      console.log("Using fallback HTTP API or simulation...");
       // TODO: Replace with actual API call to backend
       // Simulate API call with consensus response
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -304,10 +350,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
 
         <div ref={messagesEndRef} />
-      </div>
-
+      </div>{" "}
       {/* Input Area */}
       <div className="border-t border-primary-teal/20 p-6">
+        {/* Connection Status */}
+        {!isSocketConnected && (
+          <div className="mb-3 flex items-center space-x-2 text-sm text-amber-400">
+            <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+            <span>Real-time mode unavailable - using HTTP fallback</span>
+          </div>
+        )}
+
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex items-end space-x-4"
@@ -324,7 +377,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="flex-1">
             <textarea
               {...register("message", { required: "Message is required" })}
-              placeholder="Ask anything... Multiple AI models will analyze your question."
+              placeholder={
+                isSocketConnected
+                  ? "Ask anything... Real-time AI consensus analysis enabled."
+                  : "Ask anything... Multiple AI models will analyze your question."
+              }
               className="w-full px-4 py-3 bg-bg-dark-secondary border border-primary-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan text-white placeholder-gray-500 resize-none"
               rows={1}
               onKeyDown={(e) => {

@@ -1,5 +1,7 @@
 # Consensus Agent Backend
 
+** Add note about having venv virtual environment
+
 FastAPI backend for the Consensus Agent AI chat application with multi-LLM consensus.
 
 ## Features

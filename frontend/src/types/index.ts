@@ -6,6 +6,29 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+// Socket.IO Types
+export interface SocketMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  session_id: number | string;
+  timestamp?: string;
+  consensus?: ConsensusData;
+}
+
+export interface SocketError {
+  error: string;
+}
+
+export interface SocketJoinData {
+  session_id: string;
+}
+
+export interface SocketSendMessageData {
+  session_id: string;
+  message: string;
+  token: string;
+}
+
 // User Types
 export interface User {
   id: string;
@@ -74,12 +97,55 @@ export interface FileUpload {
   id: string;
   user_id: string;
   filename: string;
+  original_filename: string;
   file_path?: string;
   google_drive_id?: string;
+  google_drive_url?: string;
   file_type: string;
   file_size: number;
+  mime_type?: string;
+  is_processed: boolean;
+  processing_error?: string;
   uploaded_at: string;
+  updated_at?: string;
 }
+
+export interface FileUploadRequest {
+  file: File;
+}
+
+export interface FileUploadResponse {
+  message: string;
+  filename: string;
+  size: number;
+  file_id?: string;
+}
+
+export interface FileListResponse {
+  files: FileUpload[];
+}
+
+export interface SupportedFileType {
+  extension: string;
+  mimeType: string;
+  maxSize: number; // in MB
+  category: 'document' | 'spreadsheet' | 'presentation' | 'image' | 'other';
+}
+
+export const SUPPORTED_FILE_TYPES: SupportedFileType[] = [
+  // Documents
+  { extension: '.pdf', mimeType: 'application/pdf', maxSize: 50, category: 'document' },
+  { extension: '.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', maxSize: 50, category: 'document' },
+  { extension: '.txt', mimeType: 'text/plain', maxSize: 10, category: 'document' },
+  { extension: '.md', mimeType: 'text/markdown', maxSize: 10, category: 'document' },
+  
+  // Spreadsheets
+  { extension: '.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', maxSize: 50, category: 'spreadsheet' },
+  { extension: '.csv', mimeType: 'text/csv', maxSize: 10, category: 'spreadsheet' },
+  
+  // Presentations
+  { extension: '.pptx', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', maxSize: 100, category: 'presentation' },
+];
 
 // LLM Model Types
 export interface LLMModel {

@@ -25,18 +25,46 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
     setError(null);
 
     try {
+      console.log("Attempting login with:", { username: data.username });
       const result = await apiService.login({
         username: data.username,
         password: data.password,
       });
 
+      console.log("Login result:", result);
+
       if (result.error) {
+        console.error("Login error:", result.error);
         setError(
           typeof result.error === "string" ? result.error : "Login failed"
         );
       } else if (result.data) {
+        console.log("Setting token:", result.data.access_token);
+        // Set the token first
         apiService.setToken(result.data.access_token);
-        onLogin(result.data.user);
+
+        // Then fetch user info
+        console.log("Fetching user info...");
+        const userResult = await apiService.getCurrentUser();
+        console.log("User result:", userResult);
+
+        if (userResult.error) {
+          console.error("User fetch error:", userResult.error);
+          setError("Failed to get user information");
+          apiService.clearToken();
+        } else if (userResult.data) {
+          console.log("Login successful, calling onLogin with:", {
+            access_token: result.data.access_token,
+            token_type: result.data.token_type,
+            user: userResult.data,
+          });
+          // Pass the complete auth data to onLogin
+          onLogin({
+            access_token: result.data.access_token,
+            token_type: result.data.token_type,
+            user: userResult.data,
+          });
+        }
       }
     } catch (err) {
       console.error("Login error:", err);

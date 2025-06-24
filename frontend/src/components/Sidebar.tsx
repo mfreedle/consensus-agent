@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, MessageSquare, Settings, File, Bot } from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
+import FileUpload from "./FileUpload";
+import FileList from "./FileList";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (isOpen && activeTab === "chats") {
@@ -40,7 +43,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       setIsLoading(false);
     }
   };
-
   const handleNewChat = async () => {
     try {
       const result = await apiService.createChatSession();
@@ -51,6 +53,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }
+  };
+
+  // File upload handlers
+  const handleFileUploadSuccess = (file: any) => {
+    console.log("File uploaded successfully:", file);
+    // Trigger file list refresh
+    setFileRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleFileUploadError = (error: string) => {
+    console.error("File upload error:", error);
+    // TODO: Show error toast to user
+  };
+
+  const handleFileDelete = (file: any) => {
+    console.log("File deleted:", file);
+    // Trigger file list refresh
+    setFileRefreshTrigger((prev) => prev + 1);
   };
 
   return (
@@ -169,20 +189,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </div>
             </div>
-          )}
-
+          )}{" "}
           {activeTab === "files" && (
             <div className="p-4">
-              <div className="text-center text-gray-400 py-8">
-                <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">No files uploaded yet</p>
-                <button className="mt-2 text-primary-cyan text-sm hover:underline">
-                  Upload a file
-                </button>
+              {/* File Upload Section */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-primary-cyan mb-3">
+                  Upload Files
+                </h3>
+                <FileUpload
+                  onUploadSuccess={handleFileUploadSuccess}
+                  onUploadError={handleFileUploadError}
+                  maxFiles={5}
+                  className="mb-4"
+                />
+              </div>
+
+              {/* File List Section */}
+              <div>
+                <h3 className="text-sm font-medium text-primary-cyan mb-3">
+                  Your Files
+                </h3>
+                <FileList
+                  onFileDelete={handleFileDelete}
+                  refreshTrigger={fileRefreshTrigger}
+                  className="max-h-96 overflow-y-auto"
+                />
               </div>
             </div>
           )}
-
           {activeTab === "models" && (
             <div className="p-4">
               <div className="space-y-3">

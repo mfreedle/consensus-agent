@@ -20,11 +20,16 @@ export interface RegisterRequest {
 export interface AuthResponse {
   access_token: string;
   token_type: string;
-  user: {
+  user?: {
     id: number;
     username: string;
-    email: string;
+    email?: string;
   };
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
 }
 
 export interface ChatSession {
@@ -124,10 +129,9 @@ class ApiService {
         error: 'Network error. Please check your connection.',
       };
     }
-  }
-  // Authentication endpoints
-  async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
-    return this.request<AuthResponse>('/auth/login', {
+  }  // Authentication endpoints
+  async login(credentials: LoginRequest): Promise<ApiResponse<TokenResponse>> {
+    return this.request<TokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
@@ -172,20 +176,37 @@ class ApiService {
     return this.request<any[]>('/models');
   }
 
-  // Files endpoints
+  // Files endpoints  // File management endpoints
   async uploadFile(file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
 
     return this.request<any>('/files/upload', {
       method: 'POST',
-      headers: {},
+      headers: {}, // Let browser set Content-Type for FormData
       body: formData,
     });
   }
 
   async getUserFiles(): Promise<ApiResponse<any[]>> {
     return this.request<any[]>('/files');
+  }
+
+  async deleteFile(fileId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/files/${fileId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getFileContent(fileId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/files/${fileId}/content`);
+  }
+
+  async updateFile(fileId: string, data: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/files/${fileId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 }
 

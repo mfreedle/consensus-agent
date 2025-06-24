@@ -50,3 +50,36 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+async def get_current_user_from_token(token: str) -> User:
+    """Get current user from JWT token string (for Socket.IO)"""
+    from app.auth.utils import verify_token
+    from app.database.connection import get_db
+    from app.models.user import User
+    from fastapi import HTTPException, status
+    from sqlalchemy import select
+    
+    token_data = verify_token(token)
+    username = token_data.get("username")
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    db = await get_db().__anext__()
+    stmt = select(User).where(User.username == username)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+        )
+    return user

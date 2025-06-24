@@ -1,13 +1,13 @@
 # Core FastAPI dependencies
-fastapi==0.104.1
+fastapi==0.115.13
 uvicorn[standard]==0.24.0
-python-multipart==0.0.6
+python-multipart==0.0.20
 
 # Database
-sqlalchemy==2.0.23
+sqlalchemy==2.0.41
 alembic==1.12.1
-psycopg2-binary==2.9.9
-asyncpg==0.29.0
+# psycopg2-binary==2.9.9  # Commented out for local SQLite development
+asyncpg==0.30.0
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
@@ -15,8 +15,8 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 
 # OpenAI APIs
-openai==1.54.4
-openai-agents==0.0.14
+openai==1.91.0
+openai-agents==0.0.19
 
 # Google APIs
 google-auth==2.23.4
@@ -34,12 +34,12 @@ markdown==3.5.1
 python-socketio==5.10.0
 
 # HTTP requests
-httpx==0.25.2
+httpx==0.28.1
 aiofiles==23.2.1
 
 # Data validation
-pydantic==2.5.0
-pydantic-settings==2.0.3
+pydantic==2.11.7
+pydantic-settings==2.10.0
 
 # Background tasks
 celery==5.3.4
@@ -50,3 +50,7 @@ pytest==7.4.3
 pytest-asyncio==0.21.1
 black==23.11.0
 isort==5.12.0
+
+anyio==4.9.0
+aiosqlite==0.21.0
+fastapi-socketio==0.0.10

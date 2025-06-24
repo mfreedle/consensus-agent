@@ -5,12 +5,14 @@ interface HeaderProps {
   onToggleSidebar: () => void;
   onLogout: () => void;
   currentUser?: any;
+  isSocketConnected?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   onToggleSidebar,
   onLogout,
   currentUser,
+  isSocketConnected = false,
 }) => {
   return (
     <header className="bg-bg-dark-secondary border-b border-primary-teal/20 px-6 py-4 flex items-center justify-between">
@@ -30,7 +32,8 @@ const Header: React.FC<HeaderProps> = ({
             CONSENSUS AGENT
           </h1>
         </div>
-      </div>{" "}
+      </div>
+
       {/* Right Section */}
       <div className="flex items-center space-x-4">
         {/* User Info */}
@@ -42,6 +45,28 @@ const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
         )}
+
+        {/* Socket Connection Status */}
+        <div
+          className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
+            isSocketConnected ? "bg-primary-green/10" : "bg-red-500/10"
+          }`}
+        >
+          <div
+            className={`w-2 h-2 rounded-full ${
+              isSocketConnected
+                ? "bg-primary-green animate-pulse"
+                : "bg-red-500"
+            }`}
+          ></div>
+          <span
+            className={`text-sm ${
+              isSocketConnected ? "text-primary-green" : "text-red-400"
+            }`}
+          >
+            {isSocketConnected ? "Real-time Connected" : "Connecting..."}
+          </span>
+        </div>
 
         {/* Model Status Indicator */}
         <div className="flex items-center space-x-2 px-3 py-1 bg-primary-teal/10 rounded-full">
