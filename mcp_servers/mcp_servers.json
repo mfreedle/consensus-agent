@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "playwright-mcp-server": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
+    },
+    "Сontext7": {
+      "autoApprove": [],
+      "disabled": false,
+      "timeout": 60,
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "context7-mcp"],
+      "transportType": "stdio"
+    }
+  }
+}
