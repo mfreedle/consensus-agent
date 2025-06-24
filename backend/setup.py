@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for Agent Mark backend
+Setup script for Consensus Agent backend
 """
 
 import asyncio
@@ -114,7 +114,7 @@ async def create_default_user():
 
 async def main():
     """Run setup tasks"""
-    print("Setting up Agent Mark backend...")
+    print("Setting up Consensus Agent backend...")
     
     # Create uploads directory
     uploads_dir = Path("uploads")

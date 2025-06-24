@@ -1,7 +1,7 @@
 @echo off
-REM Quick start script for Agent Mark backend
+REM Quick start script for Consensus Agent backend
 
-echo Setting up Agent Mark Backend...
+echo Setting up Consensus Agent Backend...
 
 REM Check if Python is installed
 python --version >nul 2>&1

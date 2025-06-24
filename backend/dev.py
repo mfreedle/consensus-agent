@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Development server for Agent Mark backend
+Development server for Consensus Agent backend
 """
 
 import os

@@ -1,6 +1,6 @@
-# Agent Mark Backend
+# Consensus Agent Backend
 
-FastAPI backend for the Agent Mark AI chat application with multi-LLM consensus.
+FastAPI backend for the Consensus Agent AI chat application with multi-LLM consensus.
 
 ## Features
 

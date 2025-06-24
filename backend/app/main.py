@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Agent Mark - AI Chat Application",
+    title="Consensus Agent - AI Chat Application",
     description="Multi-LLM consensus chat application with document management",
     version="1.0.0",
     lifespan=lifespan
@@ -54,7 +54,7 @@ app.include_router(google_router, prefix="/google", tags=["Google Drive"])
 @app.get("/")
 async def root():
     """Health check endpoint"""
-    return {"message": "Agent Mark API is running", "status": "healthy"}
+    return {"message": "Consensus Agent API is running", "status": "healthy"}
 
 @app.get("/health")
 async def health_check():

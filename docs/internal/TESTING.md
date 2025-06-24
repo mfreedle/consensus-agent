@@ -1,6 +1,6 @@
-# Agent Mark Backend Testing Guide
+# Consensus Agent Backend Testing Guide
 
-This guide will walk you through testing the Agent Mark backend step by step.
+This guide will walk you through testing the Consensus Agent backend step by step.
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ This will test:
 ### 3.2 Expected Output
 
 ```
-🚀 Starting Agent Mark Backend Tests
+🚀 Starting Consensus Agent Backend Tests
 
 🔍 Testing configuration...
 ✅ Config loaded - Environment: development
@@ -118,7 +118,7 @@ This will:
 ### 4.2 Expected Output
 
 ```
-Setting up Agent Mark backend...
+Setting up Consensus Agent backend...
 Created uploads directory
 Initializing database...
 Database tables created successfully!

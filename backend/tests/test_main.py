@@ -1,5 +1,5 @@
 """
-Basic tests for the Agent Mark backend
+Basic tests for the Consensus Agent backend
 """
 
 import pytest
@@ -21,7 +21,7 @@ def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert "Agent Mark API" in data["message"]
+    assert "Consensus Agent API" in data["message"]
 
 def test_models_endpoint_without_auth():
     """Test that models endpoint requires authentication"""

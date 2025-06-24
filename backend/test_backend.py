@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for Agent Mark backend
+Test script for Consensus Agent backend
 """
 
 import asyncio
@@ -162,7 +162,7 @@ async def test_fastapi_app():
 
 async def main():
     """Run all tests"""
-    print("🚀 Starting Agent Mark Backend Tests\n")
+    print("🚀 Starting Consensus Agent Backend Tests\n")
     
     tests = [
         ("Configuration", test_config()),
