@@ -1,6 +1,6 @@
 from app.database.connection import Base
 from sqlalchemy import (BigInteger, Boolean, Column, DateTime, ForeignKey,
-                        Integer, String)
+                        Integer, String, Text)
 from sqlalchemy.sql import func
 
 
@@ -15,6 +15,9 @@ class File(Base):
     file_type = Column(String(50), nullable=False)  # pdf, docx, txt, etc.
     file_size = Column(BigInteger, nullable=False)
     mime_type = Column(String(100), nullable=True)
+    
+    # File content (extracted text for AI context)
+    extracted_text = Column(Text, nullable=True)
     
     # Google Drive integration
     google_drive_id = Column(String(100), nullable=True)

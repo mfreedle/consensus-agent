@@ -29,7 +29,6 @@ const FileList: React.FC<FileListProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-
   // Load files from backend
   const loadFiles = async () => {
     try {
@@ -37,11 +36,13 @@ const FileList: React.FC<FileListProps> = ({
       setError(null);
 
       const result = await apiService.getUserFiles();
-
       if (result.error) {
         setError(result.error);
       } else {
-        setFiles(result.data || []);
+        // Backend returns {files: []} so we need to extract the files array
+        const responseData = result.data as any;
+        const filesData = responseData?.files || responseData || [];
+        setFiles(Array.isArray(filesData) ? filesData : []);
       }
     } catch (err) {
       setError("Failed to load files");

@@ -186,10 +186,8 @@ class ApiService {
       headers: {}, // Let browser set Content-Type for FormData
       body: formData,
     });
-  }
-
-  async getUserFiles(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/files');
+  }  async getUserFiles(): Promise<ApiResponse<{files: any[]}>> {
+    return this.request<{files: any[]}>('/files/');
   }
 
   async deleteFile(fileId: string): Promise<ApiResponse<any>> {
