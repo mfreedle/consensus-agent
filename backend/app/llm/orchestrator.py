@@ -44,44 +44,38 @@ class LLMOrchestrator:
     async def get_openai_response(
         self, 
         prompt: str, 
-        model: str = "gpt-4o",
+        model: str = "gpt-4o-mini",
         context: Optional[str] = None
     ) -> ModelResponse:
-        """Get response from OpenAI using Responses API"""
+        """Get response from OpenAI using Chat Completions API"""
         try:
-            # Prepare input with context if provided
-            input_text = f"Context: {context}\n\nUser: {prompt}" if context else prompt
+            # Prepare messages with context if provided
+            messages = []
+            if context:
+                messages.append({
+                    "role": "system",
+                    "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
+                })
+            messages.append({
+                "role": "user", 
+                "content": prompt
+            })
             
-            # Use OpenAI Responses API for structured output
-            response = await self.openai_client.responses.create(
+            # Use OpenAI Chat Completions API
+            response = await self.openai_client.chat.completions.create(
                 model=model,
-                instructions="You are a helpful AI assistant. Provide thoughtful, accurate responses. Include your confidence level and reasoning for your answer.",
-                input=input_text,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "structured_response",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "content": {"type": "string"},
-                                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-                                "reasoning": {"type": "string"}
-                            },
-                            "required": ["content", "confidence", "reasoning"]
-                        }
-                    }
-                }
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1000
             )
             
-            # Parse structured response
-            output = response.output_parsed if hasattr(response, 'output_parsed') else {"content": response.output_text, "confidence": 0.8, "reasoning": "Standard response"}
+            content = response.choices[0].message.content
             
             return ModelResponse(
-                content=output.get("content", response.output_text),
+                content=content,
                 model=model,
-                confidence=output.get("confidence", 0.8),
-                reasoning=output.get("reasoning", "OpenAI response")
+                confidence=0.8,
+                reasoning="OpenAI response"
             )
             
         except Exception as e:

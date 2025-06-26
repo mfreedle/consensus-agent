@@ -48,8 +48,33 @@ export interface ChatMessage {
 }
 
 export interface SendMessageRequest {
-  content: string;
+  message: string;
   session_id?: number;
+  use_consensus?: boolean;
+  selected_models?: string[];
+}
+
+export interface ChatResponseMessage {
+  id: number;
+  content: string;
+  role: string;
+  session_id: number;
+  model_used?: string;
+  consensus_data?: any;
+  created_at: string;
+}
+
+export interface ChatResponseSession {
+  id: number;
+  user_id: number;
+  title: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ChatResponse {
+  message: ChatResponseMessage;
+  session: ChatResponseSession;
 }
 
 export interface ConsensusResponse {
@@ -164,8 +189,8 @@ class ApiService {
     return this.request<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
   }
 
-  async sendMessage(request: SendMessageRequest): Promise<ApiResponse<ConsensusResponse>> {
-    return this.request<ConsensusResponse>('/chat/message', {
+  async sendMessage(request: SendMessageRequest): Promise<ApiResponse<ChatResponse>> {
+    return this.request<ChatResponse>('/chat/message', {
       method: 'POST',
       body: JSON.stringify(request),
     });

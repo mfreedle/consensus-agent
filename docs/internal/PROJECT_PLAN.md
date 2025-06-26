@@ -320,7 +320,13 @@ moderator_agent = Agent("consensus_moderator")
     - [x] Integrated into sidebar Files tab
     - [x] Backend file storage and database persistence
     - [x] File upload, listing, and deletion functionality
-  - [ ] Model selection and consensus debate simulation UI (pending)
+  - [x] Model selection and consensus debate simulation UI
+    - [x] ModelSelection component with model toggle, debate modes, and advanced options
+    - [x] ConsensusDebateVisualizer component for real-time debate visualization
+    - [x] Integration with chat interface to show consensus process
+    - [x] Enhanced model API with capabilities and status information
+    - [x] Model selection state management across components
+    - [x] Debate process visualization with confidence scores and reasoning
   - [ ] Production-ready error handling and loading states (pending)
   - [ ] Responsive/mobile UI polish (pending)
 

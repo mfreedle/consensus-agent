@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
-import { SocketMessage, SocketError } from "../types";
+import { SocketMessage, SocketError, ModelSelectionState } from "../types";
 import Header from "./Header";
 import ChatInterface from "./ChatInterface";
 import Sidebar from "./Sidebar";
@@ -12,6 +12,11 @@ const ChatApp: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [socketMessages, setSocketMessages] = useState<SocketMessage[]>([]);
+  const [modelSelection, setModelSelection] = useState<ModelSelectionState>({
+    selectedModels: [],
+    debateMode: "consensus",
+    showDebateProcess: true,
+  });
 
   // Handle incoming Socket.IO messages
   const handleNewMessage = useCallback((message: SocketMessage) => {
@@ -62,14 +67,15 @@ const ChatApp: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-bg-dark text-white">
-      {/* Sidebar */}
+      {/* Sidebar */}{" "}
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         currentSessionId={currentSessionId}
         onSessionSelect={setCurrentSessionId}
+        modelSelection={modelSelection}
+        onModelSelectionChange={setModelSelection}
       />
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}{" "}
@@ -86,6 +92,7 @@ const ChatApp: React.FC = () => {
           socketMessages={socketMessages}
           onSendSocketMessage={sendSocketMessage}
           isSocketConnected={isSocketConnected}
+          modelSelection={modelSelection}
         />
       </div>
     </div>

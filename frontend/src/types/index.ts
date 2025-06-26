@@ -151,10 +151,43 @@ export const SUPPORTED_FILE_TYPES: SupportedFileType[] = [
 export interface LLMModel {
   id: string;
   provider: 'openai' | 'grok' | 'claude';
-  model_name: string;
+  model_name?: string;
   display_name: string;
-  is_active: boolean;
+  description?: string;
+  is_active?: boolean;
+  supports_streaming?: boolean;
+  supports_function_calling?: boolean;
   capabilities?: Record<string, any>;
+  created_at?: string;
+}
+
+export interface ModelSelectionState {
+  selectedModels: string[];
+  debateMode: 'consensus' | 'detailed' | 'quick';
+  showDebateProcess: boolean;
+}
+
+export interface DebateStep {
+  id: string;
+  step_number: number;
+  model_id: string;
+  model_name: string;
+  content: string;
+  confidence: number;
+  reasoning: string;
+  timestamp: string;
+}
+
+export interface ConsensusDebate {
+  id: string;
+  session_id: string;
+  user_message: string;
+  selected_models: string[];
+  debate_steps: DebateStep[];
+  final_consensus: string;
+  confidence_score: number;
+  reasoning: string;
+  debate_points: string[];
   created_at: string;
 }
 

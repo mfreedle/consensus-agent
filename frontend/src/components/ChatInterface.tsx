@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Upload, Bot, User } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { ConsensusResponse } from "../services/api";
-import { SocketMessage } from "../types";
+import { ConsensusResponse, apiService } from "../services/api";
+import { SocketMessage, ModelSelectionState } from "../types";
+import ConsensusDebateVisualizer from "./ConsensusDebateVisualizer";
 
 interface ChatInterfaceProps {
   sessionId: string | null;
@@ -10,6 +11,7 @@ interface ChatInterfaceProps {
   socketMessages?: SocketMessage[];
   onSendSocketMessage?: (message: string) => boolean;
   isSocketConnected?: boolean;
+  modelSelection?: ModelSelectionState;
 }
 
 interface Message {
@@ -31,6 +33,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   socketMessages = [],
   onSendSocketMessage,
   isSocketConnected = false,
+  modelSelection,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -152,49 +155,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (socketSent) {
           console.log("Message sent via Socket.IO");
           // The response will come through socketMessages
+          setIsLoading(false);
           return;
         }
       }
 
-      // Fallback to HTTP API or simulate for development
-      console.log("Using fallback HTTP API or simulation...");
-      // TODO: Replace with actual API call to backend
-      // Simulate API call with consensus response
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Use real API call to backend
+      console.log("Sending message to backend API...");
 
-      const assistantMessage: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: `I've analyzed your question "${data.message}" using multiple AI models. Here's the consensus response:\n\nThis is a simulated response that would normally come from the backend after processing through both OpenAI and Grok models, then generating a consensus answer.`,
-        timestamp: new Date().toISOString(),
-        session_id: parseInt(sessionId || "0"),
-        consensus: {
-          openai_response: {
-            content: "OpenAI perspective on the question",
-            confidence: 0.85,
-            reasoning: "Based on training data and reasoning",
-          },
-          grok_response: {
-            content: "Grok perspective with real-time insights",
-            confidence: 0.82,
-            reasoning: "Real-time analysis and current context",
-          },
-          final_consensus: "Merged insights from both models",
-          confidence_score: 0.84,
-          reasoning: "Good alignment between model responses",
-          debate_points: [
-            "Model agreement on core concepts",
-            "Slight differences in confidence levels",
-            "Real-time vs training data perspectives",
-          ],
-        },
+      const apiRequest = {
+        message: data.message,
+        session_id: sessionId ? parseInt(sessionId) : undefined,
+        use_consensus:
+          modelSelection?.selectedModels &&
+          modelSelection.selectedModels.length > 1,
+        selected_models: modelSelection?.selectedModels || ["gpt-4o"],
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const response = await apiService.sendMessage(apiRequest);
 
-      // Create session if this is the first message
-      if (!sessionId) {
-        onSessionCreated(Date.now().toString());
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (response.data) {
+        const backendMessage = response.data.message;
+        const assistantMessage: Message = {
+          id: backendMessage.id,
+          role: backendMessage.role as "user" | "assistant",
+          content: backendMessage.content,
+          timestamp: backendMessage.created_at,
+          session_id: backendMessage.session_id,
+          consensus: backendMessage.consensus_data as
+            | ConsensusResponse
+            | undefined,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+
+        // Update session if created
+        if (response.data.session && !sessionId) {
+          onSessionCreated(response.data.session.id.toString());
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -291,38 +293,49 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="text-xs text-gray-500 mt-1">
                       {formatTime(message.timestamp)}
                     </div>
-                    {/* Consensus Details */}
-                    {message.consensus && (
-                      <div className="mt-2">
-                        <button
-                          onClick={() => toggleConsensusDetails(message.id)}
-                          className="text-xs text-primary-cyan hover:underline"
-                        >
-                          {showConsensusDetails === message.id
-                            ? "Hide"
-                            : "Show"}{" "}
-                          Consensus Details
-                        </button>
-
-                        {showConsensusDetails === message.id && (
-                          <div className="mt-2 p-3 bg-bg-dark rounded-lg border border-primary-teal/20 text-sm space-y-2">
-                            <div className="font-medium text-primary-cyan">
-                              Consensus Analysis
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              Confidence:{" "}
-                              {(
-                                message.consensus.confidence_score * 100
-                              ).toFixed(1)}
-                              %
-                            </div>
-                            <div className="text-xs text-gray-300">
-                              {message.consensus.reasoning}
-                            </div>
-                          </div>
-                        )}
+                    {/* Consensus Visualization */}
+                    {message.consensus && modelSelection?.showDebateProcess && (
+                      <div className="mt-3 w-full max-w-2xl">
+                        <ConsensusDebateVisualizer
+                          consensusData={message.consensus}
+                          isDebating={false}
+                          className="w-full"
+                        />
                       </div>
                     )}
+                    {/* Legacy Consensus Details - Show when debate process is hidden */}
+                    {message.consensus &&
+                      !modelSelection?.showDebateProcess && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => toggleConsensusDetails(message.id)}
+                            className="text-xs text-primary-cyan hover:underline"
+                          >
+                            {showConsensusDetails === message.id
+                              ? "Hide"
+                              : "Show"}{" "}
+                            Consensus Details
+                          </button>
+
+                          {showConsensusDetails === message.id && (
+                            <div className="mt-2 p-3 bg-bg-dark rounded-lg border border-primary-teal/20 text-sm space-y-2">
+                              <div className="font-medium text-primary-cyan">
+                                Consensus Analysis
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                Confidence:{" "}
+                                {(
+                                  message.consensus.confidence_score * 100
+                                ).toFixed(1)}
+                                %
+                              </div>
+                              <div className="text-xs text-gray-300">
+                                {message.consensus.reasoning}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -338,11 +351,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <Bot className="w-4 h-4 text-primary-azure" />
               </div>
               <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-2xl px-4 py-3">
+                {" "}
                 <div className="flex items-center space-x-2">
                   <Loader2 className="w-4 h-4 animate-spin text-primary-cyan" />
-                  <span className="text-sm text-gray-400">
-                    Analyzing with multiple AI models...
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-400">
+                      {modelSelection?.selectedModels?.length
+                        ? `Analyzing with ${modelSelection.selectedModels.length} AI models...`
+                        : "Analyzing with multiple AI models..."}
+                    </span>
+                    {modelSelection?.selectedModels?.length &&
+                      modelSelection.selectedModels.length > 0 && (
+                        <span className="text-xs text-gray-500">
+                          Mode: {modelSelection.debateMode}
+                        </span>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>

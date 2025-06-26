@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, MessageSquare, Settings, File, Bot } from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
+import { ModelSelectionState } from "../types";
 import FileUpload from "./FileUpload";
 import FileList from "./FileList";
+import ModelSelection from "./ModelSelection";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   currentSessionId: string | null;
   onSessionSelect: (sessionId: string) => void;
+  modelSelection?: ModelSelectionState;
+  onModelSelectionChange?: (selection: ModelSelectionState) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -16,6 +20,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   currentSessionId,
   onSessionSelect,
+  modelSelection = {
+    selectedModels: [],
+    debateMode: "consensus",
+    showDebateProcess: true,
+  },
+  onModelSelectionChange = () => {},
 }) => {
   const [activeTab, setActiveTab] = useState<"chats" | "files" | "models">(
     "chats"
@@ -219,41 +229,12 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
           {activeTab === "models" && (
-            <div className="p-4">
-              <div className="space-y-3">
-                <div className="p-3 bg-primary-teal/10 rounded-lg border border-primary-teal/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-primary-cyan">
-                      OpenAI GPT-4
-                    </h3>
-                    <div className="w-2 h-2 bg-primary-green rounded-full"></div>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Active • High reasoning
-                  </p>
-                </div>
-
-                <div className="p-3 bg-primary-blue/10 rounded-lg border border-primary-blue/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-primary-azure">Grok-2</h3>
-                    <div className="w-2 h-2 bg-primary-green rounded-full"></div>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Active • Real-time insights
-                  </p>
-                </div>
-
-                <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-300">Claude-3</h3>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Inactive • Not configured
-                  </p>
-                </div>
-              </div>
-            </div>
+            <ModelSelection
+              selectedModels={modelSelection.selectedModels}
+              debateMode={modelSelection.debateMode}
+              showDebateProcess={modelSelection.showDebateProcess}
+              onModelSelectionChange={onModelSelectionChange}
+            />
           )}
         </div>
 
