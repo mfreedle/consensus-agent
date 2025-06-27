@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Check, Settings, Bot, Zap, Brain, Sparkles } from "lucide-react";
 import { LLMModel, ModelSelectionState } from "../types";
-import { apiService } from "../services/api";
+import { enhancedApiService } from "../services/enhancedApi";
+import { useErrorHandler } from "../hooks/useErrorHandler";
+import LoadingIndicator from "./LoadingIndicator";
 
 interface ModelSelectionProps {
   selectedModels: string[];
@@ -21,43 +23,43 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
   const [availableModels, setAvailableModels] = useState<LLMModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { addError } = useErrorHandler();
 
-  useEffect(() => {
-    const loadAvailableModels = async () => {
-      setIsLoading(true);
-      try {
-        const result = await apiService.getAvailableModels();
-        if (result.data) {
-          setAvailableModels(result.data);
+  const loadAvailableModels = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await enhancedApiService.getAvailableModels();
+      setAvailableModels(result);
 
-          // Auto-select active models if none selected
-          if (selectedModels.length === 0) {
-            const activeModels = result.data
-              .filter((model) => model.is_active !== false)
-              .slice(0, 2) // Select first 2 active models by default
-              .map((model) => model.id);
+      // Auto-select active models if none selected
+      if (selectedModels.length === 0) {
+        const activeModels = result
+          .filter((model: LLMModel) => model.is_active !== false)
+          .slice(0, 2) // Select first 2 active models by default
+          .map((model: LLMModel) => model.id);
 
-            onModelSelectionChange({
-              selectedModels: activeModels,
-              debateMode,
-              showDebateProcess,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load models:", error);
-      } finally {
-        setIsLoading(false);
+        onModelSelectionChange({
+          selectedModels: activeModels,
+          debateMode,
+          showDebateProcess,
+        });
       }
-    };
-
-    loadAvailableModels();
+    } catch (error) {
+      addError(error, "api", "Failed to load available models");
+    } finally {
+      setIsLoading(false);
+    }
   }, [
     selectedModels.length,
     debateMode,
     showDebateProcess,
     onModelSelectionChange,
+    addError,
   ]);
+
+  useEffect(() => {
+    loadAvailableModels();
+  }, [loadAvailableModels]);
 
   const handleModelToggle = (modelId: string) => {
     let newSelection = [...selectedModels];
@@ -125,14 +127,11 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
   if (isLoading) {
     return (
       <div className={`p-4 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-700 rounded w-1/3 mb-4"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-gray-700 rounded"></div>
-            ))}
-          </div>
-        </div>
+        <LoadingIndicator
+          isLoading={true}
+          variant="skeleton"
+          message="Loading models..."
+        />
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   File,
   Trash2,
@@ -9,7 +9,9 @@ import {
   HardDrive,
   RefreshCw,
 } from "lucide-react";
-import { apiService } from "../services/api";
+import { enhancedApiService } from "../services/enhancedApi";
+import { useErrorHandler } from "../hooks/useErrorHandler";
+import LoadingIndicator from "./LoadingIndicator";
 import { FileUpload } from "../types";
 
 interface FileListProps {
@@ -27,67 +29,60 @@ const FileList: React.FC<FileListProps> = ({
 }) => {
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const { addError, clearErrors } = useErrorHandler();
+
   // Load files from backend
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      clearErrors();
 
-      const result = await apiService.getUserFiles();
-      if (result.error) {
-        setError(result.error);
-      } else {
-        // Backend returns {files: []} so we need to extract the files array
-        const responseData = result.data as any;
-        const filesData = responseData?.files || responseData || [];
-        setFiles(Array.isArray(filesData) ? filesData : []);
-      }
-    } catch (err) {
-      setError("Failed to load files");
-      console.error("Error loading files:", err);
+      const result = await enhancedApiService.getUserFiles();
+      // Backend returns {files: []} so we need to extract the files array
+      const filesData = result?.files || result || [];
+      setFiles(Array.isArray(filesData) ? filesData : []);
+    } catch (error) {
+      addError(error, "api", "Failed to load files");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addError, clearErrors]);
 
   // Load files on mount and when refresh is triggered
   useEffect(() => {
     loadFiles();
-  }, [refreshTrigger]);
+  }, [loadFiles, refreshTrigger]);
 
   // Handle file deletion
-  const handleDelete = async (file: FileUpload) => {
-    if (
-      !window.confirm(`Are you sure you want to delete "${file.filename}"?`)
-    ) {
-      return;
-    }
-
-    try {
-      setDeletingIds((prev) => new Set(prev).add(file.id));
-
-      const result = await apiService.deleteFile(file.id);
-
-      if (result.error) {
-        throw new Error(result.error);
+  const handleDelete = useCallback(
+    async (file: FileUpload) => {
+      if (
+        !window.confirm(`Are you sure you want to delete "${file.filename}"?`)
+      ) {
+        return;
       }
 
-      // Remove from local state
-      setFiles((prev) => prev.filter((f) => f.id !== file.id));
-      onFileDelete?.(file);
-    } catch (err) {
-      console.error("Error deleting file:", err);
-      alert("Failed to delete file. Please try again.");
-    } finally {
-      setDeletingIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(file.id);
-        return newSet;
-      });
-    }
-  };
+      try {
+        setDeletingIds((prev) => new Set(prev).add(file.id));
+
+        await enhancedApiService.deleteFile(file.id);
+
+        // Remove from local state
+        setFiles((prev) => prev.filter((f) => f.id !== file.id));
+        onFileDelete?.(file);
+      } catch (error) {
+        addError(error, "api", `Failed to delete file "${file.filename}"`);
+      } finally {
+        setDeletingIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(file.id);
+          return newSet;
+        });
+      }
+    },
+    [addError, onFileDelete]
+  );
 
   // Format file size
   const formatFileSize = (bytes: number): string => {
@@ -133,26 +128,12 @@ const FileList: React.FC<FileListProps> = ({
   if (isLoading) {
     return (
       <div className={`${className}`}>
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-6 h-6 animate-spin text-primary-cyan" />
-          <span className="ml-2 text-gray-400">Loading files...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={`${className}`}>
-        <div className="text-center py-12">
-          <div className="text-red-400 mb-4">{error}</div>
-          <button
-            onClick={loadFiles}
-            className="px-4 py-2 bg-primary-teal/20 hover:bg-primary-teal/30 text-primary-cyan rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
+        <LoadingIndicator
+          isLoading={true}
+          variant="overlay"
+          message="Loading files..."
+          className="min-h-[200px]"
+        />
       </div>
     );
   }

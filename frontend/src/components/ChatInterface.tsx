@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Upload, Bot, User } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { ConsensusResponse, apiService } from "../services/api";
+import { ConsensusResponse } from "../services/api";
+import { enhancedApiService } from "../services/enhancedApi";
+import { useErrorHandler } from "../hooks/useErrorHandler";
 import { SocketMessage, ModelSelectionState } from "../types";
 import ConsensusDebateVisualizer from "./ConsensusDebateVisualizer";
 
@@ -41,6 +43,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     number | null
   >(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { addError } = useErrorHandler();
 
   const {
     register,
@@ -88,53 +91,49 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const onSubmit = async (data: MessageForm) => {
-    if (!data.message.trim()) return;
+  const onSubmit = useCallback(
+    async (data: MessageForm) => {
+      if (!data.message.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now(),
-      role: "user",
-      content: data.message,
-      timestamp: new Date().toISOString(),
-      session_id: parseInt(sessionId || "0"),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-    reset();
-
-    try {
-      // Try to send via Socket.IO first if connected
-      if (isSocketConnected && onSendSocketMessage) {
-        const socketSent = onSendSocketMessage(data.message);
-        if (socketSent) {
-          console.log("Message sent via Socket.IO");
-          // The response will come through socketMessages
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Use real API call to backend
-      console.log("Sending message to backend API...");
-
-      const apiRequest = {
-        message: data.message,
-        session_id: sessionId ? parseInt(sessionId) : undefined,
-        use_consensus:
-          modelSelection?.selectedModels &&
-          modelSelection.selectedModels.length > 1,
-        selected_models: modelSelection?.selectedModels || ["gpt-4o"],
+      const userMessage: Message = {
+        id: Date.now(),
+        role: "user",
+        content: data.message,
+        timestamp: new Date().toISOString(),
+        session_id: parseInt(sessionId || "0"),
       };
 
-      const response = await apiService.sendMessage(apiRequest);
+      setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
+      reset();
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      try {
+        // Try to send via Socket.IO first if connected
+        if (isSocketConnected && onSendSocketMessage) {
+          const socketSent = onSendSocketMessage(data.message);
+          if (socketSent) {
+            console.log("Message sent via Socket.IO");
+            // The response will come through socketMessages
+            setIsLoading(false);
+            return;
+          }
+        }
 
-      if (response.data) {
-        const backendMessage = response.data.message;
+        // Use enhanced API service to backend
+        console.log("Sending message to backend API...");
+
+        const apiRequest = {
+          message: data.message,
+          session_id: sessionId ? parseInt(sessionId) : undefined,
+          use_consensus:
+            modelSelection?.selectedModels &&
+            modelSelection.selectedModels.length > 1,
+          selected_models: modelSelection?.selectedModels || ["gpt-4o"],
+        };
+
+        const response = await enhancedApiService.sendMessage(apiRequest);
+
+        const backendMessage = response.message;
         const assistantMessage: Message = {
           id: backendMessage.id,
           role: backendMessage.role as "user" | "assistant",
@@ -149,17 +148,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Update session if created
-        if (response.data.session && !sessionId) {
-          onSessionCreated(response.data.session.id.toString());
+        if (response.session && !sessionId) {
+          onSessionCreated(response.session.id.toString());
         }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        addError(error, "api", "Failed to send message. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      // TODO: Show error toast
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [
+      sessionId,
+      reset,
+      isSocketConnected,
+      onSendSocketMessage,
+      modelSelection,
+      onSessionCreated,
+      addError,
+    ]
+  );
   const toggleConsensusDetails = (messageId: number) => {
     setShowConsensusDetails(
       showConsensusDetails === messageId ? null : messageId
@@ -353,7 +361,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
 
           {/* Message Input */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <textarea
               {...register("message", { required: "Message is required" })}
               placeholder={
@@ -361,8 +369,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ? "Ask anything... Real-time AI consensus analysis enabled."
                   : "Ask anything... Multiple AI models will analyze your question."
               }
-              className="w-full px-4 py-3 bg-bg-dark-secondary border border-primary-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan text-white placeholder-gray-500 resize-none"
+              className="w-full px-4 py-3 bg-bg-dark-secondary border border-primary-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan text-white placeholder-gray-500 resize-none disabled:opacity-50"
               rows={1}
+              disabled={isLoading}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -370,6 +379,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               }}
             />
+            {isLoading && (
+              <div className="absolute right-3 top-3">
+                <Loader2 className="w-5 h-5 animate-spin text-primary-cyan" />
+              </div>
+            )}
             {errors.message && (
               <p className="text-red-400 text-sm mt-1">
                 {typeof errors.message === "string"
@@ -385,7 +399,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             disabled={isLoading}
             className="flex-shrink-0 btn-gradient-primary p-3 rounded-lg hover:glow-effect-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-5 h-5 text-white" />
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              <Send className="w-5 h-5 text-white" />
+            )}
           </button>
         </form>
       </div>

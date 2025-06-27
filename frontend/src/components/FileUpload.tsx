@@ -3,6 +3,8 @@ import { useDropzone } from "react-dropzone";
 import { Upload, X, File, AlertCircle, CheckCircle } from "lucide-react";
 import { apiService } from "../services/api";
 import { SUPPORTED_FILE_TYPES } from "../types";
+import { useError } from "../contexts/ErrorContext";
+import { useLoadingState } from "./LoadingIndicator";
 
 interface FileUploadProps {
   onUploadSuccess?: (file: any) => void;
@@ -27,6 +29,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const { addError } = useError();
+  const loadingState = useLoadingState();
 
   // Validate file type and size
   const validateFile = (file: File): { isValid: boolean; error?: string } => {
@@ -55,66 +59,98 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return { isValid: true };
   };
 
-  // Handle file upload
-  const uploadFile = async (file: File): Promise<void> => {
-    const fileId = Date.now().toString() + Math.random().toString(36);
+  // Handle file upload with enhanced error handling
+  const uploadFile = useCallback(
+    async (file: File): Promise<void> => {
+      const fileId = Date.now().toString() + Math.random().toString(36);
 
-    // Add to uploading files list
-    const uploadingFile: UploadingFile = {
-      file,
-      progress: 0,
-      status: "uploading",
-      id: fileId,
-    };
-
-    setUploadingFiles((prev) => [...prev, uploadingFile]);
-
-    try {
-      // Simulate progress updates (in real implementation, you'd use XMLHttpRequest for progress)
-      const updateProgress = (progress: number) => {
-        setUploadingFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress } : f))
-        );
+      // Add to uploading files list
+      const uploadingFile: UploadingFile = {
+        file,
+        progress: 0,
+        status: "uploading",
+        id: fileId,
       };
 
-      updateProgress(20);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      updateProgress(50);
+      setUploadingFiles((prev) => [...prev, uploadingFile]);
 
-      const result = await apiService.uploadFile(file);
+      try {
+        // Show global loading for first file
+        if (uploadingFiles.length === 0) {
+          loadingState.setLoading(
+            true,
+            "Uploading file...",
+            `Processing ${file.name}`
+          );
+        }
 
-      if (result.error) {
-        throw new Error(result.error);
+        // Simulate progress updates (in real implementation, you'd use XMLHttpRequest for progress)
+        const updateProgress = (progress: number) => {
+          setUploadingFiles((prev) =>
+            prev.map((f) => (f.id === fileId ? { ...f, progress } : f))
+          );
+
+          if (uploadingFiles.length === 0) {
+            loadingState.updateProgress(progress);
+          }
+        };
+
+        updateProgress(20);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        updateProgress(50);
+
+        const result = await apiService.uploadFile(file);
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        updateProgress(100);
+
+        // Mark as success
+        setUploadingFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: "success", progress: 100 } : f
+          )
+        );
+
+        onUploadSuccess?.(result.data);
+
+        // Remove from list after 3 seconds
+        setTimeout(() => {
+          setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
+        }, 3000);
+      } catch (error) {
+        console.error("File upload error:", error);
+
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
+
+        // Mark file as failed
+        setUploadingFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: "error", error: errorMessage } : f
+          )
+        );
+
+        // Add to global error system
+        addError(error, "upload", `Failed to upload ${file.name}`);
+        onUploadError?.(errorMessage);
+      } finally {
+        // Clear global loading if this was the only file
+        if (uploadingFiles.length === 0) {
+          loadingState.setLoading(false);
+        }
       }
-
-      updateProgress(100);
-
-      // Mark as success
-      setUploadingFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId ? { ...f, status: "success", progress: 100 } : f
-        )
-      );
-
-      onUploadSuccess?.(result.data);
-
-      // Remove from list after 3 seconds
-      setTimeout(() => {
-        setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
-      }, 3000);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Upload failed";
-
-      setUploadingFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId ? { ...f, status: "error", error: errorMessage } : f
-        )
-      );
-
-      onUploadError?.(errorMessage);
-    }
-  };
+    },
+    [
+      uploadingFiles.length,
+      loadingState,
+      onUploadSuccess,
+      addError,
+      onUploadError,
+    ]
+  );
   // Handle dropped files
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -126,6 +162,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         const validation = validateFile(file);
 
         if (!validation.isValid) {
+          addError(validation.error || "Invalid file", "validation");
           onUploadError?.(validation.error || "Invalid file");
           continue;
         }
@@ -134,10 +171,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
       }
 
       setIsUploading(false);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [onUploadSuccess, onUploadError]
-  ); // uploadFile is defined inline and depends on state
+    [addError, onUploadError, uploadFile]
+  );
 
   // Remove file from uploading list
   const removeFile = (fileId: string) => {
