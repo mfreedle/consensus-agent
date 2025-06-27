@@ -45,20 +45,27 @@ class LLMOrchestrator:
             raise ValueError("OpenAI API key not configured")
             
         try:
-            # Prepare the input with context if provided
-            full_input = prompt
+            # Prepare the input messages for the Responses API
+            input_messages = []
             if context:
-                full_input = f"Context: {context}\n\nUser Query: {prompt}"
+                input_messages.append({
+                    "role": "system",
+                    "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide clear, accurate responses with confidence scoring."
+                })
+            input_messages.append({
+                "role": "user",
+                "content": prompt
+            })
             
             # Use the new Responses API with structured output
             response = await self.openai_client.responses.create(
                 model=model,
-                instructions="You are a helpful AI assistant. Provide clear, accurate responses with confidence scoring.",
-                input=full_input,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
+                input=input_messages,
+                text={
+                    "format": {
+                        "type": "json_schema",
                         "name": "structured_response",
+                        "description": "Structured response with confidence and reasoning",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -77,17 +84,18 @@ class LLMOrchestrator:
                                     "description": "Explanation of the reasoning behind the response"
                                 }
                             },
-                            "required": ["content", "confidence", "reasoning"]
-                        }
+                            "required": ["content", "confidence", "reasoning"],
+                            "additionalProperties": False
+                        },
+                        "strict": True
                     }
                 }
             )
             
-            # Parse the structured response
-            response_data = response.output
-            if isinstance(response_data, str):
-                import json
-                response_data = json.loads(response_data)
+            # Extract the structured response from the output
+            import json
+            response_text = response.output[0].content[0].text
+            response_data = json.loads(response_text)
             
             return LLMResponse(
                 content=response_data.get("content", "No response generated"),

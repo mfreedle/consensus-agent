@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Google OAuth Callback</title>
+	<style>
+		body {
+			font-family: system-ui, -apple-system, sans-serif;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			margin: 0;
+			background-color: #1a1f2e;
+			color: white;
+		}
+
+		.container {
+			text-align: center;
+			padding: 2rem;
+		}
+
+		.spinner {
+			border: 4px solid #333;
+			border-top: 4px solid #00d4aa;
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			animation: spin 1s linear infinite;
+			margin: 0 auto 1rem;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+
+		.error {
+			color: #ef4444;
+			margin-top: 1rem;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="spinner"></div>
+		<h2>Processing Google OAuth...</h2>
+		<p>Please wait while we complete the authorization.</p>
+		<div id="error" class="error" style="display: none;"></div>
+	</div>
+
+	<script>
+		function getUrlParams() {
+			const urlParams = new URLSearchParams(window.location.search);
+			return {
+				code: urlParams.get('code'),
+				state: urlParams.get('state'),
+				error: urlParams.get('error'),
+				error_description: urlParams.get('error_description')
+			};
+		}
+
+		function handleOAuthCallback() {
+			const params = getUrlParams();
+
+			if (params.error) {
+				// OAuth error occurred
+				const errorDiv = document.getElementById('error');
+				errorDiv.style.display = 'block';
+				errorDiv.textContent = `OAuth Error: ${params.error_description || params.error}`;
+
+				// Send error message to parent window
+				if (window.opener) {
+					window.opener.postMessage({
+						type: 'GOOGLE_OAUTH_ERROR',
+						error: params.error,
+						error_description: params.error_description
+					}, window.location.origin);
+				}
+
+				// Close popup after 3 seconds
+				setTimeout(() => {
+					window.close();
+				}, 3000);
+				return;
+			}
+
+			if (params.code && params.state) {
+				// Success - send data to parent window
+				if (window.opener) {
+					window.opener.postMessage({
+						type: 'GOOGLE_OAUTH_SUCCESS',
+						code: params.code,
+						state: params.state
+					}, window.location.origin);
+				}
+
+				// Close popup
+				window.close();
+			} else {
+				// Missing required parameters
+				const errorDiv = document.getElementById('error');
+				errorDiv.style.display = 'block';
+				errorDiv.textContent = 'Missing authorization code or state parameter';
+
+				if (window.opener) {
+					window.opener.postMessage({
+						type: 'GOOGLE_OAUTH_ERROR',
+						error: 'missing_parameters',
+						error_description: 'Missing authorization code or state parameter'
+					}, window.location.origin);
+				}
+
+				setTimeout(() => {
+					window.close();
+				}, 3000);
+			}
+		}
+
+		// Run callback handler when page loads
+		window.addEventListener('load', handleOAuthCallback);
+	</script>
+</body>
+
+</html>

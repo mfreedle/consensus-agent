@@ -75,7 +75,7 @@ class SocketService {
     }
   }
 
-  sendMessage(sessionId: string, message: string, token: string): void {
+  sendMessage(sessionId: string | null, message: string, token: string): void {
     if (this.socket && this.isConnected) {
       this.socket.emit('send_message', {
         session_id: sessionId,
@@ -97,10 +97,17 @@ class SocketService {
     }
   }
 
+  onSessionCreated(callback: (data: { session_id: number; title: string }) => void): void {
+    if (this.socket) {
+      this.socket.on('session_created', callback);
+    }
+  }
+
   removeAllListeners(): void {
     if (this.socket) {
       this.socket.removeAllListeners('new_message');
       this.socket.removeAllListeners('error');
+      this.socket.removeAllListeners('session_created');
     }
   }
 

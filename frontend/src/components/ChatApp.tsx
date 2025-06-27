@@ -29,6 +29,16 @@ const ChatApp: React.FC = () => {
     console.error("Socket.IO error:", error);
     // TODO: Show error toast to user
   }, []);
+
+  // Handle session creation
+  const handleSessionCreated = useCallback(
+    (data: { session_id: number; title: string }) => {
+      console.log("Session created:", data);
+      setCurrentSessionId(data.session_id.toString());
+    },
+    []
+  );
+
   // Initialize Socket.IO connection
   const { sendMessage: sendSocketMessage, isConnected: getIsConnected } =
     useSocket({
@@ -37,6 +47,7 @@ const ChatApp: React.FC = () => {
       sessionId: currentSessionId,
       onNewMessage: handleNewMessage,
       onError: handleSocketError,
+      onSessionCreated: handleSessionCreated,
     });
 
   const isSocketConnected = getIsConnected();

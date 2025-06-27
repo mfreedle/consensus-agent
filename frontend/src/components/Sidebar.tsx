@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { X, Plus, MessageSquare, Settings, File, Bot } from "lucide-react";
+import {
+  X,
+  Plus,
+  MessageSquare,
+  Settings,
+  File,
+  Bot,
+  Cloud,
+} from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
 import { ModelSelectionState } from "../types";
 import FileUpload from "./FileUpload";
 import FileList from "./FileList";
 import ModelSelection from "./ModelSelection";
+import { GoogleDriveIntegration } from "./GoogleDriveIntegration";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,9 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   },
   onModelSelectionChange = () => {},
 }) => {
-  const [activeTab, setActiveTab] = useState<"chats" | "files" | "models">(
-    "chats"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "chats" | "files" | "models" | "google"
+  >("chats");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
@@ -117,35 +126,46 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex border-b border-primary-teal/20">
           <button
             onClick={() => setActiveTab("chats")}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
               activeTab === "chats"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <MessageSquare className="w-4 h-4 inline-block mr-2" />
+            <MessageSquare className="w-4 h-4 inline-block mr-1" />
             Chats
           </button>
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
               activeTab === "files"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <File className="w-4 h-4 inline-block mr-2" />
+            <File className="w-4 h-4 inline-block mr-1" />
             Files
           </button>
           <button
+            onClick={() => setActiveTab("google")}
+            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
+              activeTab === "google"
+                ? "text-primary-cyan border-b-2 border-primary-cyan"
+                : "text-gray-400 hover:text-primary-cyan"
+            }`}
+          >
+            <Cloud className="w-4 h-4 inline-block mr-1" />
+            Drive
+          </button>
+          <button
             onClick={() => setActiveTab("models")}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
               activeTab === "models"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <Bot className="w-4 h-4 inline-block mr-2" />
+            <Bot className="w-4 h-4 inline-block mr-1" />
             Models
           </button>
         </div>
@@ -226,6 +246,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   className="max-h-96 overflow-y-auto"
                 />
               </div>
+            </div>
+          )}
+          {activeTab === "google" && (
+            <div className="p-4">
+              <GoogleDriveIntegration />
             </div>
           )}
           {activeTab === "models" && (

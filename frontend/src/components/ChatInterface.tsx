@@ -48,55 +48,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     reset,
     formState: { errors },
   } = useForm<MessageForm>(); // Mock messages for development
+  // Load messages for session - removed mock messages that interfere with real Socket.IO
   useEffect(() => {
-    if (sessionId === "1") {
-      setMessages([
-        {
-          id: 1,
-          role: "user",
-          content:
-            "What are the key ethical considerations when developing AI systems?",
-          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          session_id: 1,
-        },
-        {
-          id: 2,
-          role: "assistant",
-          content:
-            "After analyzing multiple AI perspectives, here are the key ethical considerations for AI development:\n\n1. **Transparency and Explainability**: AI systems should provide clear explanations for their decisions\n2. **Fairness and Bias Mitigation**: Ensuring AI doesn't perpetuate or amplify societal biases\n3. **Privacy Protection**: Safeguarding user data and maintaining confidentiality\n4. **Human Oversight**: Maintaining meaningful human control over AI decisions\n5. **Accountability**: Clear responsibility chains for AI outcomes",
-          timestamp: new Date(Date.now() - 3590000).toISOString(),
-          session_id: 1,
-          consensus: {
-            openai_response: {
-              content:
-                "Focus on transparency, fairness, privacy, and accountability as core pillars.",
-              confidence: 0.92,
-              reasoning:
-                "Based on established AI ethics frameworks and research",
-            },
-            grok_response: {
-              content:
-                "Emphasize human oversight and real-world impact assessment.",
-              confidence: 0.88,
-              reasoning:
-                "Real-time analysis of current AI deployment challenges",
-            },
-            final_consensus:
-              "Combined comprehensive approach balancing technical and human factors.",
-            confidence_score: 0.9,
-            reasoning:
-              "High agreement between models on fundamental ethical principles",
-            debate_points: [
-              "Privacy vs transparency trade-offs",
-              "Human oversight vs automation efficiency",
-              "Global vs local ethical standards",
-            ],
-          },
-        },
-      ]);
-    } else {
-      setMessages([]);
-    }
+    // Clear messages when session changes
+    setMessages([]);
   }, [sessionId]); // Add socket messages to the regular messages
   useEffect(() => {
     if (socketMessages.length > 0) {

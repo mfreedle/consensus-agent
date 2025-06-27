@@ -22,7 +22,12 @@ class Settings(BaseSettings):
     # DeepSeek
     deepseek_api_key: str = ""
     
-    # Google APIs - Service Account
+    # Google APIs - OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:3000/google-oauth-callback.html"
+    
+    # Google APIs - Service Account (for admin operations)
     google_service_account_file: str = ""
     google_project_id: str = ""
     google_client_email: str = ""

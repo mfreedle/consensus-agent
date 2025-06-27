@@ -30,8 +30,9 @@ class LLMOrchestrator:
     def __init__(self):
         # Initialize OpenAI client
         self.openai_client = AsyncOpenAI(
-            api_key=settings.openai_api_key,
-            organization=settings.openai_org_id if settings.openai_org_id else None
+            api_key=settings.openai_api_key
+            # Remove org_id temporarily to avoid mismatch errors
+            # organization=settings.openai_org_id if settings.openai_org_id else None
         )
         
         # Initialize Grok client (using httpx for HTTP requests)
@@ -47,45 +48,107 @@ class LLMOrchestrator:
         model: str = "gpt-4o-mini",
         context: Optional[str] = None
     ) -> ModelResponse:
-        """Get response from OpenAI using Chat Completions API"""
+        """Get response from OpenAI using Responses API with structured outputs"""
         try:
-            # Prepare messages with context if provided
-            messages = []
+            # Prepare the input messages
+            input_messages = []
             if context:
-                messages.append({
+                input_messages.append({
                     "role": "system",
                     "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
                 })
-            messages.append({
+            input_messages.append({
                 "role": "user", 
                 "content": prompt
             })
             
-            # Use OpenAI Chat Completions API
-            response = await self.openai_client.chat.completions.create(
+            # Use the new Responses API with structured outputs
+            response = await self.openai_client.responses.create(
                 model=model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=1000
+                input=input_messages,
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "model_response", 
+                        "description": "Structured response from the model",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "content": {
+                                    "type": "string",
+                                    "description": "The main response content"
+                                },
+                                "confidence": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1,
+                                    "description": "Confidence score for the response (0-1)"
+                                },
+                                "reasoning": {
+                                    "type": "string", 
+                                    "description": "Explanation of the reasoning behind the response"
+                                }
+                            },
+                            "required": ["content", "confidence", "reasoning"],
+                            "additionalProperties": False
+                        },
+                        "strict": True
+                    }
+                }
             )
             
-            content = response.choices[0].message.content
+            # Extract the structured response from the output
+            import json
+            response_text = response.output[0].content[0].text
+            response_data = json.loads(response_text)
             
             return ModelResponse(
-                content=content,
+                content=response_data["content"],
                 model=model,
-                confidence=0.8,
-                reasoning="OpenAI response"
+                confidence=response_data["confidence"],
+                reasoning=response_data["reasoning"]
             )
             
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
-            return ModelResponse(
-                content=f"Error getting OpenAI response: {str(e)}",
-                model=model,
-                confidence=0.0,
-                reasoning="API error occurred"
-            )
+            logger.error(f"OpenAI Responses API error: {e}")
+            # Fallback to regular chat completions if Responses API fails
+            try:
+                # Prepare messages for fallback
+                messages = []
+                if context:
+                    messages.append({
+                        "role": "system",
+                        "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
+                    })
+                messages.append({
+                    "role": "user", 
+                    "content": prompt
+                })
+                
+                fallback_response = await self.openai_client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                
+                content = fallback_response.choices[0].message.content
+                
+                return ModelResponse(
+                    content=content,
+                    model=model,
+                    confidence=0.8,
+                    reasoning="Fallback to Chat Completions API"
+                )
+                
+            except Exception as fallback_error:
+                logger.error(f"Fallback OpenAI API error: {fallback_error}")
+                return ModelResponse(
+                    content=f"Error getting OpenAI response: {str(e)}",
+                    model=model,
+                    confidence=0.0,
+                    reasoning="API error occurred"
+                )
     
     async def get_grok_response(
         self, 
@@ -169,38 +232,35 @@ class LLMOrchestrator:
         4. Explains your reasoning
         5. Lists key debate points if any disagreements exist
         
-        Format your response as a structured analysis.
+        Provide your response in the following JSON format:
+        {{
+            "final_consensus": "your consensus response here",
+            "confidence_score": 0.85,
+            "reasoning": "explanation of your analysis",
+            "debate_points": ["point1", "point2", "point3"]
+        }}
         """
         
         try:
-            consensus_response = await self.openai_client.responses.create(
+            consensus_response = await self.openai_client.chat.completions.create(
                 model=openai_model,
-                instructions="You are an expert analyst that creates consensus from multiple AI responses. Be thorough and balanced in your analysis.",
-                input=consensus_prompt,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "consensus_analysis",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "final_consensus": {"type": "string"},
-                                "confidence_score": {"type": "number", "minimum": 0, "maximum": 1},
-                                "reasoning": {"type": "string"},
-                                "debate_points": {"type": "array", "items": {"type": "string"}}
-                            },
-                            "required": ["final_consensus", "confidence_score", "reasoning", "debate_points"]
-                        }
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert analyst that creates consensus from multiple AI responses. Always respond with valid JSON in the requested format."
+                    },
+                    {
+                        "role": "user", 
+                        "content": consensus_prompt
                     }
-                }
+                ],
+                temperature=0.3,
+                max_tokens=1500,
+                response_format={"type": "json_object"}
             )
             
-            consensus_data = consensus_response.output_parsed if hasattr(consensus_response, 'output_parsed') else {
-                "final_consensus": "Unable to parse consensus response",
-                "confidence_score": 0.5,
-                "reasoning": "Parsing error",
-                "debate_points": []
-            }
+            import json
+            consensus_data = json.loads(consensus_response.choices[0].message.content)
             
             return ConsensusResult(
                 openai_response=openai_response,

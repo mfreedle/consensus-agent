@@ -8,6 +8,7 @@ interface UseSocketProps {
   sessionId?: string | null;
   onNewMessage?: (message: SocketMessage) => void;
   onError?: (error: SocketError) => void;
+  onSessionCreated?: (data: { session_id: number; title: string }) => void;
 }
 
 export const useSocket = ({
@@ -16,6 +17,7 @@ export const useSocket = ({
   sessionId,
   onNewMessage,
   onError,
+  onSessionCreated,
 }: UseSocketProps) => {
   const socketRef = useRef(socketService);
   const currentSessionRef = useRef<string | null>(null);
@@ -67,6 +69,11 @@ export const useSocket = ({
         socketInstance.onError(onError);
       }
 
+      // Set up session created listener
+      if (onSessionCreated) {
+        socketInstance.onSessionCreated(onSessionCreated);
+      }
+
       return () => {
         console.log('Cleaning up Socket.IO listeners...');
         socketInstance.removeAllListeners();
@@ -95,8 +102,11 @@ export const useSocket = ({
       if (onError) {
         socketInstance.onError(onError);
       }
+      if (onSessionCreated) {
+        socketInstance.onSessionCreated(onSessionCreated);
+      }
     }
-  }, [onNewMessage, onError]);
+  }, [onNewMessage, onError, onSessionCreated]);
 
   // Join session room when session changes
   useEffect(() => {
@@ -115,9 +125,9 @@ export const useSocket = ({
   }, [isAuthenticated, sessionId]);
   // Send message function
   const sendMessage = useCallback((message: string) => {
-    if (isAuthenticated && token && sessionId && socketRef.current.isSocketConnected()) {
+    if (isAuthenticated && token && socketRef.current.isSocketConnected()) {
       console.log(`Sending message via Socket.IO: ${message}`);
-      socketRef.current.sendMessage(sessionId, message, token);
+      socketRef.current.sendMessage(sessionId || null, message, token);
       return true;
     } else {
       console.warn('Cannot send message: not connected or missing credentials');
