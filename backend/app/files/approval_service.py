@@ -236,6 +236,25 @@ class DocumentApprovalService:
     ) -> DocumentVersion:
         """Create a new document version"""
         
+        # Generate content hash first
+        content_hash = self._generate_content_hash(content)
+        
+        # Check if a version with this hash already exists
+        existing_result = await self.db.execute(
+            select(DocumentVersion)
+            .where(
+                and_(
+                    DocumentVersion.file_id == file_id,
+                    DocumentVersion.version_hash == content_hash
+                )
+            )
+        )
+        existing_version = existing_result.scalar_one_or_none()
+        
+        if existing_version:
+            # Version with same content already exists, return it
+            return existing_version
+        
         # Get current version number
         result = await self.db.execute(
             select(func.max(DocumentVersion.version_number))
@@ -243,9 +262,6 @@ class DocumentApprovalService:
         )
         max_version = result.scalar() or 0
         new_version = max_version + 1
-        
-        # Generate content hash
-        content_hash = self._generate_content_hash(content)
         
         # Get previous version for diff
         content_diff = None

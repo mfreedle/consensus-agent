@@ -51,7 +51,7 @@ class DocumentApproval(Base):
     confidence_score = Column(Float, nullable=True)  # 0.0 to 1.0
     
     # Approval status
-    status = Column(Enum(ApprovalStatus), default=ApprovalStatus.PENDING, nullable=False)
+    status = Column(Enum(ApprovalStatus, values_callable=lambda obj: [e.value for e in obj]), default=ApprovalStatus.PENDING, nullable=False)
     approved_at = Column(DateTime, nullable=True)
     approved_by_user = Column(Boolean, default=False)
     
@@ -118,7 +118,6 @@ class DocumentVersion(Base):
     __table_args__ = (
         Index("idx_file_version", "file_id", "version_number"),
         Index("idx_version_hash", "version_hash"),
-        Index("idx_file_current", "file_id", "is_current"),
     )
 
 
