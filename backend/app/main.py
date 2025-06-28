@@ -5,6 +5,7 @@ import socketio
 from app.auth.router import router as auth_router
 from app.chat.router import router as chat_router
 from app.database.connection import init_db
+from app.files.approval_router import router as approval_router
 from app.files.router import router as files_router
 from app.google.router import router as google_router
 from app.llm.router import router as llm_router
@@ -42,6 +43,7 @@ fastapi_app.add_middleware(
 fastapi_app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 fastapi_app.include_router(chat_router, prefix="/chat", tags=["Chat"])
 fastapi_app.include_router(files_router, prefix="/files", tags=["Files"])
+fastapi_app.include_router(approval_router, prefix="/files", tags=["Document Approvals"])
 fastapi_app.include_router(llm_router, prefix="/models", tags=["LLM Models"])
 fastapi_app.include_router(google_router, prefix="/google", tags=["Google Drive"])
 

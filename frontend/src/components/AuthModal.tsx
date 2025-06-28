@@ -76,15 +76,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-bg-dark flex items-center justify-center px-4">
-      <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-2xl p-8 w-full max-w-md">
+      <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-2xl p-6 md:p-8 w-full max-w-md">
         {/* Logo and Title */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 md:mb-8">
           <img
             src="/logo.svg"
             alt="Consensus Agent"
-            className="w-16 h-16 mx-auto mb-4"
+            className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4"
           />
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-teal to-primary-cyan bg-clip-text text-transparent mb-2">
+          <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary-teal to-primary-cyan bg-clip-text text-transparent mb-2">
             CONSENSUS AGENT
           </h1>
           <p className="text-gray-400 text-sm">Multi-LLM AI Chat Platform</p>

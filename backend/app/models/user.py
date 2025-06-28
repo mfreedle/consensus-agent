@@ -1,5 +1,6 @@
 from app.database.connection import Base
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 
@@ -17,3 +18,8 @@ class User(Base):
     google_drive_token = Column(Text, nullable=True)
     google_refresh_token = Column(Text, nullable=True)
     google_token_expiry = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    document_approvals = relationship("DocumentApproval", back_populates="user")
+    document_versions = relationship("DocumentVersion", back_populates="user")
+    approval_templates = relationship("ApprovalTemplate", back_populates="user")

@@ -181,20 +181,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
         {messages.length === 0 && !sessionId ? (
           // Welcome Screen
           <div className="flex items-center justify-center h-full">
-            <div className="text-center">
+            <div className="text-center px-4">
               <img
                 src="/logo.svg"
                 alt="Consensus Agent"
-                className="w-24 h-24 mx-auto mb-6 opacity-50"
+                className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 opacity-50"
               />
-              <h2 className="text-2xl font-bold text-primary-cyan mb-2">
+              <h2 className="text-xl md:text-2xl font-bold text-primary-cyan mb-2">
                 Welcome to Consensus Agent
               </h2>
-              <p className="text-gray-400 max-w-md">
+              <p className="text-gray-400 max-w-md text-sm md:text-base">
                 Experience the power of multi-LLM consensus. Ask any question
                 and get insights from multiple AI models working together.
               </p>
@@ -211,27 +211,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }`}
               >
                 <div
-                  className={`flex max-w-4xl ${
+                  className={`flex max-w-full md:max-w-4xl ${
                     message.role === "user" ? "flex-row-reverse" : "flex-row"
                   }`}
                 >
                   {/* Avatar */}
                   <div
                     className={`flex-shrink-0 ${
-                      message.role === "user" ? "ml-3" : "mr-3"
+                      message.role === "user" ? "ml-2 md:ml-3" : "mr-2 md:mr-3"
                     }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center ${
                         message.role === "user"
                           ? "bg-primary-teal/20"
                           : "bg-primary-blue/20"
                       }`}
                     >
                       {message.role === "user" ? (
-                        <User className="w-4 h-4 text-primary-cyan" />
+                        <User className="w-3 h-3 md:w-4 md:h-4 text-primary-cyan" />
                       ) : (
-                        <Bot className="w-4 h-4 text-primary-azure" />
+                        <Bot className="w-3 h-3 md:w-4 md:h-4 text-primary-azure" />
                       )}
                     </div>
                   </div>
@@ -243,13 +243,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     }`}
                   >
                     <div
-                      className={`px-4 py-3 rounded-2xl ${
+                      className={`px-3 py-2 md:px-4 md:py-3 rounded-2xl max-w-[85%] sm:max-w-none ${
                         message.role === "user"
                           ? "bg-primary-teal/20 text-white"
                           : "bg-bg-dark-secondary border border-primary-teal/20 text-white"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap">
+                      <div className="whitespace-pre-wrap text-sm md:text-base">
                         {message.content}
                       </div>
                     </div>{" "}
@@ -309,23 +309,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {/* Loading Indicator */}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-primary-blue/20 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-primary-azure" />
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary-blue/20 flex items-center justify-center">
+                <Bot className="w-3 h-3 md:w-4 md:h-4 text-primary-azure" />
               </div>
-              <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-2xl px-4 py-3">
-                {" "}
+              <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-2xl px-3 py-2 md:px-4 md:py-3">
                 <div className="flex items-center space-x-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary-cyan" />
+                  <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin text-primary-cyan" />
                   <div className="flex flex-col">
-                    <span className="text-sm text-gray-400">
+                    <span className="text-xs md:text-sm text-gray-400">
                       {modelSelection?.selectedModels?.length
                         ? `Analyzing with ${modelSelection.selectedModels.length} AI models...`
                         : "Analyzing with multiple AI models..."}
                     </span>
                     {modelSelection?.selectedModels?.length &&
                       modelSelection.selectedModels.length > 0 && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 hidden sm:inline">
                           Mode: {modelSelection.debateMode}
                         </span>
                       )}
@@ -339,23 +338,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div ref={messagesEndRef} />
       </div>{" "}
       {/* Input Area */}
-      <div className="border-t border-primary-teal/20 p-6">
+      <div className="border-t border-primary-teal/20 p-4 md:p-6">
         {/* Connection Status */}
         {!isSocketConnected && (
-          <div className="mb-3 flex items-center space-x-2 text-sm text-amber-400">
+          <div className="mb-3 flex items-center space-x-2 text-xs md:text-sm text-amber-400">
             <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-            <span>Real-time mode unavailable - using HTTP fallback</span>
+            <span className="hidden sm:inline">
+              Real-time mode unavailable - using HTTP fallback
+            </span>
+            <span className="sm:hidden">HTTP mode</span>
           </div>
         )}
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex items-end space-x-4"
+          className="flex items-end space-x-2 md:space-x-4"
         >
-          {/* File Upload Button */}
+          {/* File Upload Button - Hidden on small screens */}
           <button
             type="button"
-            className="flex-shrink-0 p-3 rounded-lg bg-primary-teal/10 hover:bg-primary-teal/20 transition-colors"
+            className="hidden sm:flex flex-shrink-0 p-3 rounded-lg bg-primary-teal/10 hover:bg-primary-teal/20 transition-colors"
           >
             <Upload className="w-5 h-5 text-primary-cyan" />
           </button>
@@ -369,7 +371,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ? "Ask anything... Real-time AI consensus analysis enabled."
                   : "Ask anything... Multiple AI models will analyze your question."
               }
-              className="w-full px-4 py-3 bg-bg-dark-secondary border border-primary-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan text-white placeholder-gray-500 resize-none disabled:opacity-50"
+              className="w-full px-3 md:px-4 py-2 md:py-3 bg-bg-dark-secondary border border-primary-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan/50 focus:border-primary-cyan text-white placeholder-gray-500 resize-none disabled:opacity-50 text-sm md:text-base"
               rows={1}
               disabled={isLoading}
               onKeyDown={(e) => {
@@ -380,12 +382,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }}
             />
             {isLoading && (
-              <div className="absolute right-3 top-3">
-                <Loader2 className="w-5 h-5 animate-spin text-primary-cyan" />
+              <div className="absolute right-3 top-2 md:top-3">
+                <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-primary-cyan" />
               </div>
             )}
             {errors.message && (
-              <p className="text-red-400 text-sm mt-1">
+              <p className="text-red-400 text-xs md:text-sm mt-1">
                 {typeof errors.message === "string"
                   ? errors.message
                   : errors.message.message || "Message is required"}
@@ -397,12 +399,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-shrink-0 btn-gradient-primary p-3 rounded-lg hover:glow-effect-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 btn-gradient-primary p-2 md:p-3 rounded-lg hover:glow-effect-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-white" />
+              <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-white" />
             ) : (
-              <Send className="w-5 h-5 text-white" />
+              <Send className="w-4 h-4 md:w-5 md:h-5 text-white" />
             )}
           </button>
         </form>

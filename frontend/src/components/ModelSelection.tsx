@@ -126,7 +126,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`p-4 ${className}`}>
+      <div className={`p-3 md:p-4 ${className}`}>
         <LoadingIndicator
           isLoading={true}
           variant="skeleton"
@@ -137,7 +137,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
   }
 
   return (
-    <div className={`p-4 space-y-4 ${className}`}>
+    <div className={`p-3 md:p-4 space-y-3 md:space-y-4 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-primary-cyan">
@@ -147,7 +147,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="p-1 rounded-lg hover:bg-primary-teal/10 transition-colors"
         >
-          <Settings className="w-4 h-4 text-gray-400" />
+          <Settings className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
         </button>
       </div>
 

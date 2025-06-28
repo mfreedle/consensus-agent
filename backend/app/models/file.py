@@ -1,6 +1,7 @@
 from app.database.connection import Base
 from sqlalchemy import (BigInteger, Boolean, Column, DateTime, ForeignKey,
                         Integer, String, Text)
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 
@@ -30,3 +31,7 @@ class File(Base):
     # Metadata
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    approvals = relationship("DocumentApproval", back_populates="file")
+    versions = relationship("DocumentVersion", back_populates="file")

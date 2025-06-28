@@ -1,14 +1,17 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
+import { useResponsive } from "../hooks/useResponsive";
 import { SocketMessage, SocketError, ModelSelectionState } from "../types";
 import Header from "./Header";
 import ChatInterface from "./ChatInterface";
 import Sidebar from "./Sidebar";
 import AuthModal from "./AuthModal";
+import MobileStatusBar from "./MobileStatusBar";
 
 const ChatApp: React.FC = () => {
   const { isAuthenticated, user, token, login, logout, loading } = useAuth();
+  const { isMobile } = useResponsive();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [socketMessages, setSocketMessages] = useState<SocketMessage[]>([]);
@@ -17,6 +20,13 @@ const ChatApp: React.FC = () => {
     debateMode: "consensus",
     showDebateProcess: true,
   });
+
+  // Auto-close sidebar on mobile when session changes
+  useEffect(() => {
+    if (isMobile && currentSessionId) {
+      setIsSidebarOpen(false);
+    }
+  }, [currentSessionId, isMobile]);
 
   // Handle incoming Socket.IO messages
   const handleNewMessage = useCallback((message: SocketMessage) => {
@@ -78,7 +88,7 @@ const ChatApp: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-bg-dark text-white">
-      {/* Sidebar */}{" "}
+      {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -89,13 +99,21 @@ const ChatApp: React.FC = () => {
       />
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}{" "}
+        {/* Header */}
         <Header
           onToggleSidebar={toggleSidebar}
           onLogout={logout}
           currentUser={user}
           isSocketConnected={isSocketConnected}
         />
+
+        {/* Mobile Status Bar */}
+        <MobileStatusBar
+          isSocketConnected={isSocketConnected}
+          currentUser={user}
+          modelSelection={modelSelection}
+        />
+
         {/* Chat Interface */}
         <ChatInterface
           sessionId={currentSessionId}

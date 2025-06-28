@@ -209,7 +209,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
+          border-2 border-dashed rounded-lg p-4 md:p-8 text-center cursor-pointer transition-all duration-200
           ${
             isDragActive && !isDragReject
               ? "border-primary-cyan bg-primary-cyan/5"
@@ -223,19 +223,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
         <input {...getInputProps()} />
 
         <Upload
-          className={`w-12 h-12 mx-auto mb-4 ${
+          className={`w-8 h-8 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 ${
             isDragActive ? "text-primary-cyan" : "text-gray-400"
           }`}
         />
 
         {isDragActive ? (
           <div>
-            <p className="text-lg font-medium text-primary-cyan mb-2">
+            <p className="text-base md:text-lg font-medium text-primary-cyan mb-1 md:mb-2">
               {isDragReject
                 ? "Some files are not supported"
                 : "Drop files here"}
             </p>
-            <p className="text-sm text-gray-400">
+            <p className="text-xs md:text-sm text-gray-400">
               {isDragReject
                 ? "Please check file types and sizes"
                 : "Release to upload"}
@@ -243,10 +243,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
           </div>
         ) : (
           <div>
-            <p className="text-lg font-medium text-white mb-2">
+            <p className="text-base md:text-lg font-medium text-white mb-1 md:mb-2">
               Drag & drop files here, or click to select
             </p>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-xs md:text-sm text-gray-400 mb-2 md:mb-4">
               Support for PDF, DOCX, TXT, MD, XLSX, CSV, PPTX
             </p>
             <p className="text-xs text-gray-500">
@@ -258,20 +258,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* Uploading Files List */}
       {uploadingFiles.length > 0 && (
-        <div className="mt-6 space-y-3">
+        <div className="mt-4 md:mt-6 space-y-2 md:space-y-3">
           <h4 className="text-sm font-medium text-gray-300">Uploading Files</h4>
 
           {uploadingFiles.map((uploadingFile) => (
             <div
               key={uploadingFile.id}
-              className="flex items-center space-x-3 p-3 bg-bg-dark-secondary rounded-lg border border-primary-teal/20"
+              className="flex items-center space-x-2 md:space-x-3 p-2 md:p-3 bg-bg-dark-secondary rounded-lg border border-primary-teal/20"
             >
               {/* File Icon */}
               <div className="flex-shrink-0">
                 {uploadingFile.status === "success" ? (
-                  <CheckCircle className="w-5 h-5 text-primary-green" />
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-primary-green" />
                 ) : uploadingFile.status === "error" ? (
-                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
                 ) : (
                   getFileIcon(uploadingFile.file.name)
                 )}
@@ -279,7 +279,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
               {/* File Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-xs md:text-sm font-medium text-white truncate">
                   {uploadingFile.file.name}
                 </p>
                 <p className="text-xs text-gray-400">
@@ -296,8 +296,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
               {/* Progress Bar */}
               {uploadingFile.status === "uploading" && (
-                <div className="flex-1 max-w-32">
-                  <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="flex-1 max-w-24 md:max-w-32">
+                  <div className="w-full bg-gray-700 rounded-full h-1.5 md:h-2">
                     <div
                       className="bg-primary-cyan h-2 rounded-full transition-all duration-300"
                       style={{ width: `${uploadingFile.progress}%` }}

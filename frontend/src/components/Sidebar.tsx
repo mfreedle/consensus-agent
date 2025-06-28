@@ -7,6 +7,7 @@ import {
   File,
   Bot,
   Cloud,
+  CheckCircle,
 } from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
 import { ModelSelectionState } from "../types";
@@ -14,6 +15,7 @@ import FileUpload from "./FileUpload";
 import FileList from "./FileList";
 import ModelSelection from "./ModelSelection";
 import { GoogleDriveIntegration } from "./GoogleDriveIntegration";
+import { ApprovalDashboard } from "./ApprovalDashboard";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -37,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onModelSelectionChange = () => {},
 }) => {
   const [activeTab, setActiveTab] = useState<
-    "chats" | "files" | "models" | "google"
+    "chats" | "files" | "models" | "google" | "approvals"
   >("chats");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <div
         className={`
-        fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-bg-dark-secondary border-r border-primary-teal/20 transform transition-transform duration-300 ease-in-out flex flex-col
+        fixed lg:relative inset-y-0 left-0 z-50 w-80 sm:w-96 lg:w-80 bg-bg-dark-secondary border-r border-primary-teal/20 transform transition-transform duration-300 ease-in-out flex flex-col
         ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}
       >
@@ -123,50 +125,61 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-primary-teal/20">
+        <div className="flex border-b border-primary-teal/20 overflow-x-auto">
           <button
             onClick={() => setActiveTab("chats")}
-            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 px-2 sm:px-3 py-3 text-xs sm:text-sm font-medium transition-colors min-w-0 ${
               activeTab === "chats"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <MessageSquare className="w-4 h-4 inline-block mr-1" />
-            Chats
+            <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1" />
+            <span className="hidden xs:inline">Chats</span>
           </button>
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 px-2 sm:px-3 py-3 text-xs sm:text-sm font-medium transition-colors min-w-0 ${
               activeTab === "files"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <File className="w-4 h-4 inline-block mr-1" />
-            Files
+            <File className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1" />
+            <span className="hidden xs:inline">Files</span>
           </button>
           <button
             onClick={() => setActiveTab("google")}
-            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 px-2 sm:px-3 py-3 text-xs sm:text-sm font-medium transition-colors min-w-0 ${
               activeTab === "google"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <Cloud className="w-4 h-4 inline-block mr-1" />
-            Drive
+            <Cloud className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1" />
+            <span className="hidden xs:inline">Drive</span>
           </button>
           <button
             onClick={() => setActiveTab("models")}
-            className={`flex-1 px-3 py-3 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 px-2 sm:px-3 py-3 text-xs sm:text-sm font-medium transition-colors min-w-0 ${
               activeTab === "models"
                 ? "text-primary-cyan border-b-2 border-primary-cyan"
                 : "text-gray-400 hover:text-primary-cyan"
             }`}
           >
-            <Bot className="w-4 h-4 inline-block mr-1" />
-            Models
+            <Bot className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1" />
+            <span className="hidden xs:inline">Models</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("approvals")}
+            className={`flex-shrink-0 px-2 sm:px-3 py-3 text-xs sm:text-sm font-medium transition-colors min-w-0 ${
+              activeTab === "approvals"
+                ? "text-primary-cyan border-b-2 border-primary-cyan"
+                : "text-gray-400 hover:text-primary-cyan"
+            }`}
+          >
+            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 inline-block mr-1" />
+            <span className="hidden xs:inline">Approvals</span>
           </button>
         </div>
 
@@ -260,6 +273,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               showDebateProcess={modelSelection.showDebateProcess}
               onModelSelectionChange={onModelSelectionChange}
             />
+          )}
+          {activeTab === "approvals" && (
+            <div className="p-4">
+              <ApprovalDashboard />
+            </div>
           )}
         </div>
 

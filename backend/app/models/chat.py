@@ -16,6 +16,7 @@ class ChatSession(Base):
     
     # Relationships
     messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
+    approvals = relationship("DocumentApproval", back_populates="chat_session")
 
 class Message(Base):
     __tablename__ = "messages"
