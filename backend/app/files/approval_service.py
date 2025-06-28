@@ -149,7 +149,6 @@ class DocumentApprovalService:
         
         result = await self.db.execute(
             select(DocumentApproval)
-            .options(selectinload(DocumentApproval.file))
             .where(DocumentApproval.user_id == user_id)
             .order_by(desc(DocumentApproval.created_at))
             .limit(limit)

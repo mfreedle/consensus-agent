@@ -173,6 +173,18 @@ class DocumentApprovalService {
   }
 
   /**
+   * Apply changes for an approved but not yet applied approval
+   */
+  async applyApprovalChanges(approvalId: number): Promise<DocumentApproval> {
+    return this.api.request<DocumentApproval>(
+      `/files/approvals/${approvalId}/apply`,
+      {
+        method: 'POST',
+      }
+    );
+  }
+
+  /**
    * Expire old pending approvals (maintenance)
    */
   async expireOldApprovals(): Promise<any> {

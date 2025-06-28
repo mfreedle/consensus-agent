@@ -16,6 +16,8 @@ import FileList from "./FileList";
 import ModelSelection from "./ModelSelection";
 import { GoogleDriveIntegration } from "./GoogleDriveIntegration";
 import { ApprovalDashboard } from "./ApprovalDashboard";
+import { ApprovalViewer } from "./ApprovalViewer";
+import { approvalService, DocumentApproval } from "../services/approvalService";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -44,6 +46,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
+  const [selectedApproval, setSelectedApproval] = useState<any>(null);
+  const [showApprovalViewer, setShowApprovalViewer] = useState(false);
 
   useEffect(() => {
     if (isOpen && activeTab === "chats") {
@@ -92,6 +96,53 @@ const Sidebar: React.FC<SidebarProps> = ({
     console.log("File deleted:", file);
     // Trigger file list refresh
     setFileRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleSelectApproval = (approval: DocumentApproval) => {
+    setSelectedApproval(approval);
+    setShowApprovalViewer(true);
+  };
+
+  const handleBackToDashboard = () => {
+    setShowApprovalViewer(false);
+    setSelectedApproval(null);
+  };
+
+  const handleApprovalChange = (updatedApproval: DocumentApproval) => {
+    setSelectedApproval(updatedApproval);
+    // You might want to refresh the dashboard here
+  };
+
+  const handleCreateTestApproval = async () => {
+    try {
+      // First get the user's files to create an approval for
+      const filesResult = await apiService.getUserFiles();
+      if (filesResult.data && filesResult.data.files.length > 0) {
+        const firstFile = filesResult.data.files[0];
+
+        // Create a test approval request
+        await approvalService.createApproval({
+          file_id: firstFile.id,
+          title: "Test Document Update",
+          description:
+            "This is a test approval request to demonstrate the workflow",
+          change_type: "content_edit",
+          original_content: "Original content...",
+          proposed_content: "Updated content with test changes...",
+          ai_reasoning:
+            "This change improves clarity and adds important information",
+          confidence_score: 85,
+          expires_in_hours: 24,
+        });
+
+        // Switch to approvals tab to show the new approval
+        setActiveTab("approvals");
+      } else {
+        console.error("No files available to create approval for");
+      }
+    } catch (error) {
+      console.error("Failed to create test approval:", error);
+    }
   };
 
   return (
@@ -276,7 +327,18 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
           {activeTab === "approvals" && (
             <div className="p-4">
-              <ApprovalDashboard />
+              {showApprovalViewer && selectedApproval ? (
+                <ApprovalViewer
+                  approval={selectedApproval}
+                  onBack={handleBackToDashboard}
+                  onApprovalChange={handleApprovalChange}
+                />
+              ) : (
+                <ApprovalDashboard
+                  onCreateApproval={handleCreateTestApproval}
+                  onSelectApproval={handleSelectApproval}
+                />
+              )}
             </div>
           )}
         </div>

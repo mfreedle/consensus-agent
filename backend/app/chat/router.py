@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from app.auth.dependencies import get_current_active_user
 from app.database.connection import get_db
-from app.llm.consensus import llm_orchestrator
+from app.llm.orchestrator import llm_orchestrator
 from app.models.chat import ChatSession, Message
 from app.models.user import User
 from app.schemas.chat import (ChatRequest, ChatResponse, ChatSessionCreate,

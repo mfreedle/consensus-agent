@@ -14,6 +14,7 @@ import {
   approvalService,
   DocumentApproval,
   ContentDiff,
+  ApprovalStatus,
 } from "../services/approvalService";
 
 interface ApprovalViewerProps {
@@ -33,6 +34,19 @@ export const ApprovalViewer: React.FC<ApprovalViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
+
+  const getDarkStatusColor = (status: ApprovalStatus): string => {
+    const colorMap: Record<ApprovalStatus, string> = {
+      pending: "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20",
+      approved: "text-green-400 bg-green-400/10 border border-green-400/20",
+      rejected: "text-red-400 bg-red-400/10 border border-red-400/20",
+      expired: "text-gray-400 bg-gray-400/10 border border-gray-400/20",
+    };
+    return (
+      colorMap[status] ||
+      "text-gray-400 bg-gray-400/10 border border-gray-400/20"
+    );
+  };
 
   const loadDiff = useCallback(async () => {
     try {
@@ -108,21 +122,11 @@ export const ApprovalViewer: React.FC<ApprovalViewerProps> = ({
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onBack}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+          className="flex items-center space-x-2 text-gray-400 hover:text-primary-cyan transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Dashboard</span>
         </button>
-
-        <div className="flex items-center space-x-2">
-          <span
-            className={`px-3 py-1 text-sm font-medium rounded-full ${approvalService.getStatusColor(
-              approval.status
-            )}`}
-          >
-            {approvalService.formatStatus(approval.status)}
-          </span>
-        </div>
       </div>
 
       {error && (
@@ -135,18 +139,18 @@ export const ApprovalViewer: React.FC<ApprovalViewerProps> = ({
       )}
 
       {/* Approval Details */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div className="bg-bg-dark-secondary border border-primary-teal/20 rounded-lg p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            <h1 className="text-xl font-semibold text-white mb-2">
               {approval.title}
             </h1>
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-4 text-sm text-gray-300">
               <span className="flex items-center space-x-1">
                 <FileText className="w-4 h-4" />
                 <span>{approval.file_name || `File ${approval.file_id}`}</span>
               </span>
-              <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+              <span className="px-2 py-1 bg-primary-teal/20 rounded text-xs text-primary-cyan">
                 {approvalService.formatChangeType(approval.change_type)}
               </span>
               <span className="flex items-center space-x-1">
@@ -155,34 +159,41 @@ export const ApprovalViewer: React.FC<ApprovalViewerProps> = ({
               </span>
             </div>
           </div>
+          <span
+            className={`px-3 py-1 text-sm font-medium rounded-full ${getDarkStatusColor(
+              approval.status
+            )}`}
+          >
+            {approvalService.formatStatus(approval.status)}
+          </span>
         </div>
 
         {approval.description && (
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
-              Description
-            </h3>
-            <p className="text-gray-700">{approval.description}</p>
+            <h3 className="text-sm font-medium text-white mb-2">Description</h3>
+            <p className="text-gray-300">{approval.description}</p>
           </div>
         )}
 
         {approval.ai_reasoning && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="bg-primary-blue/10 border border-primary-blue/20 rounded-lg p-4 mb-4">
             <div className="flex items-start space-x-2">
-              <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+              <Info className="w-4 h-4 text-primary-blue mt-0.5" />
               <div>
-                <h3 className="text-sm font-medium text-blue-900 mb-1">
+                <h3 className="text-sm font-medium text-primary-blue mb-1">
                   AI Reasoning
                 </h3>
-                <p className="text-sm text-blue-700">{approval.ai_reasoning}</p>
+                <p className="text-sm text-primary-cyan">
+                  {approval.ai_reasoning}
+                </p>
                 {approval.confidence_score && (
                   <div className="mt-2">
-                    <span className="text-xs text-blue-600">
+                    <span className="text-xs text-primary-cyan">
                       Confidence: {approval.confidence_score}%
                     </span>
-                    <div className="w-full bg-blue-200 rounded-full h-2 mt-1">
+                    <div className="w-full bg-primary-teal/20 rounded-full h-2 mt-1">
                       <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-primary-teal h-2 rounded-full transition-all duration-300"
                         style={{ width: `${approval.confidence_score}%` }}
                       />
                     </div>

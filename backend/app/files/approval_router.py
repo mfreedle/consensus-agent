@@ -1,11 +1,13 @@
+import logging
+import traceback
 from typing import List
 
 from app.auth.dependencies import get_current_active_user
 from app.database.connection import get_db
 from app.files.approval_service import DocumentApprovalService
+from app.models.document_approval import ApprovalStatus, DocumentApproval
 from app.models.user import User
 from app.schemas.document_approval import (ApprovalDecisionRequest,
-                                           ApprovalStatus,
                                            ApprovalSummaryResponse,
                                            ApprovalTemplateCreateRequest,
                                            ApprovalTemplateResponse,
@@ -16,6 +18,7 @@ from app.schemas.document_approval import (ApprovalDecisionRequest,
                                            DocumentApprovalResponse,
                                            VersionHistoryResponse)
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
@@ -116,39 +119,42 @@ async def get_approval_history(
     db: AsyncSession = Depends(get_db)
 ):
     """Get approval history for the current user"""
-    
-    service = DocumentApprovalService(db)
-    approvals = await service.get_approval_history(current_user.id, limit)
-    
-    return [
-        DocumentApprovalResponse(
-            id=approval.id,
-            file_id=approval.file_id,
-            chat_session_id=approval.chat_session_id,
-            title=approval.title,
-            description=approval.description,
-            change_type=approval.change_type,
-            original_content=approval.original_content,
-            proposed_content=approval.proposed_content,
-            change_location=approval.change_location,
-            change_metadata=approval.change_metadata,
-            ai_reasoning=approval.ai_reasoning,
-            confidence_score=approval.confidence_score,
-            status=approval.status,
-            approved_at=approval.approved_at,
-            approved_by_user=approval.approved_by_user,
-            expires_at=approval.expires_at,
-            version_before=approval.version_before,
-            version_after=approval.version_after,
-            is_applied=approval.is_applied,
-            applied_at=approval.applied_at,
-            application_error=approval.application_error,
-            created_at=approval.created_at,
-            updated_at=approval.updated_at,
-            file_name=approval.file.original_filename if approval.file else None
-        )
-        for approval in approvals
-    ]
+    try:
+        service = DocumentApprovalService(db)
+        approvals = await service.get_approval_history(current_user.id, limit)
+        return [
+            DocumentApprovalResponse(
+                id=approval.id,
+                file_id=approval.file_id,
+                chat_session_id=approval.chat_session_id,
+                title=approval.title,
+                description=approval.description,
+                change_type=approval.change_type,
+                original_content=approval.original_content,
+                proposed_content=approval.proposed_content,
+                change_location=approval.change_location,
+                change_metadata=approval.change_metadata,
+                ai_reasoning=approval.ai_reasoning,
+                confidence_score=approval.confidence_score,
+                status=approval.status,
+                approved_at=approval.approved_at,
+                approved_by_user=approval.approved_by_user,
+                expires_at=approval.expires_at,
+                version_before=approval.version_before,
+                version_after=approval.version_after,
+                is_applied=approval.is_applied,
+                applied_at=approval.applied_at,
+                application_error=approval.application_error,
+                created_at=approval.created_at,
+                updated_at=approval.updated_at,
+                file_name=None,  # Temporarily disabled to avoid relationship errors
+                chat_session_title=None  # Temporarily disabled to avoid relationship errors
+            )
+            for approval in approvals
+        ]
+    except Exception as e:
+        logging.error(f"Error in get_approval_history: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
 
 
 @router.post("/approvals/{approval_id}/decision", response_model=DocumentApprovalResponse)
@@ -199,7 +205,8 @@ async def process_approval_decision(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to process approval decision")
+        logging.error(f"Error in process_approval_decision: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to process approval decision: {e}")
 
 
 @router.get("/approvals/{approval_id}/diff", response_model=ContentDiffResponse)
@@ -217,7 +224,8 @@ async def get_approval_diff(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to generate diff")
+        logging.error(f"Error in get_approval_diff: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate diff: {e}")
 
 
 @router.post("/files/{file_id}/rollback/{version_number}")
@@ -298,6 +306,70 @@ async def get_file_version_history(
             }
             for v in versions
         ]
+    )
+
+
+@router.post("/approvals/{approval_id}/apply", response_model=DocumentApprovalResponse)
+async def apply_approval_changes(
+    approval_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Apply changes for an approved but not yet applied approval"""
+    
+    service = DocumentApprovalService(db)
+    
+    # Get the approval
+    result = await db.execute(
+        select(DocumentApproval).where(
+            DocumentApproval.id == approval_id,
+            DocumentApproval.user_id == current_user.id
+        )
+    )
+    approval = result.scalar_one_or_none()
+    if not approval:
+        raise HTTPException(status_code=404, detail="Approval request not found")
+    
+    if approval.status != ApprovalStatus.APPROVED:
+        raise HTTPException(status_code=400, detail="Approval must be approved before applying changes")
+    
+    if approval.is_applied:
+        raise HTTPException(status_code=400, detail="Changes have already been applied")
+    
+    # Apply the changes
+    try:
+        await service._apply_document_changes(approval)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to apply changes: {str(e)}")
+    
+    return DocumentApprovalResponse(
+        id=approval.id,
+        file_id=approval.file_id,
+        chat_session_id=approval.chat_session_id,
+        title=approval.title,
+        description=approval.description,
+        change_type=approval.change_type,
+        original_content=approval.original_content,
+        proposed_content=approval.proposed_content,
+        change_location=approval.change_location,
+        change_metadata=approval.change_metadata,
+        ai_reasoning=approval.ai_reasoning,
+        confidence_score=approval.confidence_score,
+        status=approval.status,
+        approved_at=approval.approved_at,
+        approved_by_user=approval.approved_by_user,
+        expires_at=approval.expires_at,
+        version_before=approval.version_before,
+        version_after=approval.version_after,
+        is_applied=approval.is_applied,
+        applied_at=approval.applied_at,
+        application_error=approval.application_error,
+        created_at=approval.created_at,
+        updated_at=approval.updated_at,
+        file_name=approval.file.filename if approval.file else None,
+        chat_session_title=approval.chat_session.title if approval.chat_session else None
     )
 
 

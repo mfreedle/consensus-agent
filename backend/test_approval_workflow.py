@@ -2,16 +2,35 @@
 """
 Test script for the Document Approval Workflow
 """
-import asyncio
+import requests
 import json
 from datetime import datetime
 
-import aiohttp
-
 BASE_URL = "http://localhost:8000"
 
-async def test_approval_workflow():
+def get_auth_headers():
+    """Get authentication headers"""
+    # Login first
+    login_response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json={"username": "admin", "password": "password123"}
+    )
+    
+    if login_response.status_code == 200:
+        token = login_response.json()["access_token"]
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+    else:
+        raise Exception(f"Login failed: {login_response.status_code}")
+
+def test_approval_workflow():
     """Test the complete approval workflow"""
+    
+    # Get auth headers
+    headers = get_auth_headers()
+    print("✅ Authentication successful!")
     
     # Sample test data
     test_data = {
@@ -25,8 +44,6 @@ async def test_approval_workflow():
         "confidence_score": 85,
         "expires_in_hours": 24
     }
-    
-    async with aiohttp.ClientSession() as session:
         print("🔄 Testing Document Approval Workflow...")
         print("=" * 50)
         

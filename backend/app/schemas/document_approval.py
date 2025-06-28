@@ -1,24 +1,8 @@
 from datetime import datetime
-from enum import Enum
 from typing import Dict, List, Optional
 
+from app.models.document_approval import ApprovalStatus, ChangeType
 from pydantic import BaseModel, Field
-
-
-class ApprovalStatus(str, Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    EXPIRED = "expired"
-
-
-class ChangeType(str, Enum):
-    CONTENT_EDIT = "content_edit"
-    CONTENT_APPEND = "content_append"
-    CONTENT_INSERT = "content_insert"
-    CONTENT_DELETE = "content_delete"
-    FORMATTING_CHANGE = "formatting_change"
-    METADATA_UPDATE = "metadata_update"
 
 
 # Request schemas

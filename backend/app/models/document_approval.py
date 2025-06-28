@@ -98,15 +98,13 @@ class DocumentVersion(Base):
     # Version details
     version_number = Column(Integer, nullable=False)  # Incremental version number
     version_hash = Column(String(64), nullable=False, unique=True)  # Content hash
-    content = Column(Text, nullable=False)
+    content_snapshot = Column(Text, nullable=False)
+    content_diff = Column(Text, nullable=True)
     
     # Change metadata
     change_summary = Column(String(500), nullable=True)
-    change_type = Column(Enum(ChangeType), nullable=True)
-    
-    # Flags
-    is_current = Column(Boolean, default=False)  # Is this the current version?
-    is_backup = Column(Boolean, default=False)   # Is this a backup before change?
+    file_size = Column(Integer, nullable=True)
+    file_metadata = Column(JSON, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
