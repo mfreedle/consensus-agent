@@ -1,11 +1,13 @@
 import React from "react";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Settings, MessageSquare } from "lucide-react";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
   onLogout: () => void;
   currentUser?: any;
   isSocketConnected?: boolean;
+  currentView?: "chat" | "admin";
+  onViewChange?: (view: "chat" | "admin") => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -13,6 +15,8 @@ const Header: React.FC<HeaderProps> = ({
   onLogout,
   currentUser,
   isSocketConnected = false,
+  currentView = "chat",
+  onViewChange,
 }) => {
   return (
     <header className="bg-bg-dark-secondary border-b border-primary-teal/20 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
@@ -55,6 +59,34 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Status Indicators - Responsive */}
         <div className="flex items-center space-x-1 md:space-x-2">
+          {/* View Switcher */}
+          {onViewChange && (
+            <div className="flex items-center bg-gray-700/50 rounded-lg p-1">
+              <button
+                onClick={() => onViewChange("chat")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                  currentView === "chat"
+                    ? "bg-primary-teal/20 text-primary-cyan"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Chat</span>
+              </button>
+              <button
+                onClick={() => onViewChange("admin")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${
+                  currentView === "admin"
+                    ? "bg-primary-teal/20 text-primary-cyan"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            </div>
+          )}
+
           {/* Socket Connection Status */}
           <div
             className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-3 py-1 rounded-full ${

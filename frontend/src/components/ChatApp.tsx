@@ -8,6 +8,9 @@ import ChatInterface from "./ChatInterface";
 import Sidebar from "./Sidebar";
 import AuthModal from "./AuthModal";
 import MobileStatusBar from "./MobileStatusBar";
+import AdminPanel from "./AdminPanel";
+
+type ViewMode = "chat" | "admin";
 
 const ChatApp: React.FC = () => {
   const { isAuthenticated, user, token, login, logout, loading } = useAuth();
@@ -15,6 +18,7 @@ const ChatApp: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [socketMessages, setSocketMessages] = useState<SocketMessage[]>([]);
+  const [currentView, setCurrentView] = useState<ViewMode>("chat");
   const [modelSelection, setModelSelection] = useState<ModelSelectionState>({
     selectedModels: [],
     debateMode: "consensus",
@@ -88,15 +92,18 @@ const ChatApp: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-bg-dark text-white">
-      {/* Sidebar */}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        currentSessionId={currentSessionId}
-        onSessionSelect={setCurrentSessionId}
-        modelSelection={modelSelection}
-        onModelSelectionChange={setModelSelection}
-      />
+      {/* Sidebar - Only show in chat mode */}
+      {currentView === "chat" && (
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          currentSessionId={currentSessionId}
+          onSessionSelect={setCurrentSessionId}
+          modelSelection={modelSelection}
+          onModelSelectionChange={setModelSelection}
+        />
+      )}
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
@@ -105,24 +112,32 @@ const ChatApp: React.FC = () => {
           onLogout={logout}
           currentUser={user}
           isSocketConnected={isSocketConnected}
+          currentView={currentView}
+          onViewChange={setCurrentView}
         />
 
-        {/* Mobile Status Bar */}
-        <MobileStatusBar
-          isSocketConnected={isSocketConnected}
-          currentUser={user}
-          modelSelection={modelSelection}
-        />
+        {/* Mobile Status Bar - Only in chat mode */}
+        {currentView === "chat" && (
+          <MobileStatusBar
+            isSocketConnected={isSocketConnected}
+            currentUser={user}
+            modelSelection={modelSelection}
+          />
+        )}
 
-        {/* Chat Interface */}
-        <ChatInterface
-          sessionId={currentSessionId}
-          onSessionCreated={setCurrentSessionId}
-          socketMessages={socketMessages}
-          onSendSocketMessage={sendSocketMessage}
-          isSocketConnected={isSocketConnected}
-          modelSelection={modelSelection}
-        />
+        {/* Content based on current view */}
+        {currentView === "chat" ? (
+          <ChatInterface
+            sessionId={currentSessionId}
+            onSessionCreated={setCurrentSessionId}
+            socketMessages={socketMessages}
+            onSendSocketMessage={sendSocketMessage}
+            isSocketConnected={isSocketConnected}
+            modelSelection={modelSelection}
+          />
+        ) : (
+          <AdminPanel />
+        )}
       </div>
     </div>
   );

@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # DeepSeek
     deepseek_api_key: str = ""
     
+    # Anthropic
+    anthropic_api_key: str = ""
+    
     # Google APIs - OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
