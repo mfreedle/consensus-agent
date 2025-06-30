@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { apiService } from "../services/api";
+import { enhancedApiService } from "../services/enhancedApi";
 
 interface User {
   id: number;
@@ -50,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (storedToken) {
         setToken(storedToken);
         apiService.setToken(storedToken);
+        enhancedApiService.setToken(storedToken);
 
         // Verify token with backend
         try {
@@ -61,12 +63,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Token is invalid, clear it
             localStorage.removeItem("auth_token");
             apiService.clearToken();
+            enhancedApiService.clearToken();
             setToken(null);
           }
         } catch (error) {
           console.error("Auth verification error:", error);
           localStorage.removeItem("auth_token");
           apiService.clearToken();
+          enhancedApiService.clearToken();
           setToken(null);
         }
       }
@@ -82,9 +86,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(userData.access_token || userData.token);
     setIsAuthenticated(true);
 
-    // Store token in localStorage (apiService already does this in setToken)
+    // Store token in both API services
     if (userData.access_token) {
       apiService.setToken(userData.access_token);
+      enhancedApiService.setToken(userData.access_token);
     }
   };
 
@@ -94,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     localStorage.removeItem("auth_token");
     apiService.clearToken();
+    enhancedApiService.clearToken();
   };
 
   const value: AuthContextType = {

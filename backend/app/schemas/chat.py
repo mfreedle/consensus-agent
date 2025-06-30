@@ -44,6 +44,7 @@ class ChatRequest(BaseModel):
     session_id: Optional[int] = None
     use_consensus: bool = True
     selected_models: Optional[List[str]] = None
+    attached_file_ids: Optional[List[str]] = None
 
 class ConsensusData(BaseModel):
     openai_response: str

@@ -89,7 +89,7 @@ async def upload_file(
         "is_processed": db_file.is_processed
     }
 
-@router.get("/")
+@router.get("")
 async def list_files(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)

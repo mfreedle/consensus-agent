@@ -270,12 +270,9 @@ export const ApprovalDashboard: React.FC<ApprovalDashboardProps> = ({
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-white">Document Approvals</h2>
         {onCreateApproval && (
-          <button
-            onClick={onCreateApproval}
-            className="flex items-center space-x-2 px-4 py-2 btn-gradient-primary text-white rounded-lg hover:glow-effect-sm transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Approval</span>
+          <button onClick={onCreateApproval} className="btn btn-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            New Approval
           </button>
         )}
       </div>

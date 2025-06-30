@@ -1,0 +1,12 @@
+Test Document for File Attachment
+
+This is a test document to verify that the file attachment functionality works correctly in the Consensus Agent.
+
+The document contains:
+- Basic text content
+- Multiple paragraphs
+- Information that can be referenced by AI agents
+
+This file should be uploaded and attached to a chat message, allowing the AI agents to use its content as context when responding to user queries.
+
+Test completed: File upload and attachment feature.

@@ -125,6 +125,11 @@ class ApiService {
       headers['Content-Type'] = 'application/json';
     }
 
+    // Ensure token is loaded from localStorage if not in memory
+    if (!this.token) {
+      this.token = localStorage.getItem('auth_token');
+    }
+
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }

@@ -141,101 +141,93 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
-      <div
-        className={`mobile-overlay ${isOpen ? "active" : ""}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
       {/* Sidebar */}
-      <nav
+      <div
         className={`
-          layout-sidebar sidebar-content
-          ${isOpen ? "mobile-open" : ""}
-        `}
-        role="navigation"
-        aria-label="Main navigation"
+        fixed lg:relative inset-y-0 left-0 z-50 w-80 sm:w-96 lg:w-80 bg-bg-dark-secondary border-r border-primary-teal/20 transform transition-transform duration-300 ease-in-out flex flex-col
+        ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}
       >
-        {/* Compact Header */}
-        <div className="p-3 border-b border-primary-teal/20 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-primary-cyan">
+        {/* Header */}
+        <div className="p-4 border-b border-primary-teal/20 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-primary-cyan">
             Navigation
           </h2>
           <button
             onClick={onClose}
-            className="btn btn-ghost btn-sm lg:hidden"
-            aria-label="Close sidebar"
+            className="p-1 rounded-lg hover:bg-primary-teal/10 transition-colors lg:hidden"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Content - New Grouped Navigation */}
         <div className="flex-1 overflow-y-auto">
           {/* Active Session Group */}
           <div className="border-b border-primary-teal/10">
             <button
               onClick={() => toggleGroup("activeSession")}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
-              aria-expanded={!collapsedGroups.activeSession}
-              aria-controls="active-session-content"
-              aria-label="Toggle active session section"
+              className="w-full flex items-center justify-between px-4 py-3 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
             >
               <div className="flex items-center">
                 <Smartphone className="w-4 h-4 mr-2" />
-                <span className="font-medium text-sm">Active Session</span>
+                <span className="font-medium">Active Session</span>
               </div>
               {collapsedGroups.activeSession ? (
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                <ChevronRight className="w-4 h-4" />
               ) : (
-                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                <ChevronDown className="w-4 h-4" />
               )}
             </button>
 
             {!collapsedGroups.activeSession && (
-              <div
-                className="px-3 pb-3"
-                id="active-session-content"
-                role="region"
-                aria-labelledby="active-session-heading"
-              >
+              <div className="px-4 pb-4">
                 {/* New Chat Button */}
                 <button
                   onClick={handleNewChat}
-                  className="btn btn-primary w-full mb-3 text-sm"
+                  className="w-full btn-gradient-primary font-medium py-3 px-4 rounded-lg hover:glow-effect-sm transition-all duration-200 mb-4 flex items-center justify-center"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Chat
                 </button>
 
                 {/* Current Chat Sessions */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {isLoading ? (
-                    <div className="loading-skeleton h-8 rounded"></div>
+                    <div className="text-gray-400 text-sm">
+                      Loading chats...
+                    </div>
                   ) : sessions.length === 0 ? (
-                    <div className="text-center py-3">
-                      <div className="text-gray-400 text-xs">No chats yet</div>
+                    <div className="text-center py-4">
+                      <div className="text-gray-400 text-sm">No chats yet</div>
                       <div className="text-gray-500 text-xs mt-1">
-                        Create your first chat
+                        Create your first chat to get started
                       </div>
                     </div>
                   ) : (
-                    sessions.slice(0, 5).map((session) => (
+                    sessions.map((session) => (
                       <button
                         key={session.id}
                         onClick={() => onSessionSelect(session.id.toString())}
-                        className={`w-full text-left p-2 rounded-md transition-colors ${
+                        className={`w-full text-left p-3 rounded-lg transition-colors ${
                           currentSessionId === session.id.toString()
                             ? "bg-primary-teal/20 border border-primary-teal/30 text-primary-cyan"
                             : "hover:bg-primary-teal/10 text-gray-300"
                         }`}
                       >
-                        <div className="text-xs font-medium truncate">
+                        <div className="text-sm font-medium truncate">
                           {session.title ||
                             `Chat ${session.id.toString().slice(0, 8)}`}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="text-xs text-gray-500 mt-1">
                           {new Date(session.created_at).toLocaleDateString()}
                         </div>
                       </button>
@@ -243,14 +235,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 </div>
 
-                {/* Model Selection Preview - Compact */}
-                <div className="mt-3 pt-3 border-t border-primary-teal/10">
-                  <div className="text-xs font-medium text-gray-300 mb-1">
-                    Models ({modelSelection.selectedModels.length})
+                {/* Model Selection Preview */}
+                <div className="mt-4 pt-4 border-t border-primary-teal/10">
+                  <div className="text-sm font-medium text-gray-300 mb-2">
+                    Model Selection ({modelSelection.selectedModels.length}{" "}
+                    selected)
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
+                  <div className="text-xs text-gray-500">
                     {modelSelection.selectedModels.length === 0
-                      ? "None selected"
+                      ? "No models selected"
                       : `${modelSelection.selectedModels
                           .slice(0, 2)
                           .join(", ")}${
@@ -262,119 +255,80 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* Content Management Group - Compact */}
+          {/* Content Management Group */}
           <div className="border-b border-primary-teal/10">
             <button
               onClick={() => toggleGroup("contentManagement")}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
-              aria-expanded={!collapsedGroups.contentManagement}
-              aria-controls="content-management-content"
-              aria-label="Toggle content management section"
+              className="w-full flex items-center justify-between px-4 py-3 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
             >
               <div className="flex items-center">
                 <FolderOpen className="w-4 h-4 mr-2" />
-                <span className="font-medium text-sm">Content</span>
+                <span className="font-medium">Content Management</span>
               </div>
               {collapsedGroups.contentManagement ? (
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                <ChevronRight className="w-4 h-4" />
               ) : (
-                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                <ChevronDown className="w-4 h-4" />
               )}
             </button>
 
             {!collapsedGroups.contentManagement && (
-              <div
-                className="px-3 pb-3"
-                id="content-management-content"
-                role="region"
-                aria-labelledby="content-management-heading"
-              >
-                {/* Compact Tab Navigation */}
-                <div
-                  className="grid grid-cols-3 gap-1 mb-3"
-                  role="tablist"
-                  aria-label="Content management tabs"
-                >
+              <div className="px-4 pb-4">
+                {/* Sub-navigation for content */}
+                <div className="space-y-1 mb-4">
                   <button
                     onClick={() => setActiveTab("files")}
-                    className={`flex flex-col items-center px-2 py-2 text-xs rounded-md transition-colors ${
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
                       activeTab === "files"
                         ? "bg-primary-teal/20 text-primary-cyan"
                         : "text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10"
                     }`}
-                    role="tab"
-                    aria-selected={activeTab === "files"}
-                    aria-controls="files-panel"
-                    id="files-tab"
                   >
-                    <File className="w-3 h-3 mb-1" aria-hidden="true" />
+                    <File className="w-4 h-4 mr-2" />
                     Files
                   </button>
                   <button
                     onClick={() => setActiveTab("google")}
-                    className={`flex flex-col items-center px-2 py-2 text-xs rounded-md transition-colors ${
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
                       activeTab === "google"
                         ? "bg-primary-teal/20 text-primary-cyan"
                         : "text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10"
                     }`}
-                    role="tab"
-                    aria-selected={activeTab === "google"}
-                    aria-controls="google-panel"
-                    id="google-tab"
                   >
-                    <Cloud className="w-3 h-3 mb-1" aria-hidden="true" />
-                    Drive
+                    <Cloud className="w-4 h-4 mr-2" />
+                    Google Drive
                   </button>
                   <button
                     onClick={() => setActiveTab("approvals")}
-                    className={`flex flex-col items-center px-2 py-2 text-xs rounded-md transition-colors ${
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
                       activeTab === "approvals"
                         ? "bg-primary-teal/20 text-primary-cyan"
                         : "text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10"
                     }`}
-                    role="tab"
-                    aria-selected={activeTab === "approvals"}
-                    aria-controls="approvals-panel"
-                    id="approvals-tab"
                   >
-                    <CheckCircle className="w-3 h-3 mb-1" aria-hidden="true" />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Approvals
                   </button>
                 </div>
 
-                {/* Compact Content Panels */}
+                {/* Content based on active sub-tab */}
                 {activeTab === "files" && (
-                  <div
-                    className="border-t border-primary-teal/10 pt-3"
-                    role="tabpanel"
-                    id="files-panel"
-                    aria-labelledby="files-tab"
-                  >
+                  <div className="border-t border-primary-teal/10 pt-4">
                     <FileUpload />
-                    <div className="mt-3">
+                    <div className="mt-4">
                       <FileList />
                     </div>
                   </div>
                 )}
 
                 {activeTab === "google" && (
-                  <div
-                    className="border-t border-primary-teal/10 pt-3"
-                    role="tabpanel"
-                    id="google-panel"
-                    aria-labelledby="google-tab"
-                  >
+                  <div className="border-t border-primary-teal/10 pt-4">
                     <GoogleDriveIntegration />
                   </div>
                 )}
 
                 {activeTab === "approvals" && (
-                  <div
-                    className="border-t border-primary-teal/10 pt-3"
-                    role="tabpanel"
-                    id="approvals-panel"
-                    aria-labelledby="approvals-tab"
-                  >
+                  <div className="border-t border-primary-teal/10 pt-4">
                     {showApprovalViewer && selectedApproval ? (
                       <ApprovalViewer
                         approval={selectedApproval}
@@ -393,15 +347,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* Configuration Group - Compact */}
+          {/* Configuration Group */}
           <div className="border-b border-primary-teal/10">
             <button
               onClick={() => toggleGroup("configuration")}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-primary-cyan hover:bg-primary-teal/5 transition-colors"
             >
               <div className="flex items-center">
                 <Cog className="w-4 h-4 mr-2" />
-                <span className="font-medium text-sm">Config</span>
+                <span className="font-medium">Configuration</span>
               </div>
               {collapsedGroups.configuration ? (
                 <ChevronRight className="w-4 h-4" />
@@ -411,27 +365,27 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {!collapsedGroups.configuration && (
-              <div className="px-3 pb-3">
-                <div className="grid grid-cols-2 gap-1 mb-3">
+              <div className="px-4 pb-4">
+                <div className="space-y-1 mb-4">
                   <button
                     onClick={() => setActiveTab("models")}
-                    className={`flex flex-col items-center px-2 py-2 text-xs rounded-md transition-colors ${
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
                       activeTab === "models"
                         ? "bg-primary-teal/20 text-primary-cyan"
                         : "text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10"
                     }`}
                   >
-                    <Bot className="w-3 h-3 mb-1" />
-                    Models
+                    <Bot className="w-4 h-4 mr-2" />
+                    AI Models
                   </button>
-                  <button className="flex flex-col items-center px-2 py-2 text-xs rounded-md transition-colors text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10">
-                    <Settings className="w-3 h-3 mb-1" />
+                  <button className="w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors text-gray-400 hover:text-primary-cyan hover:bg-primary-teal/10">
+                    <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </button>
                 </div>
 
                 {activeTab === "models" && (
-                  <div className="border-t border-primary-teal/10 pt-3">
+                  <div className="border-t border-primary-teal/10 pt-4">
                     <ModelSelection
                       selectedModels={modelSelection.selectedModels}
                       debateMode={modelSelection.debateMode}
@@ -444,9 +398,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
         </div>
-      </nav>
+      </div>
     </>
   );
 };
 
 export default Sidebar;
+export {};

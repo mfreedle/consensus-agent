@@ -15,35 +15,52 @@ async def get_current_user(
     """Get current authenticated user"""
     
     # Verify token
-    token_data = verify_token(credentials.credentials)
-    username = token_data.get("username")
-    
-    if username is None:
+    try:
+        token_data = verify_token(credentials.credentials)
+        username = token_data.get("username")  # This should match what verify_token returns
+        
+        if username is None:
+            print("[AUTH DEBUG] Token verification failed: username is None")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        print(f"[AUTH DEBUG] Token verified for username: {username}")
+        
+        # Get user from database
+        stmt = select(User).where(User.username == username)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if user is None:
+            print(f"[AUTH DEBUG] User not found in database: {username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not user.is_active:
+            print(f"[AUTH DEBUG] User is inactive: {username}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Inactive user"
+            )
+        
+        print(f"[AUTH DEBUG] User authenticated successfully: {username}")
+        return user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[AUTH DEBUG] Unexpected error during authentication: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Authentication failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Get user from database
-    stmt = select(User).where(User.username == username)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    
-    return user
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Get current active user"""

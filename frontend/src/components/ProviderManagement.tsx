@@ -32,6 +32,49 @@ interface ProviderManagementProps {
   className?: string;
 }
 
+const defaultProviders: ProviderConfig[] = [
+  {
+    provider: "openai",
+    display_name: "OpenAI",
+    api_base_url: "https://api.openai.com/v1",
+    is_active: true,
+    max_requests_per_minute: 60,
+    max_tokens_per_request: 4000,
+    auto_sync_models: true,
+    has_api_key: false,
+  },
+  {
+    provider: "grok",
+    display_name: "Grok (xAI)",
+    api_base_url: "https://api.x.ai/v1",
+    is_active: true,
+    max_requests_per_minute: 60,
+    max_tokens_per_request: 4000,
+    auto_sync_models: true,
+    has_api_key: false,
+  },
+  {
+    provider: "deepseek",
+    display_name: "DeepSeek",
+    api_base_url: "https://api.deepseek.com/v1",
+    is_active: true,
+    max_requests_per_minute: 60,
+    max_tokens_per_request: 4000,
+    auto_sync_models: true,
+    has_api_key: false,
+  },
+  {
+    provider: "anthropic",
+    display_name: "Anthropic",
+    api_base_url: "https://api.anthropic.com/v1",
+    is_active: true,
+    max_requests_per_minute: 60,
+    max_tokens_per_request: 4000,
+    auto_sync_models: true,
+    has_api_key: false,
+  },
+];
+
 const ProviderManagement: React.FC<ProviderManagementProps> = ({
   className = "",
 }) => {
@@ -45,54 +88,7 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
   }>({});
   const { addError } = useErrorHandler();
 
-  const defaultProviders: ProviderConfig[] = [
-    {
-      provider: "openai",
-      display_name: "OpenAI",
-      api_base_url: "https://api.openai.com/v1",
-      is_active: true,
-      max_requests_per_minute: 60,
-      max_tokens_per_request: 4000,
-      auto_sync_models: true,
-      has_api_key: false,
-    },
-    {
-      provider: "grok",
-      display_name: "Grok (xAI)",
-      api_base_url: "https://api.x.ai/v1",
-      is_active: true,
-      max_requests_per_minute: 60,
-      max_tokens_per_request: 4000,
-      auto_sync_models: true,
-      has_api_key: false,
-    },
-    {
-      provider: "deepseek",
-      display_name: "DeepSeek",
-      api_base_url: "https://api.deepseek.com/v1",
-      is_active: true,
-      max_requests_per_minute: 60,
-      max_tokens_per_request: 4000,
-      auto_sync_models: true,
-      has_api_key: false,
-    },
-    {
-      provider: "anthropic",
-      display_name: "Anthropic",
-      api_base_url: "https://api.anthropic.com/v1",
-      is_active: true,
-      max_requests_per_minute: 60,
-      max_tokens_per_request: 4000,
-      auto_sync_models: true,
-      has_api_key: false,
-    },
-  ];
-
-  useEffect(() => {
-    loadProviders();
-  }, []);
-
-  const loadProviders = async () => {
+  const loadProviders = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await enhancedApiService.request<ProviderConfig[]>(
@@ -131,7 +127,11 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addError]);
+
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
 
   const handleSaveProvider = async (providerKey: string) => {
     const config = formData[providerKey];
@@ -197,6 +197,30 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
       ...prev,
       [providerKey]: !prev[providerKey],
     }));
+  };
+
+  const handleEditProvider = (providerKey: string) => {
+    if (editingProvider === providerKey) {
+      // Stop editing
+      setEditingProvider(null);
+    } else {
+      // Start editing - ensure form data is properly initialized
+      const currentProvider = providers.find((p) => p.provider === providerKey);
+      const defaultProvider = defaultProviders.find(
+        (p) => p.provider === providerKey
+      );
+
+      // Initialize form data with current provider data or default
+      const initData = currentProvider || defaultProvider;
+      if (initData) {
+        setFormData((prev) => ({
+          ...prev,
+          [providerKey]: { ...initData },
+        }));
+      }
+
+      setEditingProvider(providerKey);
+    }
   };
 
   const getProviderIcon = (provider: string) => {
@@ -287,9 +311,7 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
                     </div>
                   )}
                   <button
-                    onClick={() =>
-                      setEditingProvider(isEditing ? null : provider.provider)
-                    }
+                    onClick={() => handleEditProvider(provider.provider)}
                     className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     <Settings className="w-4 h-4" />

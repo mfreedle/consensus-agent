@@ -7,6 +7,7 @@ The "Consensus Agent" logo features a **neural weave** design representing multi
 ## Color Palette
 
 ### Logo Elements
+
 | Element | Color | Hex Values | Notes |
 |---------|-------|------------|--------|
 | Thread 1 | Gradient: Teal → Cyan | `#00C9A7` → `#00FFFF` | Left-most curved path |
@@ -15,6 +16,7 @@ The "Consensus Agent" logo features a **neural weave** design representing multi
 | Central Node | Soft Glow: Light Blue | `#B0F6FF` with `#00FFFF` border | Outer glow (blur radius 8–12px) |
 
 ### Application Colors
+
 | Usage | Color | Hex Value | Implementation |
 |-------|-------|-----------|----------------|
 | Primary Background (dark) | Dark Navy | `#0D1B2A` | Main app background |
@@ -26,6 +28,7 @@ The "Consensus Agent" logo features a **neural weave** design representing multi
 | Tertiary Accent | Azure Blue | `#00BFFF` | Secondary buttons, borders |
 
 ### CSS Custom Properties
+
 ```css
 :root {
   /* Primary gradient colors */
@@ -83,6 +86,7 @@ font-family: 'Inter', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
 ```
 
 ### Text Hierarchy
+
 - **Headings**: Bold weight, increased letter-spacing
 - **Body Text**: Regular to Medium weight
 - **UI Elements**: Medium weight, tight letter-spacing

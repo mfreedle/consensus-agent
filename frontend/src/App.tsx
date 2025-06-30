@@ -32,6 +32,10 @@ function App() {
         <AuthProvider>
           <ErrorProvider>
             <div className="App min-h-screen bg-bg-dark">
+              {/* Skip to content link for accessibility */}
+              <a href="#main-content" className="skip-link">
+                Skip to main content
+              </a>
               <ChatApp />
             </div>
           </ErrorProvider>

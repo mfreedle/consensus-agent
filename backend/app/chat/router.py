@@ -4,6 +4,7 @@ from app.auth.dependencies import get_current_active_user
 from app.database.connection import get_db
 from app.llm.orchestrator import llm_orchestrator
 from app.models.chat import ChatSession, Message
+from app.models.file import File
 from app.models.user import User
 from app.schemas.chat import (ChatRequest, ChatResponse, ChatSessionCreate,
                               ChatSessionResponse, ConsensusData,
@@ -138,6 +139,31 @@ async def send_message(
         await db.commit()
         await db.refresh(session)
     
+    # Get attached files context if any
+    file_context = ""
+    if chat_request.attached_file_ids:
+        file_ids = [int(fid) for fid in chat_request.attached_file_ids]
+        files_stmt = select(File).where(
+            File.id.in_(file_ids),
+            File.user_id == current_user.id
+        )
+        files_result = await db.execute(files_stmt)
+        files = files_result.scalars().all()
+        
+        if files:
+            file_context = "\n\nAttached files context:\n"
+            for file in files:
+                file_context += f"\n--- {file.original_filename} ---\n"
+                if file.extracted_text:
+                    # Limit file content to prevent context overflow
+                    content = file.extracted_text[:5000]
+                    if len(file.extracted_text) > 5000:
+                        content += "\n... (content truncated)"
+                    file_context += content
+                else:
+                    file_context += "(File not yet processed or could not extract text)"
+                file_context += "\n"
+    
     # Save user message
     user_message = Message(
         session_id=session.id,
@@ -150,11 +176,14 @@ async def send_message(
     
     # Generate AI response
     try:
+        # Combine user message with file context
+        full_prompt = chat_request.message + file_context
+        
         if chat_request.use_consensus:
             # Get consensus response from multiple models
             consensus_result = await llm_orchestrator.generate_consensus(
-                prompt=chat_request.message,
-                context=None  # TODO: Add file context here
+                prompt=full_prompt,
+                context=None
             )
             
             # Save AI response with consensus data
@@ -176,12 +205,12 @@ async def send_message(
             model = chat_request.selected_models[0] if chat_request.selected_models else "gpt-4o"
             if model.startswith("gpt"):
                 response = await llm_orchestrator.get_openai_response(
-                    prompt=chat_request.message,
+                    prompt=full_prompt,
                     model=model
                 )
             else:
                 response = await llm_orchestrator.get_grok_response(
-                    prompt=chat_request.message,
+                    prompt=full_prompt,
                     model=model
                 )
             

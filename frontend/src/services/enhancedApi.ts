@@ -15,6 +15,7 @@ export interface SendMessageRequest {
   session_id?: number;
   use_consensus?: boolean;
   selected_models?: string[];
+  attached_file_ids?: string[];
 }
 
 export interface ChatResponseMessage {

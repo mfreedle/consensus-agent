@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
-import LoadingIndicator from "./LoadingIndicator";
+import LoadingSkeleton from "./LoadingSkeleton";
+import Tooltip from "./Tooltip";
 import { FileUpload } from "../types";
 
 interface FileListProps {
@@ -128,12 +129,12 @@ const FileList: React.FC<FileListProps> = ({
   if (isLoading) {
     return (
       <div className={`${className}`}>
-        <LoadingIndicator
-          isLoading={true}
-          variant="overlay"
-          message="Loading files..."
-          className="min-h-[200px]"
-        />
+        <div className="space-y-4">
+          {/* File list skeleton */}
+          {[...Array(3)].map((_, i) => (
+            <LoadingSkeleton key={i} variant="card" className="h-16" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -194,33 +195,34 @@ const FileList: React.FC<FileListProps> = ({
 
               {/* Actions */}
               <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => onFileSelect?.(file)}
-                  className="p-2 rounded-lg hover:bg-primary-teal/20 text-primary-cyan transition-colors"
-                  title="View file"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
+                <Tooltip content="View file details and content">
+                  <button
+                    onClick={() => onFileSelect?.(file)}
+                    className="p-2 rounded-lg hover:bg-primary-teal/20 text-primary-cyan transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </Tooltip>
 
-                <button
-                  className="p-2 rounded-lg hover:bg-primary-teal/20 text-primary-cyan transition-colors"
-                  title="Download file"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
+                <Tooltip content="Download file to your device">
+                  <button className="p-2 rounded-lg hover:bg-primary-teal/20 text-primary-cyan transition-colors">
+                    <Download className="w-4 h-4" />
+                  </button>
+                </Tooltip>
 
-                <button
-                  onClick={() => handleDelete(file)}
-                  disabled={deletingIds.has(file.id)}
-                  className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
-                  title="Delete file"
-                >
-                  {deletingIds.has(file.id) ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </button>
+                <Tooltip content="Delete file permanently">
+                  <button
+                    onClick={() => handleDelete(file)}
+                    disabled={deletingIds.has(file.id)}
+                    className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                  >
+                    {deletingIds.has(file.id) ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </Tooltip>
               </div>
             </div>
 

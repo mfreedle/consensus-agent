@@ -54,7 +54,7 @@ class ModelSyncResponse(BaseModel):
     errors: Optional[List[str]] = None
 
 
-@router.get("/", response_model=List[dict])
+@router.get("", response_model=List[dict])
 async def get_available_models(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
