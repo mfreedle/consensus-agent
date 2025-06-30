@@ -23,7 +23,10 @@ interface ModernChatInterfaceProps {
   sessionId: string | null;
   onSessionCreated: (sessionId: string) => void;
   socketMessages?: SocketMessage[];
-  onSendSocketMessage?: (message: string) => boolean;
+  onSendSocketMessage?: (
+    message: string,
+    attachedFileIds?: string[]
+  ) => boolean;
   isSocketConnected?: boolean;
   modelSelection?: ModelSelectionState;
 }
@@ -191,25 +194,44 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
         session_id: parseInt(sessionId || "0"),
       };
 
+      // Capture attached file IDs before clearing
+      const attachedFileIds = attachedFiles.map((af) => af.id);
+      console.log(
+        "Attached files before sending:",
+        attachedFiles.length,
+        "File IDs:",
+        attachedFileIds
+      );
+
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
       reset();
-      // Clear attached files after sending
+      // Clear attached files after capturing IDs
       setAttachedFiles([]);
 
       try {
         // Try to send via Socket.IO first if connected
         if (isSocketConnected && onSendSocketMessage) {
-          const socketSent = onSendSocketMessage(data.message);
+          const socketSent = onSendSocketMessage(data.message, attachedFileIds);
           if (socketSent) {
-            console.log("Message sent via Socket.IO");
+            console.log(
+              "Message sent via Socket.IO",
+              attachedFileIds.length > 0
+                ? `with ${attachedFileIds.length} attached files`
+                : ""
+            );
             setIsLoading(false);
             return;
           }
         }
 
-        // Use enhanced API service to backend
-        console.log("Sending message to backend API...");
+        // Use enhanced API service to backend (for file attachments or when Socket.IO fails)
+        console.log(
+          "Sending message to backend API...",
+          attachedFileIds.length > 0
+            ? `with ${attachedFileIds.length} attached files`
+            : ""
+        );
 
         const apiRequest = {
           message: data.message,
@@ -218,7 +240,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             modelSelection?.selectedModels &&
             modelSelection.selectedModels.length > 1,
           selected_models: modelSelection?.selectedModels || ["gpt-4o"],
-          attached_file_ids: attachedFiles.map((af) => af.id),
+          attached_file_ids: attachedFileIds,
         };
 
         const response = await enhancedApiService.sendMessage(apiRequest);

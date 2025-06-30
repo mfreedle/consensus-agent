@@ -142,6 +142,7 @@ async def send_message(
     # Get attached files context if any
     file_context = ""
     if chat_request.attached_file_ids:
+        print(f"DEBUG: Received attached file IDs: {chat_request.attached_file_ids}")
         file_ids = [int(fid) for fid in chat_request.attached_file_ids]
         files_stmt = select(File).where(
             File.id.in_(file_ids),
@@ -151,8 +152,11 @@ async def send_message(
         files = files_result.scalars().all()
         
         if files:
+            print(f"DEBUG: Found {len(files)} attached files")
             file_context = "\n\nAttached files context:\n"
             for file in files:
+                print(f"DEBUG: Processing file: {file.original_filename}")
+                file_context += f"\n--- {file.original_filename} ---\n"
                 file_context += f"\n--- {file.original_filename} ---\n"
                 if file.extracted_text:
                     # Limit file content to prevent context overflow

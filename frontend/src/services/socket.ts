@@ -75,12 +75,13 @@ class SocketService {
     }
   }
 
-  sendMessage(sessionId: string | null, message: string, token: string): void {
+  sendMessage(sessionId: string | null, message: string, token: string, attachedFileIds?: string[]): void {
     if (this.socket && this.isConnected) {
       this.socket.emit('send_message', {
         session_id: sessionId,
         message,
         token,
+        attached_file_ids: attachedFileIds || [],
       });
     }
   }

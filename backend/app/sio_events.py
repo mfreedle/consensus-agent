@@ -1,10 +1,12 @@
+import logging
+
 from app.auth.dependencies import get_current_user_from_token
 from app.database.connection import get_db
-from app.models.chat import Message, ChatSession
 from app.llm.orchestrator import LLMOrchestrator
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.chat import ChatSession, Message
+from app.models.file import File
 from sqlalchemy import select
-import logging
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +33,17 @@ def register_sio_events(sio):
     @sio.on('send_message')
     async def send_message(sid, data):
         try:
-            # data = {"session_id": ..., "message": ..., "token": ...}
+            # data = {"session_id": ..., "message": ..., "token": ..., "attached_file_ids": [...]}
             session_id = data.get("session_id")
             message = data.get("message")
             token = data.get("token")
+            attached_file_ids = data.get("attached_file_ids", [])
             
             if not (message and token):
                 await sio.emit('error', {'error': 'Missing required data'}, room=sid)
                 return
+            
+            print(f"DEBUG Socket.IO: Received message with {len(attached_file_ids)} attached files")
             
             # Authenticate user
             user = await get_current_user_from_token(token)
@@ -101,10 +106,40 @@ def register_sio_events(sio):
                         "timestamp": user_msg.created_at.isoformat()
                     }, room=str(session_id))
                     
+                    # Get attached files context if any
+                    file_context = ""
+                    if attached_file_ids:
+                        print(f"DEBUG Socket.IO: Processing {len(attached_file_ids)} attached file IDs: {attached_file_ids}")
+                        file_ids = [int(fid) for fid in attached_file_ids]
+                        files_stmt = select(File).where(
+                            File.id.in_(file_ids),
+                            File.user_id == user.id
+                        )
+                        files_result = await db.execute(files_stmt)
+                        files = files_result.scalars().all()
+                        
+                        if files:
+                            print(f"DEBUG Socket.IO: Found {len(files)} attached files")
+                            file_context = "\n\nAttached files context:\n"
+                            for file in files:
+                                print(f"DEBUG Socket.IO: Processing file: {file.original_filename}")
+                                file_context += f"\n--- {file.original_filename} ---\n"
+                                if file.extracted_text:
+                                    # Limit file content to prevent context overflow
+                                    content = file.extracted_text[:5000]
+                                    if len(file.extracted_text) > 5000:
+                                        content += "\n... (content truncated)"
+                                    file_context += content
+                                else:
+                                    file_context += "(File not yet processed or could not extract text)"
+                                file_context += "\n"
+                    
                     # Generate AI response using consensus
                     try:
+                        # Combine user message with file context
+                        full_prompt = message + file_context
                         consensus_result = await llm_orchestrator.generate_consensus(
-                            prompt=message,
+                            prompt=full_prompt,
                             context=None  # TODO: Add file context here
                         )
                         

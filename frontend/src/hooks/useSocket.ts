@@ -124,10 +124,11 @@ export const useSocket = ({
     }
   }, [isAuthenticated, sessionId]);
   // Send message function
-  const sendMessage = useCallback((message: string) => {
+  const sendMessage = useCallback((message: string, attachedFileIds?: string[]) => {
     if (isAuthenticated && token && socketRef.current.isSocketConnected()) {
-      console.log(`Sending message via Socket.IO: ${message}`);
-      socketRef.current.sendMessage(sessionId || null, message, token);
+      console.log(`Sending message via Socket.IO: ${message}`, 
+        attachedFileIds?.length ? `with ${attachedFileIds.length} attached files` : "");
+      socketRef.current.sendMessage(sessionId || null, message, token, attachedFileIds);
       return true;
     } else {
       console.warn('Cannot send message: not connected or missing credentials');
