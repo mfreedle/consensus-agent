@@ -69,7 +69,7 @@ async def create_default_users():
             
             await db.commit()
             print("\n🎉 Database initialization complete!")
-            print("🌐 You can now login to http://localhost:3001 with any of the accounts above")
+            print("🌐 You can now login to http://localhost:3011 with any of the accounts above")
             
         except Exception as e:
             print(f"❌ Error creating default users: {e}")

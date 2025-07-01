@@ -32,7 +32,7 @@ npm install
 npm start
 ```
 
-4. Open your browser and navigate to `http://localhost:3000`
+4. Open your browser and navigate to `http://localhost:3010`
 
 ### Option 2: Use the Hosted Version
 

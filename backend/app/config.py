@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # Google APIs - OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_redirect_uri: str = "http://localhost:3000/google-oauth-callback.html"
+    google_redirect_uri: str = "http://localhost:3010/google-oauth-callback.html"
     
     # Google APIs - Service Account (for admin operations)
     google_service_account_file: str = ""
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     
     # App Settings
     app_env: str = "development"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3010"
     port: int = 8000
     
     # Redis

@@ -80,7 +80,7 @@ def test_delete_functionality():
 def test_frontend_manually():
     """Manual test instructions for frontend delete functionality"""
     print("\n🌐 Manual Frontend Delete Test Instructions:")
-    print("1. Open http://localhost:3000 in your browser")
+    print("1. Open http://localhost:3010 in your browser")
     print("2. Login with username: admin, password: password123")
     print("3. Look at the sidebar - you should see a list of chat sessions")
     print("4. Hover over any chat session")

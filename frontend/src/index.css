@@ -1788,6 +1788,8 @@ code {
   color: white;
   margin-left: 64px;
   align-self: flex-end;
+  /* Add padding to account for avatar on the right */
+  padding-right: 56px;
 }
 
 .message-content.assistant {
@@ -1796,6 +1798,8 @@ code {
   color: var(--text-primary);
   margin-right: 64px;
   align-self: flex-start;
+  /* Add padding to account for avatar on the left */
+  padding-left: 56px;
 }
 
 .message-text {
@@ -2059,6 +2063,9 @@ code {
   border-radius: 16px;
   margin-bottom: 24px;
   margin-right: 64px;
+  position: relative;
+  /* Add padding to account for avatar on the left */
+  padding-left: 56px;
 }
 
 .typing-dots {

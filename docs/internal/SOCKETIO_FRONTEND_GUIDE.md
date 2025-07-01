@@ -53,7 +53,7 @@ The frontend Socket.IO integration has been successfully implemented with the fo
 
 ### Prerequisites
 1. Backend running on `http://localhost:8000` with Socket.IO enabled
-2. Frontend running on `http://localhost:3000`
+2. Frontend running on `http://localhost:3010`
 
 ### Test Scenarios
 

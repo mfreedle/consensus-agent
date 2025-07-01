@@ -4,6 +4,7 @@ Test script to verify complete delete functionality (backend + instructions for 
 """
 import requests
 
+
 def test_complete_delete_functionality():
     """Test the complete delete functionality"""
     print("🗑️  Testing Complete Delete Conversation Functionality\n")
@@ -91,7 +92,7 @@ def test_complete_delete_functionality():
 def show_frontend_instructions():
     """Show instructions for testing the frontend"""
     print("\n🌐 Frontend Delete Test Instructions:")
-    print("1. Open http://localhost:3000 in your browser")
+    print("1. Open http://localhost:3010 in your browser")
     print("2. Login with username: admin, password: password123")
     print("3. Look at the sidebar - you should see a list of chat sessions")
     print("4. 🎯 HOVER over any chat session")

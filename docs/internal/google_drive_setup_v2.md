@@ -41,10 +41,10 @@ This guide explains how to set up Google Drive OAuth integration for the Consens
 4. Configure the OAuth client:
    - Name: "Consensus Agent Web Client"
    - Authorized JavaScript origins:
-     - `http://localhost:3000` (development)
+     - `http://localhost:3010` (development)
      - `https://*.up.railway.app` (production)
    - Authorized redirect URIs:
-     - `http://localhost:3000/google-oauth-callback.html` (development)
+     - `http://localhost:3010/google-oauth-callback.html` (development)
      - `https://*.up.railway.app/google-oauth-callback.html` (production)
 
 ### ⚠️ **IMPORTANT: What You Need After Step 3**

@@ -37,7 +37,7 @@ docker build -t openai-agent-builder .
 docker run -p 3000:80 openai-agent-builder
 ```
 
-3. Access the application at `http://localhost:3000`
+3. Access the application at `http://localhost:3010`
 
 ### Option 3: Self-Hosted Server
 
