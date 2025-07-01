@@ -1,0 +1,166 @@
+[
+  {
+    "id": "grok-3-latest",
+    "provider": "grok",
+    "display_name": "Grok 3 Latest",
+    "description": "Latest Grok 3 model with enhanced reasoning",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": false,
+    "supports_vision": false,
+    "context_window": 128000,
+    "capabilities": {
+      "reasoning": "high",
+      "creativity": "high",
+      "realtime": "high",
+      "humor": "high"
+    }
+  },
+  {
+    "id": "grok-3-fast-latest",
+    "provider": "grok",
+    "display_name": "Grok 3 Fast Latest",
+    "description": "Faster version of Grok 3 with optimized performance",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": false,
+    "supports_vision": false,
+    "context_window": 128000,
+    "capabilities": {
+      "reasoning": "high",
+      "creativity": "medium",
+      "realtime": "high",
+      "speed": "high"
+    }
+  },
+  {
+    "id": "grok-3-mini-latest",
+    "provider": "grok",
+    "display_name": "Grok 3 Mini Latest",
+    "description": "Compact version of Grok 3 for efficient tasks",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": false,
+    "supports_vision": false,
+    "context_window": 64000,
+    "capabilities": {
+      "reasoning": "medium",
+      "creativity": "medium",
+      "efficiency": "high"
+    }
+  },
+  {
+    "id": "grok-3-mini-fast-latest",
+    "provider": "grok",
+    "display_name": "Grok 3 Mini Fast Latest",
+    "description": "Fastest and most efficient Grok 3 variant",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": false,
+    "supports_vision": false,
+    "context_window": 64000,
+    "capabilities": {
+      "reasoning": "medium",
+      "speed": "high",
+      "efficiency": "high"
+    }
+  },
+  {
+    "id": "gpt-4.1",
+    "provider": "openai",
+    "display_name": "GPT-4.1",
+    "description": "Enhanced GPT-4 with improved reasoning capabilities",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": true,
+    "context_window": 128000,
+    "capabilities": {
+      "reasoning": "high",
+      "creativity": "high",
+      "code": "high",
+      "math": "high"
+    }
+  },
+  {
+    "id": "gpt-4.1-mini",
+    "provider": "openai",
+    "display_name": "GPT-4.1 Mini",
+    "description": "Efficient version of GPT-4.1 for faster responses",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": true,
+    "context_window": 128000,
+    "capabilities": {
+      "reasoning": "high",
+      "creativity": "medium",
+      "efficiency": "high"
+    }
+  },
+  {
+    "id": "o3",
+    "provider": "openai",
+    "display_name": "O3",
+    "description": "OpenAI's latest reasoning model with advanced problem-solving",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": false,
+    "context_window": 200000,
+    "capabilities": {
+      "reasoning": "very_high",
+      "math": "very_high",
+      "code": "very_high",
+      "science": "very_high"
+    }
+  },
+  {
+    "id": "o3-mini",
+    "provider": "openai",
+    "display_name": "O3 Mini",
+    "description": "Compact version of O3 for efficient reasoning tasks",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": false,
+    "context_window": 128000,
+    "capabilities": {
+      "reasoning": "high",
+      "math": "high",
+      "efficiency": "high"
+    }
+  },
+  {
+    "id": "deepseek-chat",
+    "provider": "deepseek",
+    "display_name": "DeepSeek Chat",
+    "description": "DeepSeek's conversational AI model",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": false,
+    "context_window": 64000,
+    "capabilities": {
+      "reasoning": "high",
+      "creativity": "high",
+      "conversation": "high"
+    }
+  },
+  {
+    "id": "deepseek-reasoner",
+    "provider": "deepseek",
+    "display_name": "DeepSeek Reasoner",
+    "description": "DeepSeek's advanced reasoning model",
+    "is_active": true,
+    "supports_streaming": true,
+    "supports_function_calling": true,
+    "supports_vision": false,
+    "context_window": 64000,
+    "capabilities": {
+      "reasoning": "very_high",
+      "math": "high",
+      "logic": "very_high"
+    }
+  }
+]

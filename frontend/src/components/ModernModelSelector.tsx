@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ChevronDown,
-  Zap,
-  Brain,
-  Shuffle,
+  ChevronRight,
   CheckCircle,
   Settings,
+  Loader2,
+  AlertCircle,
+  Eye,
+  Code,
+  Cpu,
 } from "lucide-react";
-import { ModelSelectionState } from "../types";
+import { ModelSelectionState, LLMModel } from "../types";
+import { enhancedApiService } from "../services/enhancedApi";
 
 interface ModernModelSelectorProps {
   modelSelection: ModelSelectionState;
@@ -15,45 +19,33 @@ interface ModernModelSelectorProps {
   className?: string;
 }
 
-// Predefined mode configurations
-const MODE_CONFIGS = [
-  {
-    id: "fastest",
-    name: "⚡ Fastest",
-    description: "Single best model for speed",
-    icon: <Zap className="w-4 h-4" />,
-    models: ["gpt-3.5-turbo"],
-    debateMode: "single" as const,
-    color: "text-yellow-400",
+// Provider configuration for UI
+const PROVIDER_CONFIGS = {
+  openai: {
+    name: "OpenAI",
+    color: "text-green-400",
+    bgColor: "bg-green-400/10",
+    borderColor: "border-green-400/20",
   },
-  {
-    id: "smartest",
-    name: "🧠 Smartest",
-    description: "Single best model for accuracy",
-    icon: <Brain className="w-4 h-4" />,
-    models: ["gpt-4"],
-    debateMode: "single" as const,
+  grok: {
+    name: "Grok (xAI)",
     color: "text-blue-400",
+    bgColor: "bg-blue-400/10",
+    borderColor: "border-blue-400/20",
   },
-  {
-    id: "consensus",
-    name: "🔄 Consensus",
-    description: "Multiple models for reliability",
-    icon: <Shuffle className="w-4 h-4" />,
-    models: ["gpt-4", "claude-3-sonnet"],
-    debateMode: "consensus" as const,
-    color: "text-primary-teal",
+  deepseek: {
+    name: "DeepSeek",
+    color: "text-purple-400",
+    bgColor: "bg-purple-400/10",
+    borderColor: "border-purple-400/20",
   },
-  {
-    id: "custom",
-    name: "⚙️ Custom",
-    description: "Choose your own models",
-    icon: <Settings className="w-4 h-4" />,
-    models: [],
-    debateMode: "custom" as const,
-    color: "text-gray-400",
+  anthropic: {
+    name: "Anthropic",
+    color: "text-orange-400",
+    bgColor: "bg-orange-400/10",
+    borderColor: "border-orange-400/20",
   },
-];
+};
 
 const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
   modelSelection,
@@ -61,40 +53,228 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [availableModels, setAvailableModels] = useState<LLMModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(
+    new Set()
+  );
 
-  // Determine current mode based on selection
-  const getCurrentMode = () => {
-    const { selectedModels, debateMode } = modelSelection;
+  // Load available models from backend
+  const loadModels = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const models = await enhancedApiService.getAvailableModels();
+      setAvailableModels(models);
 
-    if (selectedModels.length === 0) {
-      return MODE_CONFIGS.find((m) => m.id === "fastest") || MODE_CONFIGS[0];
-    }
+      // Auto-select first available models if none selected
+      if (modelSelection.selectedModels.length === 0 && models.length > 0) {
+        const defaultModels = models
+          .filter((m) => m.is_active !== false)
+          .slice(0, 2)
+          .map((m) => m.id);
 
-    if (selectedModels.length === 1) {
-      if (selectedModels[0] === "gpt-3.5-turbo") {
-        return MODE_CONFIGS.find((m) => m.id === "fastest") || MODE_CONFIGS[0];
+        if (defaultModels.length > 0) {
+          onModelSelectionChange({
+            selectedModels: defaultModels,
+            debateMode: defaultModels.length > 1 ? "consensus" : "single",
+            showDebateProcess: defaultModels.length > 1,
+          });
+        }
       }
-      if (selectedModels[0] === "gpt-4") {
-        return MODE_CONFIGS.find((m) => m.id === "smartest") || MODE_CONFIGS[1];
+    } catch (err) {
+      console.error("Failed to load models:", err);
+      setError("Failed to load models");
+      // Set fallback models
+      setAvailableModels([
+        {
+          id: "grok-3-latest",
+          provider: "grok",
+          display_name: "Grok 3 Latest",
+          description: "Latest Grok 3 model with enhanced reasoning",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: false,
+          supports_vision: false,
+          context_window: 128000,
+        },
+        {
+          id: "grok-3-fast-latest",
+          provider: "grok",
+          display_name: "Grok 3 Fast Latest",
+          description: "Faster version of Grok 3 with optimized performance",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: false,
+          supports_vision: false,
+          context_window: 128000,
+        },
+        {
+          id: "grok-3-mini-latest",
+          provider: "grok",
+          display_name: "Grok 3 Mini Latest",
+          description: "Compact version of Grok 3 for efficient tasks",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: false,
+          supports_vision: false,
+          context_window: 64000,
+        },
+        {
+          id: "grok-3-mini-fast-latest",
+          provider: "grok",
+          display_name: "Grok 3 Mini Fast Latest",
+          description: "Fastest and most efficient Grok 3 variant",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: false,
+          supports_vision: false,
+          context_window: 64000,
+        },
+        {
+          id: "gpt-4.1",
+          provider: "openai",
+          display_name: "GPT-4.1",
+          description: "Enhanced GPT-4 with improved reasoning capabilities",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: true,
+          context_window: 128000,
+        },
+        {
+          id: "gpt-4.1-mini",
+          provider: "openai",
+          display_name: "GPT-4.1 Mini",
+          description: "Efficient version of GPT-4.1 for faster responses",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: true,
+          context_window: 128000,
+        },
+        {
+          id: "o3",
+          provider: "openai",
+          display_name: "O3",
+          description:
+            "OpenAI's latest reasoning model with advanced problem-solving",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: false,
+          context_window: 200000,
+        },
+        {
+          id: "o3-mini",
+          provider: "openai",
+          display_name: "O3 Mini",
+          description: "Compact version of O3 for efficient reasoning tasks",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: false,
+          context_window: 128000,
+        },
+        {
+          id: "deepseek-chat",
+          provider: "deepseek",
+          display_name: "DeepSeek Chat",
+          description: "DeepSeek's conversational AI model",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: false,
+          context_window: 64000,
+        },
+        {
+          id: "deepseek-reasoner",
+          provider: "deepseek",
+          display_name: "DeepSeek Reasoner",
+          description: "DeepSeek's advanced reasoning model",
+          is_active: true,
+          supports_streaming: true,
+          supports_function_calling: true,
+          supports_vision: false,
+          context_window: 64000,
+        },
+      ] as LLMModel[]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [modelSelection.selectedModels.length, onModelSelectionChange]);
+
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
+
+  // Helper function to get model display name
+  const getModelDisplayName = useCallback(
+    (modelId: string) => {
+      const model = availableModels.find((m) => m.id === modelId);
+      return (
+        model?.display_name ||
+        modelId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+      );
+    },
+    [availableModels]
+  );
+
+  // Group models by provider
+  const groupedModels = React.useMemo(() => {
+    const groups: Record<string, LLMModel[]> = {};
+    availableModels.forEach((model) => {
+      if (!groups[model.provider]) {
+        groups[model.provider] = [];
       }
+      groups[model.provider].push(model);
+    });
+
+    // Sort models within each provider by display_name
+    Object.keys(groups).forEach((provider) => {
+      groups[provider].sort((a, b) =>
+        a.display_name.localeCompare(b.display_name)
+      );
+    });
+
+    return groups;
+  }, [availableModels]);
+
+  const handleModelToggle = (modelId: string) => {
+    const isSelected = modelSelection.selectedModels.includes(modelId);
+    let newSelectedModels: string[];
+
+    if (isSelected) {
+      newSelectedModels = modelSelection.selectedModels.filter(
+        (id) => id !== modelId
+      );
+    } else {
+      newSelectedModels = [...modelSelection.selectedModels, modelId];
     }
 
-    if (selectedModels.length > 1 && debateMode === "consensus") {
-      return MODE_CONFIGS.find((m) => m.id === "consensus") || MODE_CONFIGS[2];
+    // Ensure at least one model is selected
+    if (newSelectedModels.length === 0) {
+      return;
     }
 
-    return MODE_CONFIGS.find((m) => m.id === "custom") || MODE_CONFIGS[3];
+    const newDebateMode = newSelectedModels.length > 1 ? "consensus" : "single";
+
+    onModelSelectionChange({
+      selectedModels: newSelectedModels,
+      debateMode: newDebateMode,
+      showDebateProcess: newSelectedModels.length > 1,
+    });
   };
 
-  const currentMode = getCurrentMode();
-
-  const handleModeSelect = (mode: (typeof MODE_CONFIGS)[0]) => {
-    onModelSelectionChange({
-      selectedModels: mode.models,
-      debateMode: mode.debateMode as any,
-      showDebateProcess: mode.debateMode === "consensus",
-    });
-    setIsOpen(false);
+  const toggleProvider = (provider: string) => {
+    const newExpanded = new Set(expandedProviders);
+    if (newExpanded.has(provider)) {
+      newExpanded.delete(provider);
+    } else {
+      newExpanded.add(provider);
+    }
+    setExpandedProviders(newExpanded);
   };
 
   const getDisplayName = () => {
@@ -105,9 +285,7 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
     }
 
     if (selectedModels.length === 1) {
-      return selectedModels[0]
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, (l) => l.toUpperCase());
+      return getModelDisplayName(selectedModels[0]);
     }
 
     if (debateMode === "consensus") {
@@ -128,8 +306,12 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
         aria-label={`Current model: ${getDisplayName()}`}
       >
         <div className="model-selector-content">
-          <span className={`model-icon ${currentMode.color}`}>
-            {currentMode.icon}
+          <span className="model-icon text-primary-teal">
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Settings className="w-4 h-4" />
+            )}
           </span>
           <span className="model-name">{getDisplayName()}</span>
         </div>
@@ -144,42 +326,172 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
             onClick={() => setIsOpen(false)}
           />
           <div className="model-selector-dropdown" role="listbox">
-            {MODE_CONFIGS.map((mode) => {
-              const isSelected = currentMode.id === mode.id;
-
-              return (
+            {/* Error State */}
+            {error && (
+              <div className="error-message">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <span className="text-red-400 text-sm">{error}</span>
                 <button
-                  key={mode.id}
-                  onClick={() => handleModeSelect(mode)}
-                  className={`mode-option ${isSelected ? "selected" : ""}`}
-                  role="option"
-                  aria-selected={isSelected}
+                  onClick={loadModels}
+                  className="text-primary-teal text-sm hover:underline ml-2"
                 >
-                  <div className="mode-option-content">
-                    <div className="mode-header">
-                      <span className={`mode-icon ${mode.color}`}>
-                        {mode.icon}
-                      </span>
-                      <span className="mode-name">{mode.name}</span>
-                      {isSelected && (
-                        <CheckCircle className="w-4 h-4 text-primary-teal ml-auto" />
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="loading-state">
+                <Loader2 className="w-4 h-4 animate-spin text-primary-teal" />
+                <span className="text-sm text-text-muted">
+                  Loading models...
+                </span>
+              </div>
+            )}
+
+            {/* Provider Groups */}
+            {!isLoading && Object.keys(groupedModels).length > 0 && (
+              <div className="providers-section">
+                <div className="section-header">
+                  <span className="section-title">Choose Models</span>
+                  <span className="selected-count">
+                    {modelSelection.selectedModels.length} selected
+                  </span>
+                </div>
+
+                {Object.entries(groupedModels).map(([provider, models]) => {
+                  const isExpanded = expandedProviders.has(provider);
+                  const providerConfig =
+                    PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
+                  const selectedModelsInProvider = models.filter((m) =>
+                    modelSelection.selectedModels.includes(m.id)
+                  ).length;
+
+                  return (
+                    <div key={provider} className="provider-group">
+                      <button
+                        onClick={() => toggleProvider(provider)}
+                        className="provider-header"
+                      >
+                        <div className="provider-info">
+                          <ChevronRight
+                            className={`provider-chevron ${
+                              isExpanded ? "expanded" : ""
+                            }`}
+                          />
+                          <span
+                            className={`provider-name ${
+                              providerConfig?.color || "text-text-primary"
+                            }`}
+                          >
+                            {providerConfig?.name || provider}
+                          </span>
+                          <span className="model-count">({models.length})</span>
+                        </div>
+                        {selectedModelsInProvider > 0 && (
+                          <span className="selected-badge">
+                            {selectedModelsInProvider} selected
+                          </span>
+                        )}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="provider-models">
+                          {models.map((model) => {
+                            const isSelected =
+                              modelSelection.selectedModels.includes(model.id);
+                            const isActive = model.is_active !== false;
+
+                            return (
+                              <button
+                                key={model.id}
+                                onClick={() => handleModelToggle(model.id)}
+                                disabled={!isActive}
+                                className={`model-item ${
+                                  isSelected ? "selected" : ""
+                                } ${!isActive ? "disabled" : ""}`}
+                              >
+                                <div className="model-item-content">
+                                  <div className="model-info">
+                                    <span className="model-display-name">
+                                      {model.display_name}
+                                    </span>
+                                    {model.context_window && (
+                                      <span className="model-context">
+                                        {(model.context_window / 1000).toFixed(
+                                          0
+                                        )}
+                                        k ctx
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="model-capabilities">
+                                    {model.supports_vision && (
+                                      <div title="Vision support">
+                                        <Eye className="w-3 h-3 text-blue-400" />
+                                      </div>
+                                    )}
+                                    {model.supports_function_calling && (
+                                      <div title="Function calling">
+                                        <Code className="w-3 h-3 text-green-400" />
+                                      </div>
+                                    )}
+                                    {model.supports_streaming && (
+                                      <div title="Streaming support">
+                                        <Cpu className="w-3 h-3 text-orange-400" />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {isSelected && (
+                                    <CheckCircle className="w-4 h-4 text-primary-teal" />
+                                  )}
+
+                                  {!isActive && (
+                                    <span className="inactive-badge">
+                                      Inactive
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    <p className="mode-description">{mode.description}</p>
-                    {mode.models.length > 0 && (
-                      <div className="mode-models">
-                        {mode.models.slice(0, 2).map((model, index) => (
-                          <span key={model} className="model-tag">
-                            {model.replace(/-/g, " ")}
-                            {index === 0 && mode.models.length > 2 && "..."}
-                          </span>
-                        ))}
-                      </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Current Selection Summary */}
+            {!isLoading && modelSelection.selectedModels.length > 0 && (
+              <div className="selection-summary">
+                <div className="summary-header">Current Selection</div>
+                <div className="summary-content">
+                  <div className="selected-models">
+                    {modelSelection.selectedModels.map((modelId) => (
+                      <span key={modelId} className="selected-model-tag">
+                        {getModelDisplayName(modelId)}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="summary-stats">
+                    <span>{modelSelection.selectedModels.length} models</span>
+                    <span>•</span>
+                    <span>{modelSelection.debateMode} mode</span>
+                    {modelSelection.showDebateProcess && (
+                      <>
+                        <span>•</span>
+                        <span>Process visible</span>
+                      </>
                     )}
                   </div>
-                </button>
-              );
-            })}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

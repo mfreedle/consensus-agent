@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Settings,
-  Eye,
-  EyeOff,
-  Save,
-  RotateCw,
-  Key,
-  Globe,
-} from "lucide-react";
+import { Settings, Eye, EyeOff, Save, Key, Globe } from "lucide-react";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import LoadingIndicator from "./LoadingIndicator";
@@ -22,7 +14,6 @@ interface ProviderConfig {
   is_active: boolean;
   max_requests_per_minute: number;
   max_tokens_per_request: number;
-  auto_sync_models: boolean;
   has_api_key?: boolean;
   last_sync_at?: string;
   sync_error?: string;
@@ -40,7 +31,6 @@ const defaultProviders: ProviderConfig[] = [
     is_active: true,
     max_requests_per_minute: 60,
     max_tokens_per_request: 4000,
-    auto_sync_models: true,
     has_api_key: false,
   },
   {
@@ -50,7 +40,6 @@ const defaultProviders: ProviderConfig[] = [
     is_active: true,
     max_requests_per_minute: 60,
     max_tokens_per_request: 4000,
-    auto_sync_models: true,
     has_api_key: false,
   },
   {
@@ -60,7 +49,6 @@ const defaultProviders: ProviderConfig[] = [
     is_active: true,
     max_requests_per_minute: 60,
     max_tokens_per_request: 4000,
-    auto_sync_models: true,
     has_api_key: false,
   },
   {
@@ -70,7 +58,6 @@ const defaultProviders: ProviderConfig[] = [
     is_active: true,
     max_requests_per_minute: 60,
     max_tokens_per_request: 4000,
-    auto_sync_models: true,
     has_api_key: false,
   },
 ];
@@ -80,7 +67,6 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
 }) => {
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({});
   const [formData, setFormData] = useState<{
@@ -153,28 +139,6 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
         "api",
         `Failed to save provider '${config.display_name}'`
       );
-    }
-  };
-
-  const handleSyncModels = async () => {
-    setIsSyncing(true);
-    try {
-      const response = await enhancedApiService.request<{
-        message: string;
-        created: number;
-        updated: number;
-        providers: string[];
-      }>("/models/sync", {
-        method: "POST",
-      });
-
-      if (response) {
-        await loadProviders();
-      }
-    } catch (error) {
-      addError(error, "api", "Failed to sync models");
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -268,14 +232,6 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
             Provider Management
           </h2>
         </div>
-        <button
-          onClick={handleSyncModels}
-          disabled={isSyncing}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors"
-        >
-          <RotateCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-          <span>{isSyncing ? "Syncing..." : "Sync Models"}</span>
-        </button>
       </div>
 
       {/* Provider Cards */}
@@ -457,23 +413,6 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         Provider Active
-                      </span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={config.auto_sync_models || false}
-                        onChange={(e) =>
-                          handleFormChange(
-                            provider.provider,
-                            "auto_sync_models",
-                            e.target.checked
-                          )
-                        }
-                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        Auto-sync Models
                       </span>
                     </label>
                   </div>

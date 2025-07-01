@@ -150,8 +150,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                 Advanced model management features coming soon.
               </p>
               <p className="text-xs text-gray-500">
-                For now, use the Providers tab to sync models from your
-                configured providers.
+                The app now uses a curated list of hardcoded models. New models
+                can be added manually through the admin interface.
               </p>
             </div>
           </div>

@@ -150,20 +150,24 @@ export const SUPPORTED_FILE_TYPES: SupportedFileType[] = [
 // LLM Model Types
 export interface LLMModel {
   id: string;
-  provider: 'openai' | 'grok' | 'claude';
+  provider: 'openai' | 'grok' | 'claude' | 'deepseek' | 'anthropic';
   model_name?: string;
   display_name: string;
   description?: string;
   is_active?: boolean;
   supports_streaming?: boolean;
   supports_function_calling?: boolean;
+  supports_vision?: boolean;
+  context_window?: number;
+  input_price_per_1k?: number;
+  output_price_per_1k?: number;
   capabilities?: Record<string, any>;
   created_at?: string;
 }
 
 export interface ModelSelectionState {
   selectedModels: string[];
-  debateMode: 'consensus' | 'detailed' | 'quick';
+  debateMode: 'consensus' | 'detailed' | 'quick' | 'single';
   showDebateProcess: boolean;
 }
 

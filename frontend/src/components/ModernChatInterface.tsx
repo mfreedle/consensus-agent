@@ -239,7 +239,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           use_consensus:
             modelSelection?.selectedModels &&
             modelSelection.selectedModels.length > 1,
-          selected_models: modelSelection?.selectedModels || ["gpt-4o"],
+          selected_models: modelSelection?.selectedModels || ["gpt-4.1"], // Use one of our curated models
           attached_file_ids: attachedFileIds,
         };
 

@@ -31,7 +31,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
         </button>
 
         <div className="logo-section">
-          <img src="/logo.svg" alt="Consensus Agent" className="logo" />
+          <div className="logo">CA</div>
           <h1 className="app-title">
             <span className="title-main">Consensus Agent</span>
             <span className="title-subtitle">Multi-LLM AI Platform</span>

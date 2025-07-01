@@ -19,7 +19,7 @@ const ChatApp: React.FC = () => {
   const [socketMessages, setSocketMessages] = useState<SocketMessage[]>([]);
   const [currentView, setCurrentView] = useState<ViewMode>("chat");
   const [modelSelection, setModelSelection] = useState<ModelSelectionState>({
-    selectedModels: ["gpt-4"],
+    selectedModels: ["gpt-4.1"], // Use one of our curated models
     debateMode: "consensus",
     showDebateProcess: false,
   });

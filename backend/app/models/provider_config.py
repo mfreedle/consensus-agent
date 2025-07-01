@@ -21,8 +21,8 @@ class ProviderConfig(Base):
     max_requests_per_minute = Column(Integer, default=60)
     max_tokens_per_request = Column(Integer, default=4000)
     
-    # Model sync settings
-    auto_sync_models = Column(Boolean, default=True)
+    # Model sync settings (DEPRECATED - no longer used)
+    auto_sync_models = Column(Boolean, default=True)  # DEPRECATED
     last_sync_at = Column(DateTime, nullable=True)
     sync_error = Column(Text, nullable=True)
     

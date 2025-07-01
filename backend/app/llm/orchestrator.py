@@ -45,7 +45,7 @@ class LLMOrchestrator:
     async def get_openai_response(
         self, 
         prompt: str, 
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-4.1",  # Updated to use curated model
         context: Optional[str] = None
     ) -> ModelResponse:
         """Get response from OpenAI using Responses API with structured outputs"""
@@ -153,7 +153,7 @@ class LLMOrchestrator:
     async def get_grok_response(
         self, 
         prompt: str, 
-        model: str = "grok-2",
+        model: str = "grok-3-latest",  # Updated to use curated model
         context: Optional[str] = None
     ) -> ModelResponse:
         """Get response from Grok using xAI API"""
@@ -205,8 +205,8 @@ class LLMOrchestrator:
         self, 
         prompt: str, 
         context: Optional[str] = None,
-        openai_model: str = "gpt-4o",
-        grok_model: str = "grok-2"
+        openai_model: str = "gpt-4.1",        # Updated to use curated model
+        grok_model: str = "grok-3-latest"     # Updated to use curated model
     ) -> ConsensusResult:
         """Generate consensus response from multiple models"""
         
@@ -242,8 +242,9 @@ class LLMOrchestrator:
         """
         
         try:
+            # Use O3 as the manager/judge model for consensus generation
             consensus_response = await self.openai_client.chat.completions.create(
-                model=openai_model,
+                model="o3",  # Manager/judge model is always O3
                 messages=[
                     {
                         "role": "system",
