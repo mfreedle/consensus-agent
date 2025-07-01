@@ -941,13 +941,9 @@ code {
   width: 100%;
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  background: transparent;
-  border: none;
   border-radius: 6px;
-  cursor: pointer;
   transition: all var(--transition-fast);
-  text-align: left;
+  overflow: hidden;
 }
 
 .chat-item:hover {
@@ -962,6 +958,53 @@ code {
 .chat-item.active .chat-title {
   color: var(--text-primary);
   font-weight: 500;
+}
+
+.chat-item-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.chat-item-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  opacity: 0;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.chat-item:hover .chat-item-delete {
+  opacity: 1;
+}
+
+.chat-item-delete:hover {
+  background: var(--bg-error);
+  color: var(--text-error);
+}
+
+.chat-item.active .chat-item-delete {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.chat-item.active .chat-item-delete:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
 }
 
 .chat-item-content {
@@ -1008,7 +1051,7 @@ code {
 
 .active-indicator {
   position: absolute;
-  right: 8px;
+  right: 40px; /* Move left to account for delete button */
   top: 50%;
   transform: translateY(-50%);
   width: 3px;
@@ -1635,6 +1678,7 @@ code {
   height: 100vh;
   position: relative;
   min-width: 0; /* Prevent flex overflow */
+  overflow: hidden; /* Prevent the whole interface from scrolling */
 }
 
 .modern-content-area {
@@ -1642,6 +1686,7 @@ code {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; /* Allow flex shrinking */
 }
 
 /* Modern Chat Container - Center-focused like Claude/Gemini */
@@ -1651,13 +1696,41 @@ code {
   flex-direction: column;
   position: relative;
   background: var(--bg-dark);
+  min-height: 0; /* Allow flex shrinking */
+  overflow: hidden; /* Prevent container from scrolling */
 }
 
 .modern-chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   background: var(--bg-dark);
+  scroll-behavior: smooth;
+  /* Ensure proper height calculation */
+  min-height: 0;
+  /* Enable hardware acceleration for smooth scrolling */
+  transform: translateZ(0);
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.modern-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modern-chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modern-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.modern-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Message Container - Centered like Claude */
@@ -1666,6 +1739,9 @@ code {
   margin: 0 auto;
   padding: 24px 16px;
   width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 768px) {

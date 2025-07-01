@@ -36,7 +36,7 @@ class LLMOrchestrator:
     async def get_openai_response(
         self, 
         prompt: str, 
-        model: str = "gpt-4o",
+        model: str = "gpt-4.1",
         context: Optional[str] = None
     ) -> LLMResponse:
         """Get response from OpenAI using the Responses API"""
@@ -118,7 +118,7 @@ class LLMOrchestrator:
     async def get_grok_response(
         self, 
         prompt: str, 
-        model: str = "grok-2",
+        model: str = "grok-3",
         context: Optional[str] = None
     ) -> LLMResponse:
         """Get response from Grok via xAI API"""
@@ -192,8 +192,8 @@ class LLMOrchestrator:
         self,
         prompt: str,
         context: Optional[str] = None,
-        openai_model: str = "gpt-4o",
-        grok_model: str = "grok-2"
+        openai_model: str = "gpt-4.1",
+        grok_model: str = "grok-3"
     ) -> ConsensusResult:
         """Generate consensus from multiple LLM responses"""
         

@@ -292,6 +292,18 @@ export class EnhancedApiService {
     });
   }
 
+  async getChatMessages(sessionId: number): Promise<ChatResponseMessage[]> {
+    return this.request<ChatResponseMessage[]>(`/chat/sessions/${sessionId}/messages`, {
+      method: 'GET',
+    });
+  }
+
+  async deleteChatSession(sessionId: number): Promise<{message: string}> {
+    return this.request<{message: string}>(`/chat/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Model management methods  
   async getAvailableModels(): Promise<any[]> {
     return this.request<any[]>('/models', {

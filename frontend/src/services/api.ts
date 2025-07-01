@@ -194,6 +194,12 @@ class ApiService {
     return this.request<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
   }
 
+  async deleteChatSession(sessionId: number): Promise<ApiResponse<{message: string}>> {
+    return this.request<{message: string}>(`/chat/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async sendMessage(request: SendMessageRequest): Promise<ApiResponse<ChatResponse>> {
     return this.request<ChatResponse>('/chat/message', {
       method: 'POST',

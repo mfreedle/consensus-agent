@@ -9,6 +9,7 @@ import {
   Zap,
   Brain,
   Shuffle,
+  Trash2,
 } from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
 import { ModelSelectionState } from "../types";
@@ -98,6 +99,38 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
     }
   };
 
+  const handleDeleteSession = async (
+    sessionId: number,
+    event: React.MouseEvent
+  ) => {
+    // Prevent the session from being selected when delete is clicked
+    event.stopPropagation();
+
+    // Confirm deletion
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this conversation? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await apiService.deleteChatSession(sessionId);
+
+      // Remove session from local state
+      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
+
+      // If this was the current session, clear it
+      if (currentSessionId === sessionId.toString()) {
+        onSessionSelect("");
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+      alert("Failed to delete conversation. Please try again.");
+    }
+  };
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -150,32 +183,45 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                 );
 
                 return (
-                  <button
+                  <div
                     key={session.id}
-                    onClick={() => onSessionSelect(session.id.toString())}
                     className={`chat-item ${isActive ? "active" : ""}`}
-                    aria-label={`Open chat: ${session.title || "Untitled"}`}
                   >
-                    <div className="chat-item-content">
-                      <div className="chat-item-header">
-                        {consensusIcon && (
-                          <span className="consensus-icon">
-                            {consensusIcon}
+                    <button
+                      onClick={() => onSessionSelect(session.id.toString())}
+                      className="chat-item-main"
+                      aria-label={`Open chat: ${session.title || "Untitled"}`}
+                    >
+                      <div className="chat-item-content">
+                        <div className="chat-item-header">
+                          {consensusIcon && (
+                            <span className="consensus-icon">
+                              {consensusIcon}
+                            </span>
+                          )}
+                          <span className="chat-title">
+                            {session.title || "New conversation"}
                           </span>
-                        )}
-                        <span className="chat-title">
-                          {session.title || "New conversation"}
+                        </div>
+                        <span className="chat-time">
+                          {getRelativeTime(session.created_at)}
                         </span>
                       </div>
-                      <span className="chat-time">
-                        {getRelativeTime(session.created_at)}
-                      </span>
-                    </div>
 
-                    {isActive && (
-                      <div className="active-indicator" aria-hidden="true" />
-                    )}
-                  </button>
+                      {isActive && (
+                        <div className="active-indicator" aria-hidden="true" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={(e) => handleDeleteSession(session.id, e)}
+                      className="chat-item-delete"
+                      aria-label={`Delete chat: ${session.title || "Untitled"}`}
+                      title="Delete conversation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 );
               })}
             </div>

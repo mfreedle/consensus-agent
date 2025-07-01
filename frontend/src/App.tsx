@@ -31,11 +31,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ErrorProvider>
-            <div className="App min-h-screen bg-bg-dark">
-              {/* Skip to content link for accessibility */}
-              <a href="#main-content" className="skip-link">
-                Skip to main content
-              </a>
+            <div
+              id="main-content"
+              className="App h-screen bg-bg-dark overflow-hidden"
+            >
               <ChatApp />
             </div>
           </ErrorProvider>

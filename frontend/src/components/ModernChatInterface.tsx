@@ -79,10 +79,50 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
   const messageValue = watch("message", "");
 
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    // Use a small delay to ensure the DOM has updated
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }, 100);
+  }, []);
+
   // Load messages for session
   useEffect(() => {
-    setMessages([]);
-  }, [sessionId]);
+    const loadMessages = async () => {
+      if (!sessionId) {
+        setMessages([]);
+        return;
+      }
+
+      try {
+        const sessionMessages = await enhancedApiService.getChatMessages(
+          parseInt(sessionId)
+        );
+
+        const formattedMessages: Message[] = sessionMessages.map((msg) => ({
+          id: msg.id,
+          role: msg.role as "user" | "assistant" | "system",
+          content: msg.content,
+          timestamp: msg.created_at,
+          session_id: msg.session_id,
+          consensus: msg.consensus_data as ConsensusResponse | undefined,
+        }));
+
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error("Failed to load messages for session:", sessionId, error);
+        addError(error, "api", "Failed to load conversation history");
+        setMessages([]);
+      }
+    };
+
+    loadMessages();
+  }, [sessionId, addError]);
 
   // Add socket messages to the regular messages
   useEffect(() => {
@@ -113,7 +153,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -176,10 +216,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
   const handleCloseFileModal = () => {
     setFileUploadModal({ isOpen: false, mode: "attach" });
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const onSubmit = useCallback(

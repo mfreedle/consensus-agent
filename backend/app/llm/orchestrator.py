@@ -242,9 +242,9 @@ class LLMOrchestrator:
         """
         
         try:
-            # Use O3 as the manager/judge model for consensus generation
+            # Use o3 as the manager/judge model for consensus generation
             consensus_response = await self.openai_client.chat.completions.create(
-                model="o3",  # Manager/judge model is always O3
+                model="o3",  # Manager/judge model is always o3
                 messages=[
                     {
                         "role": "system",

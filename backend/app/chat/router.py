@@ -41,9 +41,14 @@ async def get_chat_sessions(
 ):
     """Get all chat sessions for the current user"""
     
+    # Use COALESCE to fall back to created_at when updated_at is NULL
+    # This handles existing sessions that don't have updated_at set
+    from sqlalchemy import func
+    order_field = func.coalesce(ChatSession.updated_at, ChatSession.created_at)
+    
     stmt = select(ChatSession).where(
         ChatSession.user_id == current_user.id
-    ).order_by(desc(ChatSession.updated_at))
+    ).order_by(desc(order_field))
     
     result = await db.execute(stmt)
     sessions = result.scalars().all()
@@ -175,6 +180,11 @@ async def send_message(
         content=chat_request.message
     )
     db.add(user_message)
+    
+    # Update session timestamp when new message is added
+    from sqlalchemy import func
+    session.updated_at = func.now()
+    
     await db.commit()
     await db.refresh(user_message)
     
@@ -226,10 +236,13 @@ async def send_message(
             )
         
         db.add(ai_message)
+        
+        # Update session timestamp when AI response is added
+        from sqlalchemy import func
+        session.updated_at = func.now()
+        
         await db.commit()
         await db.refresh(ai_message)
-        
-        # Update session timestamp
         await db.refresh(session)
         
         return ChatResponse(
@@ -246,6 +259,11 @@ async def send_message(
             model_used="error"
         )
         db.add(error_message)
+        
+        # Update session timestamp for error messages too
+        from sqlalchemy import func
+        session.updated_at = func.now()
+        
         await db.commit()
         await db.refresh(error_message)
         

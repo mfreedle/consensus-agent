@@ -95,6 +95,11 @@ def register_sio_events(sio):
                         content=message
                     )
                     db.add(user_msg)
+                    
+                    # Update session timestamp
+                    from sqlalchemy import func
+                    session.updated_at = func.now()
+                    
                     await db.commit()
                     await db.refresh(user_msg)
                     
@@ -159,6 +164,11 @@ def register_sio_events(sio):
                         )
                         
                         db.add(ai_message)
+                        
+                        # Update session timestamp
+                        from sqlalchemy import func
+                        session.updated_at = func.now()
+                        
                         await db.commit()
                         await db.refresh(ai_message)
                         
