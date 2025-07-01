@@ -285,7 +285,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   >
                     <File className="w-4 h-4 mr-2" />
-                    Files
+                    Knowledge Base
                   </button>
                   <button
                     onClick={() => setActiveTab("google")}
@@ -314,6 +314,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {/* Content based on active sub-tab */}
                 {activeTab === "files" && (
                   <div className="border-t border-primary-teal/10 pt-4">
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-primary-cyan mb-1">
+                        Knowledge Base Files
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Upload files to your permanent knowledge base
+                      </p>
+                    </div>
                     <FileUpload />
                     <div className="mt-4">
                       <FileList />

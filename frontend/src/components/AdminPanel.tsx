@@ -6,17 +6,27 @@ import {
   Shield,
   BarChart3,
   RefreshCw,
+  FileText,
+  ArrowLeft,
 } from "lucide-react";
 import ProviderManagement from "./ProviderManagement";
+import FileList from "./FileList";
 
 interface AdminPanelProps {
   className?: string;
+  onBack?: () => void;
 }
 
-type AdminTab = "providers" | "models" | "users" | "analytics" | "system";
+type AdminTab =
+  | "providers"
+  | "models"
+  | "users"
+  | "analytics"
+  | "system"
+  | "knowledge";
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ className = "" }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>("providers");
+const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>("knowledge");
 
   const tabs = [
     {
@@ -30,6 +40,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "" }) => {
       label: "Models",
       icon: Database,
       description: "View and manage available AI models",
+    },
+    {
+      id: "knowledge" as AdminTab,
+      label: "Knowledge Base",
+      icon: FileText,
+      description: "Manage uploaded documents and knowledge base files",
     },
     {
       id: "users" as AdminTab,
@@ -55,6 +71,50 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "" }) => {
     switch (activeTab) {
       case "providers":
         return <ProviderManagement />;
+
+      case "knowledge":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Knowledge Base</h2>
+              <p className="text-gray-400">
+                Manage your uploaded documents and knowledge base files
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <FileText className="w-6 h-6 text-blue-400" />
+                <div>
+                  <h3 className="text-lg font-semibold">Document Library</h3>
+                  <p className="text-sm text-gray-400">
+                    View and manage all documents in your knowledge base
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-900/50 rounded-lg border border-gray-600 p-4">
+                <FileList className="max-h-96 overflow-y-auto" />
+              </div>
+
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <h4 className="font-medium text-blue-400 mb-2">
+                  💡 How to add files to your knowledge base:
+                </h4>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>
+                    • Use the chat interface and click "Document upload" button
+                  </li>
+                  <li>• Use the sidebar: Content Management → Files</li>
+                  <li>
+                    • Files uploaded here are permanently stored and can be
+                    referenced in any conversation
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
 
       case "models":
         return (
@@ -158,6 +218,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "" }) => {
       {/* Header */}
       <div className="border-b border-gray-700 bg-gray-800/50 px-6 py-4">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+              aria-label="Back to chat"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-400" />
+            </button>
+          )}
           <Shield className="w-6 h-6 text-blue-400" />
           <div>
             <h1 className="text-xl font-bold">Admin Panel</h1>

@@ -20,6 +20,7 @@ interface ModernSidebarProps {
   onSessionSelect: (sessionId: string) => void;
   onNewChat: () => void;
   onLogout?: () => void;
+  onSettings?: () => void;
   currentUser?: any;
   modelSelection?: ModelSelectionState;
 }
@@ -54,6 +55,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   onSessionSelect,
   onNewChat,
   onLogout,
+  onSettings,
   currentUser,
   modelSelection = {
     selectedModels: [],
@@ -199,10 +201,12 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
               {showUserMenu && (
                 <div className="user-menu-dropdown">
-                  <button className="menu-item">
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </button>
+                  {onSettings && (
+                    <button onClick={onSettings} className="menu-item">
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </button>
+                  )}
                   {onLogout && (
                     <button
                       onClick={onLogout}

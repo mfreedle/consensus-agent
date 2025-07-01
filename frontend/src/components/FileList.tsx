@@ -157,6 +157,29 @@ const FileList: React.FC<FileListProps> = ({
 
   return (
     <div className={`${className}`}>
+      {/* Knowledge Base Summary */}
+      {files.length > 0 && (
+        <div className="mb-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-primary-cyan" />
+              <span className="text-sm font-medium text-gray-300">
+                Knowledge Base Files
+              </span>
+            </div>
+            <div className="text-xs text-gray-500">
+              {files.length} {files.length === 1 ? "file" : "files"}
+            </div>
+          </div>
+          <div className="mt-1 text-xs text-gray-500">
+            Total storage:{" "}
+            {formatFileSize(
+              files.reduce((total, file) => total + (file.file_size || 0), 0)
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Files Grid */}
       <div className="grid grid-cols-1 gap-4">
         {files.map((file) => (

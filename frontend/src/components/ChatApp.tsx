@@ -58,6 +58,16 @@ const ChatApp: React.FC = () => {
     setSocketMessages([]);
   }, []);
 
+  // Handle settings navigation
+  const handleSettings = useCallback(() => {
+    setCurrentView("admin");
+  }, []);
+
+  // Handle back to chat navigation
+  const handleBackToChat = useCallback(() => {
+    setCurrentView("chat");
+  }, []);
+
   // Initialize Socket.IO connection
   const { sendMessage: sendSocketMessage, isConnected: getIsConnected } =
     useSocket({
@@ -106,6 +116,7 @@ const ChatApp: React.FC = () => {
           onSessionSelect={setCurrentSessionId}
           onNewChat={handleNewChat}
           onLogout={logout}
+          onSettings={handleSettings}
           currentUser={user}
           modelSelection={modelSelection}
         />
@@ -134,7 +145,7 @@ const ChatApp: React.FC = () => {
               modelSelection={modelSelection}
             />
           ) : (
-            <AdminPanel />
+            <AdminPanel onBack={handleBackToChat} />
           )}
         </div>
       </div>
