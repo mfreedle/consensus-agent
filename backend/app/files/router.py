@@ -128,6 +128,8 @@ async def delete_file(
 ):
     """Delete a file"""
     
+    print(f"DEBUG: Delete request received for file ID: {file_id} by user: {current_user.username}")
+    
     # Get file from database
     result = await db.execute(
         select(File).where(File.id == int(file_id), File.user_id == current_user.id)
@@ -135,19 +137,25 @@ async def delete_file(
     file = result.scalar_one_or_none()
     
     if not file:
+        print(f"DEBUG: File not found - ID: {file_id}, User ID: {current_user.id}")
         raise HTTPException(status_code=404, detail="File not found")
+    
+    print(f"DEBUG: File found - {file.original_filename}, deleting...")
     
     # Delete file from disk if it exists
     if file.file_path and os.path.exists(file.file_path):
         try:
             os.remove(file.file_path)
-        except OSError:
+            print(f"DEBUG: File deleted from disk: {file.file_path}")
+        except OSError as e:
+            print(f"DEBUG: Error deleting file from disk: {e}")
             pass  # File already deleted or permission issue
     
     # Delete from database
     await db.delete(file)
     await db.commit()
     
+    print("DEBUG: File deleted successfully from database")
     return {"message": "File deleted successfully"}
 
 @router.get("/{file_id}/content")

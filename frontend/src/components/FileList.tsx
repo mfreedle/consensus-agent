@@ -8,6 +8,9 @@ import {
   User,
   HardDrive,
   RefreshCw,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -20,6 +23,8 @@ interface FileListProps {
   onFileDelete?: (file: FileUpload) => void;
   refreshTrigger?: number; // Used to trigger refresh from parent
   className?: string;
+  showPagination?: boolean;
+  filesPerPage?: number;
 }
 
 const FileList: React.FC<FileListProps> = ({
@@ -27,10 +32,17 @@ const FileList: React.FC<FileListProps> = ({
   onFileDelete,
   refreshTrigger = 0,
   className = "",
+  showPagination = true,
+  filesPerPage = 10,
 }) => {
   const [files, setFiles] = useState<FileUpload[]>([]);
+  const [filteredFiles, setFilteredFiles] = useState<FileUpload[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<FileUpload | null>(null);
   const { addError, clearErrors } = useErrorHandler();
 
   // Load files from backend
@@ -42,7 +54,10 @@ const FileList: React.FC<FileListProps> = ({
       const result = await enhancedApiService.getUserFiles();
       // Backend returns {files: []} so we need to extract the files array
       const filesData = result?.files || result || [];
-      setFiles(Array.isArray(filesData) ? filesData : []);
+      const filesList = Array.isArray(filesData) ? filesData : [];
+      setFiles(filesList);
+      setFilteredFiles(filesList);
+      setCurrentPage(1);
     } catch (error) {
       addError(error, "api", "Failed to load files");
     } finally {
@@ -50,40 +65,81 @@ const FileList: React.FC<FileListProps> = ({
     }
   }, [addError, clearErrors]);
 
+  // Filter files based on search term
+  useEffect(() => {
+    const filtered = files.filter(
+      (file) =>
+        file.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        file.file_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        file.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredFiles(filtered);
+    setCurrentPage(1);
+  }, [files, searchTerm]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
+  const startIndex = (currentPage - 1) * filesPerPage;
+  const endIndex = startIndex + filesPerPage;
+  const currentFiles = showPagination
+    ? filteredFiles.slice(startIndex, endIndex)
+    : filteredFiles;
+
   // Load files on mount and when refresh is triggered
   useEffect(() => {
     loadFiles();
   }, [loadFiles, refreshTrigger]);
 
-  // Handle file deletion
-  const handleDelete = useCallback(
-    async (file: FileUpload) => {
-      if (
-        !window.confirm(`Are you sure you want to delete "${file.filename}"?`)
-      ) {
-        return;
-      }
+  // Handle file deletion with enhanced confirmation
+  const handleDeleteRequest = (file: FileUpload) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  };
 
-      try {
-        setDeletingIds((prev) => new Set(prev).add(file.id));
+  const confirmDelete = async () => {
+    if (!fileToDelete) return;
 
-        await enhancedApiService.deleteFile(file.id);
+    const file = fileToDelete;
+    console.log("Delete confirmed for file:", file.filename, "ID:", file.id);
 
-        // Remove from local state
-        setFiles((prev) => prev.filter((f) => f.id !== file.id));
-        onFileDelete?.(file);
-      } catch (error) {
-        addError(error, "api", `Failed to delete file "${file.filename}"`);
-      } finally {
-        setDeletingIds((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(file.id);
-          return newSet;
-        });
-      }
-    },
-    [addError, onFileDelete]
-  );
+    try {
+      console.log("Starting delete process for file ID:", file.id);
+      setDeletingIds((prev) => new Set(prev).add(file.id));
+
+      console.log("Calling API to delete file...");
+      const result = await enhancedApiService.deleteFile(file.id);
+      console.log("API delete result:", result);
+
+      // Remove from local state
+      setFiles((prev) => {
+        const newFiles = prev.filter((f) => f.id !== file.id);
+        console.log(
+          "Updated files list, removed file. New count:",
+          newFiles.length
+        );
+        return newFiles;
+      });
+
+      onFileDelete?.(file);
+      console.log("File deletion completed successfully");
+    } catch (error) {
+      console.error("Error during file deletion:", error);
+      addError(error, "api", `Failed to delete file "${file.filename}"`);
+    } finally {
+      setDeletingIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(file.id);
+        return newSet;
+      });
+      setShowDeleteModal(false);
+      setFileToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setFileToDelete(null);
+  };
 
   // Format file size
   const formatFileSize = (bytes: number): string => {
@@ -157,6 +213,28 @@ const FileList: React.FC<FileListProps> = ({
 
   return (
     <div className={`${className}`}>
+      {/* Search and Filter */}
+      {files.length > 0 && (
+        <div className="mb-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search files by name, type, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:border-primary-cyan focus:outline-none"
+            />
+          </div>
+
+          {searchTerm && (
+            <div className="text-xs text-gray-400">
+              Found {filteredFiles.length} of {files.length} files
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Knowledge Base Summary */}
       {files.length > 0 && (
         <div className="mb-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
@@ -182,7 +260,7 @@ const FileList: React.FC<FileListProps> = ({
 
       {/* Files Grid */}
       <div className="grid grid-cols-1 gap-4">
-        {files.map((file) => (
+        {currentFiles.map((file) => (
           <div
             key={file.id}
             className="group bg-bg-dark-secondary border border-primary-teal/20 rounded-lg p-4 hover:border-primary-cyan/40 transition-all duration-200"
@@ -235,7 +313,7 @@ const FileList: React.FC<FileListProps> = ({
 
                 <Tooltip content="Delete file permanently">
                   <button
-                    onClick={() => handleDelete(file)}
+                    onClick={() => handleDeleteRequest(file)}
                     disabled={deletingIds.has(file.id)}
                     className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
                   >
@@ -285,6 +363,117 @@ const FileList: React.FC<FileListProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {showPagination && totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center space-x-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="p-2 rounded-lg hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-400" />
+          </button>
+
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                  currentPage === page
+                    ? "bg-primary-cyan text-gray-900"
+                    : "hover:bg-gray-700/50 text-gray-400"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
+            disabled={currentPage === totalPages}
+            className="p-2 rounded-lg hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+      )}
+
+      {/* Enhanced Delete Confirmation Modal */}
+      {showDeleteModal && fileToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-white mb-4">
+              Confirm File Deletion
+            </h3>
+
+            <div className="space-y-3 mb-6">
+              <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`flex-shrink-0 ${getFileTypeColor(
+                      fileToDelete.file_type
+                    )}`}
+                  >
+                    <File className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium truncate">
+                      {fileToDelete.filename}
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      ID: {fileToDelete.id}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-xs text-gray-500 space-y-1">
+                  <div>Size: {formatFileSize(fileToDelete.file_size)}</div>
+                  <div>Uploaded: {formatDate(fileToDelete.uploaded_at)}</div>
+                  <div>Type: {fileToDelete.file_type}</div>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <p className="text-red-400 text-sm">
+                  ⚠️ This action cannot be undone. The file will be permanently
+                  removed from your knowledge base.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deletingIds.has(fileToDelete.id)}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2"
+              >
+                {deletingIds.has(fileToDelete.id) ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete File</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Refresh Button */}
       <div className="mt-6 text-center">
