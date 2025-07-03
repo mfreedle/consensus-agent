@@ -1,5 +1,5 @@
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 from app.auth.dependencies import get_current_active_user
 from app.auth.utils import (create_access_token, get_password_hash,
