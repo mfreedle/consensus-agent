@@ -6,7 +6,7 @@ python-multipart==0.0.20
 # Database
 sqlalchemy==2.0.41
 alembic==1.12.1
-# psycopg2-binary==2.9.9  # Commented out for local SQLite development
+psycopg2-binary==2.9.9  # PostgreSQL adapter for production
 asyncpg==0.30.0
 
 # Authentication & Security
