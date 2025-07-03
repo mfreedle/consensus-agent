@@ -1,5 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 
+// Use environment variable or current domain for socket connection
+const SOCKET_URL = process.env.REACT_APP_API_URL 
+  ? process.env.REACT_APP_API_URL.replace('/api', '') 
+  : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000');
+
 export interface SocketMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -30,12 +35,13 @@ class SocketService {
 
     this.isConnecting = true;
     console.log('Creating new Socket.IO connection...');
+    console.log('Socket URL:', SOCKET_URL);
     
     // Disconnect any existing socket first
     if (this.socket) {
       this.socket.disconnect();
     }
-    this.socket = io('http://localhost:8000', {
+    this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       autoConnect: false,
     });    this.socket.on('connect', () => {

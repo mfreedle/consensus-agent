@@ -12,7 +12,7 @@ RUN npm ci
 # Copy frontend source
 COPY frontend/ .
 
-# Set production API URL
+# Set production API URL to use relative path
 ENV REACT_APP_API_URL=/api
 
 # Build frontend

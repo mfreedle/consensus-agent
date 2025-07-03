@@ -47,7 +47,7 @@ export class EnhancedApiService {
   private baseURL: string;
   private defaultTimeout: number = 30000; // 30 seconds
 
-  constructor(baseURL: string = 'http://localhost:8000') {
+  constructor(baseURL: string = process.env.REACT_APP_API_URL || 'http://localhost:8000') {
     this.baseURL = baseURL;
     this.token = localStorage.getItem('auth_token');
   }
