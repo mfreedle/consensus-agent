@@ -73,8 +73,14 @@ async def init_db():
 
 async def seed_initial_data():
     """Seed the database with default models and admin user"""
-    await seed_models()
-    await create_default_user()
+    try:
+        logger.info("Starting to seed initial data...")
+        await seed_models()
+        await create_default_user()
+        logger.info("Initial data seeding completed successfully")
+    except Exception as e:
+        logger.error(f"Failed to seed initial data: {e}")
+        raise
 
 async def seed_models():
     """Seed the database with default LLM models"""
@@ -154,22 +160,28 @@ async def create_default_user():
     admin_username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
     admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "password123")
     
-    async with AsyncSessionLocal() as session:
-        # Check if default user exists
-        result = await session.execute(select(User).where(User.username == admin_username))
-        existing_user = result.scalar_one_or_none()
-        
-        if existing_user:
-            logger.info("Default admin user already exists.")
-            return
-        
-        # Create default user
-        user = User(
-            username=admin_username,
-            password_hash=get_password_hash(admin_password),
-            is_active=True
-        )
-        
-        session.add(user)
-        await session.commit()
-        logger.info(f"Created default admin user: {admin_username}")
+    try:
+        async with AsyncSessionLocal() as session:
+            # Check if default user exists
+            result = await session.execute(select(User).where(User.username == admin_username))
+            existing_user = result.scalar_one_or_none()
+            
+            if existing_user:
+                logger.info(f"Default admin user '{admin_username}' already exists.")
+                return
+            
+            # Create default user
+            hashed_password = get_password_hash(admin_password)
+            user = User(
+                username=admin_username,
+                password_hash=hashed_password,
+                is_active=True
+            )
+            
+            session.add(user)
+            await session.commit()
+            logger.info(f"Created default admin user: {admin_username} with password: {admin_password}")
+            
+    except Exception as e:
+        logger.error(f"Failed to create default admin user: {e}")
+        raise

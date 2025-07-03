@@ -63,6 +63,30 @@ async def health_check():
         "environment": os.getenv("APP_ENV", "development")
     }
 
+@fastapi_app.get("/api/debug/users")
+async def debug_users():
+    """Debug endpoint to check what users exist in the database"""
+    from app.database.connection import get_db
+    from app.models.user import User
+    from sqlalchemy import select
+    
+    async for db in get_db():
+        result = await db.execute(select(User))
+        users = result.scalars().all()
+        
+        return {
+            "total_users": len(users),
+            "users": [
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at.isoformat() if user.created_at else None
+                }
+                for user in users
+            ]
+        }
+
 # Catch-all route for frontend (must be last)
 @fastapi_app.get("/{path:path}")
 async def serve_frontend(path: str):
