@@ -81,10 +81,45 @@ async def debug_users():
                     "id": user.id,
                     "username": user.username,
                     "is_active": user.is_active,
-                    "created_at": user.created_at.isoformat() if user.created_at else None
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "password_hash_length": len(user.password_hash) if user.password_hash else 0
                 }
                 for user in users
             ]
+        }
+
+@fastapi_app.get("/api/debug/test-password")
+async def debug_test_password():
+    """Debug endpoint to test password verification"""
+    from app.auth.utils import get_password_hash, verify_password
+    from app.database.connection import get_db
+    from app.models.user import User
+    from sqlalchemy import select
+    
+    test_password = "password123"
+    
+    async for db in get_db():
+        # Get the admin user
+        result = await db.execute(select(User).where(User.username == "admin"))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return {"error": "Admin user not found"}
+        
+        # Test password verification
+        is_valid = verify_password(test_password, user.password_hash)
+        
+        # Generate a fresh hash for comparison
+        fresh_hash = get_password_hash(test_password)
+        fresh_is_valid = verify_password(test_password, fresh_hash)
+        
+        return {
+            "user_exists": True,
+            "stored_hash_length": len(user.password_hash),
+            "test_password": test_password,
+            "password_verification_result": is_valid,
+            "fresh_hash_verification": fresh_is_valid,
+            "fresh_hash_sample": fresh_hash[:20] + "..." if fresh_hash else None
         }
 
 # Catch-all route for frontend (must be last)

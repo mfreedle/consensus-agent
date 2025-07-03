@@ -1,4 +1,5 @@
 from datetime import timedelta
+import logging
 
 from app.auth.dependencies import get_current_active_user
 from app.auth.utils import (create_access_token, get_password_hash,
@@ -43,13 +44,30 @@ async def register_user(user_data: UserCreate, db: AsyncSession = Depends(get_db
 async def login(user_credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     """Authenticate user and return access token"""
     
+    logger = logging.getLogger(__name__)
+    logger.info(f"Login attempt for username: {user_credentials.username}")
+    
     # Get user from database
     stmt = select(User).where(User.username == user_credentials.username)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     
-    # Verify credentials
-    if not user or not verify_password(user_credentials.password, user.password_hash):
+    if not user:
+        logger.warning(f"User not found: {user_credentials.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    logger.info(f"User found: {user.username}, checking password...")
+    
+    # Verify password
+    password_valid = verify_password(user_credentials.password, user.password_hash)
+    logger.info(f"Password verification result: {password_valid}")
+    
+    if not password_valid:
+        logger.warning(f"Invalid password for user: {user_credentials.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
