@@ -122,6 +122,42 @@ async def debug_test_password():
             "fresh_hash_sample": fresh_hash[:20] + "..." if fresh_hash else None
         }
 
+@fastapi_app.post("/api/debug/reset-admin-password")
+async def debug_reset_admin_password():
+    """Debug endpoint to reset admin password with fresh hash"""
+    from app.auth.utils import get_password_hash, verify_password
+    from app.database.connection import get_db
+    from app.models.user import User
+    from sqlalchemy import select
+    
+    new_password = "password123"
+    
+    async for db in get_db():
+        # Get the admin user
+        result = await db.execute(select(User).where(User.username == "admin"))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            return {"error": "Admin user not found"}
+        
+        # Generate fresh password hash
+        new_hash = get_password_hash(new_password)
+        
+        # Update user password
+        user.password_hash = new_hash
+        await db.commit()
+        
+        # Verify the new hash works
+        verification_test = verify_password(new_password, new_hash)
+        
+        return {
+            "success": True,
+            "message": "Admin password reset successfully",
+            "new_hash_length": len(new_hash),
+            "verification_test": verification_test,
+            "password": new_password
+        }
+
 # Catch-all route for frontend (must be last)
 @fastapi_app.get("/{path:path}")
 async def serve_frontend(path: str):
