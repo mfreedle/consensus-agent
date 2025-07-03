@@ -12,6 +12,8 @@ import {
   Brain,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ConsensusResponse } from "../services/api";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -463,7 +465,50 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           )}
         </div>
 
-        <div className="message-text">{message.content}</div>
+        <div className="message-text">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              // Customize components to ensure they work well in chat bubbles
+              p: ({ children, ...props }) => {
+                // Check if this paragraph is inside a list item
+                return <p {...props}>{children}</p>;
+              },
+              h1: ({ children }) => <h1>{children}</h1>,
+              h2: ({ children }) => <h2>{children}</h2>,
+              h3: ({ children }) => <h3>{children}</h3>,
+              ul: ({ children }) => <ul>{children}</ul>,
+              ol: ({ children }) => <ol>{children}</ol>,
+              li: ({ children }) => {
+                // Handle list items - ensure text flows inline with numbers
+                return <li>{children}</li>;
+              },
+              code: ({ children, className }) => {
+                const isBlock = className?.includes("language-");
+                return isBlock ? (
+                  <pre className="bg-black bg-opacity-20 rounded p-2 mb-2 overflow-x-auto">
+                    <code className={className}>{children}</code>
+                  </pre>
+                ) : (
+                  <code className="bg-black bg-opacity-20 px-1 py-0.5 rounded text-sm">
+                    {children}
+                  </code>
+                );
+              },
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-2 border-gray-400 pl-4 italic mb-2">
+                  {children}
+                </blockquote>
+              ),
+              strong: ({ children }) => (
+                <strong className="font-bold">{children}</strong>
+              ),
+              em: ({ children }) => <em className="italic">{children}</em>,
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
       </div>
 
       <div className="message-timestamp">{formatTime(message.timestamp)}</div>
@@ -576,6 +621,14 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                 disabled={isLoading || !messageValue?.trim()}
                 className="modern-send-button"
                 aria-label="Send message"
+                onClick={(e) => {
+                  console.log("Send button clicked!", {
+                    isLoading,
+                    messageValue,
+                    hasMessage: !!messageValue?.trim(),
+                    disabled: isLoading || !messageValue?.trim(),
+                  });
+                }}
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
