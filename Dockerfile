@@ -22,11 +22,11 @@ COPY backend/ backend/
 RUN mkdir -p backend/uploads
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/backend
 ENV PORT=8000
 
 # Expose port
 EXPOSE $PORT
 
 # Run the application
-CMD ["sh", "-c", "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"]
+CMD ["sh", "-c", "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
