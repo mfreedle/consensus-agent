@@ -94,42 +94,46 @@ async def seed_models():
         models = [
             LLMModel(
                 provider="openai",
-                model_name="gpt-4o",
+                model_id="gpt-4o",
                 display_name="GPT-4o",
                 description="Most capable OpenAI model for complex tasks",
                 max_tokens=128000,
                 supports_streaming=True,
                 supports_function_calling=True,
+                supports_vision=True,
                 capabilities={"vision": True, "reasoning": True, "code": True}
             ),
             LLMModel(
                 provider="openai",
-                model_name="gpt-4o-mini",
+                model_id="gpt-4o-mini",
                 display_name="GPT-4o Mini",
                 description="Fast and efficient model for simpler tasks",
                 max_tokens=128000,
                 supports_streaming=True,
                 supports_function_calling=True,
+                supports_vision=True,
                 capabilities={"vision": True, "reasoning": True, "code": True}
             ),
             LLMModel(
                 provider="grok",
-                model_name="grok-beta",
+                model_id="grok-beta",
                 display_name="Grok Beta",
                 description="xAI's powerful language model",
                 max_tokens=131072,
                 supports_streaming=True,
                 supports_function_calling=False,
+                supports_vision=False,
                 capabilities={"reasoning": True, "real_time": True}
             ),
             LLMModel(
                 provider="deepseek",
-                model_name="deepseek-chat",
+                model_id="deepseek-chat",
                 display_name="DeepSeek Chat",
                 description="Efficient model for coding and reasoning",
                 max_tokens=64000,
                 supports_streaming=True,
                 supports_function_calling=True,
+                supports_vision=False,
                 capabilities={"code": True, "reasoning": True}
             ),
         ]
@@ -145,7 +149,7 @@ async def create_default_user():
     from app.auth.utils import get_password_hash
     from app.models.user import User
     from sqlalchemy import select
-    
+
     # Get default admin credentials from environment or use defaults
     admin_username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
     admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "password123")
