@@ -14,8 +14,8 @@ from app.sio_events import register_sio_events
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # Load environment variables
 load_dotenv()

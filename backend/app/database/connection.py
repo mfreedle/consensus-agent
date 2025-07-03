@@ -1,4 +1,5 @@
 import logging
+import os
 
 from app.config import settings
 from sqlalchemy import MetaData
@@ -50,7 +51,7 @@ async def get_db() -> AsyncSession:
 
 # Initialize database
 async def init_db():
-    """Create database tables"""
+    """Create database tables and seed initial data"""
     try:
         async with engine.begin() as conn:
             # Import all models to ensure they are registered
@@ -62,6 +63,109 @@ async def init_db():
             # Create all tables
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables created successfully")
+        
+        # Seed initial data
+        await seed_initial_data()
+        logger.info("Database initialization completed successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         raise
+
+async def seed_initial_data():
+    """Seed the database with default models and admin user"""
+    await seed_models()
+    await create_default_user()
+
+async def seed_models():
+    """Seed the database with default LLM models"""
+    from app.models.llm_model import LLMModel
+    from sqlalchemy import select
+    
+    async with AsyncSessionLocal() as session:
+        # Check if models already exist
+        result = await session.execute(select(LLMModel))
+        existing_models = result.scalars().all()
+        
+        if existing_models:
+            logger.info("Models already seeded.")
+            return
+        
+        # Default models
+        models = [
+            LLMModel(
+                provider="openai",
+                model_name="gpt-4o",
+                display_name="GPT-4o",
+                description="Most capable OpenAI model for complex tasks",
+                max_tokens=128000,
+                supports_streaming=True,
+                supports_function_calling=True,
+                capabilities={"vision": True, "reasoning": True, "code": True}
+            ),
+            LLMModel(
+                provider="openai",
+                model_name="gpt-4o-mini",
+                display_name="GPT-4o Mini",
+                description="Fast and efficient model for simpler tasks",
+                max_tokens=128000,
+                supports_streaming=True,
+                supports_function_calling=True,
+                capabilities={"vision": True, "reasoning": True, "code": True}
+            ),
+            LLMModel(
+                provider="grok",
+                model_name="grok-beta",
+                display_name="Grok Beta",
+                description="xAI's powerful language model",
+                max_tokens=131072,
+                supports_streaming=True,
+                supports_function_calling=False,
+                capabilities={"reasoning": True, "real_time": True}
+            ),
+            LLMModel(
+                provider="deepseek",
+                model_name="deepseek-chat",
+                display_name="DeepSeek Chat",
+                description="Efficient model for coding and reasoning",
+                max_tokens=64000,
+                supports_streaming=True,
+                supports_function_calling=True,
+                capabilities={"code": True, "reasoning": True}
+            ),
+        ]
+        
+        for model in models:
+            session.add(model)
+        
+        await session.commit()
+        logger.info(f"Seeded {len(models)} LLM models")
+
+async def create_default_user():
+    """Create a default admin user"""
+    from app.auth.utils import get_password_hash
+    from app.models.user import User
+    from sqlalchemy import select
+    
+    # Get default admin credentials from environment or use defaults
+    admin_username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
+    admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "password123")
+    
+    async with AsyncSessionLocal() as session:
+        # Check if default user exists
+        result = await session.execute(select(User).where(User.username == admin_username))
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            logger.info("Default admin user already exists.")
+            return
+        
+        # Create default user
+        user = User(
+            username=admin_username,
+            password_hash=get_password_hash(admin_password),
+            is_active=True
+        )
+        
+        session.add(user)
+        await session.commit()
+        logger.info(f"Created default admin user: {admin_username}")
