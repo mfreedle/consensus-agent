@@ -1,3 +1,24 @@
+FROM node:18-alpine AS frontend-build
+
+# Set working directory for frontend
+WORKDIR /app/frontend
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY frontend/ .
+
+# Set production API URL
+ENV REACT_APP_API_URL=/api
+
+# Build frontend
+RUN npm run build
+
+# Python backend stage
 FROM python:3.11-slim
 
 # Set working directory
@@ -17,6 +38,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY backend/ backend/
+
+# Copy built frontend from previous stage
+COPY --from=frontend-build /app/frontend/build /app/frontend/build
 
 # Create uploads directory
 RUN mkdir -p backend/uploads
