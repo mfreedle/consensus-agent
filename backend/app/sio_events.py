@@ -40,6 +40,8 @@ def register_sio_events(sio):
             use_consensus = data.get("use_consensus", False)
             selected_models = data.get("selected_models", [])
             
+            logger.info(f"Socket.IO send_message: session_id={session_id} (type: {type(session_id)}), message_length={len(message) if message else 0}, use_consensus={use_consensus}, models={selected_models}")
+            
             if not (message and token):
                 await sio.emit('error', {'error': 'Missing required data'}, room=sid)
                 return
@@ -49,8 +51,11 @@ def register_sio_events(sio):
             # Authenticate user
             user = await get_current_user_from_token(token)
             if not user:
+                logger.error(f"Socket.IO authentication failed for token: {token[:20]}...")
                 await sio.emit('error', {'error': 'Unauthorized'}, room=sid)
                 return
+            
+            logger.info(f"Socket.IO authenticated user: {user.id} ({user.username})")
             
             # Get database session
             async with AsyncSessionLocal() as db:
@@ -58,17 +63,28 @@ def register_sio_events(sio):
                     # Get or create session
                     session = None
                     if session_id:
+                        # Convert session_id to int if it's a string
+                        try:
+                            session_id_int = int(session_id)
+                        except (ValueError, TypeError):
+                            await sio.emit('error', {'error': 'Invalid session ID format'}, room=sid)
+                            return
+                        
                         # Verify existing session belongs to user
                         session_stmt = select(ChatSession).where(
-                            ChatSession.id == session_id,
+                            ChatSession.id == session_id_int,
                             ChatSession.user_id == user.id
                         )
                         session_result = await db.execute(session_stmt)
                         session = session_result.scalar_one_or_none()
                         
                         if not session:
+                            logger.error(f"Chat session not found: session_id={session_id_int}, user_id={user.id}")
                             await sio.emit('error', {'error': 'Chat session not found'}, room=sid)
                             return
+                        
+                        # Update session_id to the integer value for consistency
+                        session_id = session_id_int
                     else:
                         # Create new session
                         session = ChatSession(
