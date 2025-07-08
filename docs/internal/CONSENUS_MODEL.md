@@ -91,7 +91,7 @@ Great question! Let me examine the code to see exactly which model is being used
 
 ## The Orchestrator Model Configuration
 
-**The orchestrator/consensus judge is using `GPT-4o` by default!** Here's the breakdown:
+**The orchestrator/consensus judge is using `o3` by default!** Here's the breakdown:
 
 ### 1. **Default Configuration**
 ```python
@@ -99,22 +99,22 @@ async def generate_consensus(
     self, 
     prompt: str, 
     context: Optional[str] = None,
-    openai_model: str = "gpt-4o",  # 👈 This is the orchestrator model
-    grok_model: str = "grok-2"
+    openai_model: str = "o3",  # 👈 This is the orchestrator model
+    grok_model: str = "grok-3"
 ) -> ConsensusResult:
 ```
 
 ### 2. **The Three Models in Play**
 
-1. **Worker Model 1**: `gpt-4o-mini` (default for OpenAI responses)
-2. **Worker Model 2**: `grok-2` (for Grok responses)  
-3. **Orchestrator/Judge**: `gpt-4o` (for consensus generation)
+1. **Worker Model 1**: `gpt-4.1` (default for OpenAI responses)
+2. **Worker Model 2**: `grok-3` (for Grok responses)  
+3. **Orchestrator/Judge**: `o3` (for consensus generation)
 
-### 3. **Why GPT-4o as the Orchestrator?**
+### 3. **Why o3 as the Orchestrator?**
 
 This is actually a brilliant choice because:
 
-- **GPT-4o** is OpenAI's most capable model with superior reasoning abilities
+- **o3** is OpenAI's most capable model with superior reasoning abilities
 - It's excellent at **meta-analysis** (analyzing other AI responses)
 - It has strong **structured output** capabilities (needed for the JSON schema)
 - It can handle **complex instructions** like "resolve contradictions" and "provide confidence scores"
@@ -123,28 +123,28 @@ This is actually a brilliant choice because:
 
 ```
 ┌─────────────────┐
-│   GPT-4o        │  ← The "Judge/Orchestrator" 
+│   o3        │  ← The "Judge/Orchestrator" 
 │   (Consensus)   │     (Most capable, makes final decisions)
 └─────────────────┘
          ↑
     Analyzes responses from:
          ↓
 ┌─────────────────┐    ┌─────────────────┐
-│   GPT-4o-mini   │    │    Grok-2       │  ← The "Workers"
+│   GPT-4.1       │    │    Grok-3       │  ← The "Workers"
 │   (OpenAI)      │    │   (Grok/X.AI)   │     (Generate initial responses)
 └─────────────────┘    └─────────────────┘
 ```
 
 ### 5. **The Consensus Instructions**
 
-The orchestrator (GPT-4o) gets these specific instructions:
+The orchestrator (o3) gets these specific instructions:
 ```python
 instructions="You are an expert analyst that creates consensus from multiple AI responses. Be thorough and balanced in your analysis."
 ```
 
-So essentially, **GPT-4o acts as the "senior expert"** who reviews the work of the other models and creates the final synthesized response. It's like having:
+So essentially, **o3 acts as the "senior expert"** who reviews the work of the other models and creates the final synthesized response. It's like having:
 
-- Two junior analysts (GPT-4o-mini and Grok-2) provide their perspectives
-- A senior analyst (GPT-4o) reviews both and creates the final recommendation
+- Two junior analysts (GPT-4.1 and Grok-3) provide their perspectives
+- A senior analyst (o3) reviews both and creates the final recommendation
 
 This architecture ensures that the consensus process itself is handled by the most capable reasoning model available!

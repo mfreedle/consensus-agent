@@ -19,6 +19,7 @@ import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import { SocketMessage, ModelSelectionState } from "../types";
 import ConsensusDebateVisualizer from "./ConsensusDebateVisualizer";
+import ConsensusProcessingIndicator from "./ConsensusProcessingIndicator";
 import FileUploadModal from "./FileUploadModal";
 
 interface ModernChatInterfaceProps {
@@ -27,7 +28,9 @@ interface ModernChatInterfaceProps {
   socketMessages?: SocketMessage[];
   onSendSocketMessage?: (
     message: string,
-    attachedFileIds?: string[]
+    attachedFileIds?: string[],
+    useConsensus?: boolean,
+    selectedModels?: string[]
   ) => boolean;
   isSocketConnected?: boolean;
   modelSelection?: ModelSelectionState;
@@ -62,6 +65,9 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [consensusPhase, setConsensusPhase] = useState<
+    "analyzing" | "processing" | "consensus" | "finalizing"
+  >("processing");
   const [fileUploadModal, setFileUploadModal] = useState<{
     isOpen: boolean;
     mode: "attach" | "knowledge";
@@ -126,32 +132,81 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     loadMessages();
   }, [sessionId, addError]);
 
-  // Add socket messages to the regular messages
+  // Add socket messages to the regular messages (only for current session)
   useEffect(() => {
-    if (socketMessages.length > 0) {
-      const convertedMessages: Message[] = socketMessages.map(
-        (socketMsg, index) => ({
-          id: Date.now() + index,
-          role: socketMsg.role,
-          content: socketMsg.content,
-          timestamp: socketMsg.timestamp || new Date().toISOString(),
-          session_id:
-            typeof socketMsg.session_id === "string"
-              ? parseInt(socketMsg.session_id)
-              : socketMsg.session_id,
-          consensus: socketMsg.consensus as ConsensusResponse | undefined,
-        })
+    if (socketMessages.length > 0 && sessionId) {
+      const currentSessionIdNum = parseInt(sessionId);
+
+      // Filter messages to only include those for the current session
+      const sessionMessages = socketMessages.filter((socketMsg) => {
+        const msgSessionId =
+          typeof socketMsg.session_id === "string"
+            ? parseInt(socketMsg.session_id)
+            : socketMsg.session_id;
+        return msgSessionId === currentSessionIdNum;
+      });
+
+      if (sessionMessages.length > 0) {
+        const convertedMessages: Message[] = sessionMessages.map(
+          (socketMsg, index) => ({
+            id: Date.now() + index,
+            role: socketMsg.role,
+            content: socketMsg.content,
+            timestamp: socketMsg.timestamp || new Date().toISOString(),
+            session_id: currentSessionIdNum,
+            consensus: socketMsg.consensus as ConsensusResponse | undefined,
+          })
+        );
+
+        setMessages((prev) => {
+          const existingContents = prev.map((msg) => msg.content);
+          const newMessages = convertedMessages.filter(
+            (msg) => !existingContents.includes(msg.content)
+          );
+
+          // Turn off loading when we receive an assistant message via Socket.IO
+          const hasNewAssistantMessage = newMessages.some(
+            (msg) => msg.role === "assistant"
+          );
+          if (hasNewAssistantMessage && isLoading) {
+            setIsLoading(false);
+          }
+
+          return [...prev, ...newMessages];
+        });
+      }
+    }
+  }, [socketMessages, sessionId, isLoading]);
+
+  // Simulate consensus phases when loading for better UX
+  useEffect(() => {
+    if (
+      isLoading &&
+      modelSelection?.selectedModels?.length &&
+      modelSelection.selectedModels.length > 1
+    ) {
+      setConsensusPhase("analyzing");
+
+      const phaseTimer1 = setTimeout(
+        () => setConsensusPhase("processing"),
+        2000
+      );
+      const phaseTimer2 = setTimeout(
+        () => setConsensusPhase("consensus"),
+        5000
+      );
+      const phaseTimer3 = setTimeout(
+        () => setConsensusPhase("finalizing"),
+        8000
       );
 
-      setMessages((prev) => {
-        const existingContents = prev.map((msg) => msg.content);
-        const newMessages = convertedMessages.filter(
-          (msg) => !existingContents.includes(msg.content)
-        );
-        return [...prev, ...newMessages];
-      });
+      return () => {
+        clearTimeout(phaseTimer1);
+        clearTimeout(phaseTimer2);
+        clearTimeout(phaseTimer3);
+      };
     }
-  }, [socketMessages]);
+  }, [isLoading, modelSelection?.selectedModels?.length]);
 
   useEffect(() => {
     scrollToBottom();
@@ -250,15 +305,27 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       try {
         // Try to send via Socket.IO first if connected
         if (isSocketConnected && onSendSocketMessage) {
-          const socketSent = onSendSocketMessage(data.message, attachedFileIds);
+          const useConsensus =
+            modelSelection?.selectedModels &&
+            modelSelection.selectedModels.length > 1;
+          const socketSent = onSendSocketMessage(
+            data.message,
+            attachedFileIds,
+            useConsensus,
+            modelSelection?.selectedModels
+          );
           if (socketSent) {
             console.log(
               "Message sent via Socket.IO",
               attachedFileIds.length > 0
                 ? `with ${attachedFileIds.length} attached files`
-                : ""
+                : "",
+              `use_consensus: ${useConsensus}, models: ${modelSelection?.selectedModels?.join(
+                ", "
+              )}`
             );
-            setIsLoading(false);
+            // DON'T set loading to false immediately - wait for Socket.IO response
+            // setIsLoading(false); // ← REMOVED: This was causing the bug
             return;
           }
         }
@@ -526,24 +593,43 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     </div>
   );
 
-  const renderTypingIndicator = () => (
-    <div className="typing-indicator">
-      <div className={`message-avatar assistant`}>
-        <Bot className="w-4 h-4" />
+  const renderTypingIndicator = () => {
+    // Use enhanced consensus indicator for multi-model scenarios
+    const isConsensusMode =
+      modelSelection?.selectedModels?.length &&
+      modelSelection.selectedModels.length > 1;
+
+    if (isConsensusMode) {
+      return (
+        <div className="message-bubble assistant">
+          <div className="message-avatar assistant">
+            <Bot className="w-4 h-4" />
+          </div>
+          <div className="message-content">
+            <ConsensusProcessingIndicator
+              message={`Consulting ${modelSelection.selectedModels.length} AI models for consensus`}
+              phase={consensusPhase}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Standard typing indicator for single model
+    return (
+      <div className="typing-indicator">
+        <div className={`message-avatar assistant`}>
+          <Bot className="w-4 h-4" />
+        </div>
+        <div className="typing-dots">
+          <div className="typing-dot"></div>
+          <div className="typing-dot"></div>
+          <div className="typing-dot"></div>
+        </div>
+        <span className="text-text-muted text-sm ml-2">AI is thinking...</span>
       </div>
-      <div className="typing-dots">
-        <div className="typing-dot"></div>
-        <div className="typing-dot"></div>
-        <div className="typing-dot"></div>
-      </div>
-      <span className="text-text-muted text-sm ml-2">
-        {modelSelection?.selectedModels?.length &&
-        modelSelection.selectedModels.length > 1
-          ? `${modelSelection.selectedModels.length} AI models are thinking...`
-          : "AI is thinking..."}
-      </span>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="modern-chat-container">

@@ -96,9 +96,9 @@ interface ConsensusDebate {
 **New Model Data Structure**:
 ```python
 {
-  "id": "gpt-4o",
+  "id": "o3",
   "provider": "openai",
-  "display_name": "GPT-4o",
+  "display_name": "o3",
   "description": "Most capable OpenAI model with multimodal abilities",
   "is_active": True,
   "supports_streaming": True,

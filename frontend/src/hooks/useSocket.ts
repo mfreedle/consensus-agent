@@ -124,11 +124,12 @@ export const useSocket = ({
     }
   }, [isAuthenticated, sessionId]);
   // Send message function
-  const sendMessage = useCallback((message: string, attachedFileIds?: string[]) => {
+  const sendMessage = useCallback((message: string, attachedFileIds?: string[], useConsensus?: boolean, selectedModels?: string[]) => {
     if (isAuthenticated && token && socketRef.current.isSocketConnected()) {
       console.log(`Sending message via Socket.IO: ${message}`, 
-        attachedFileIds?.length ? `with ${attachedFileIds.length} attached files` : "");
-      socketRef.current.sendMessage(sessionId || null, message, token, attachedFileIds);
+        attachedFileIds?.length ? `with ${attachedFileIds.length} attached files` : "",
+        `use_consensus: ${useConsensus}, models: ${selectedModels?.join(', ')}`);
+      socketRef.current.sendMessage(sessionId || null, message, token, attachedFileIds, useConsensus, selectedModels);
       return true;
     } else {
       console.warn('Cannot send message: not connected or missing credentials');

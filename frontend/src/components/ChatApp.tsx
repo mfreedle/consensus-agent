@@ -52,10 +52,16 @@ const ChatApp: React.FC = () => {
     []
   );
 
+  // Handle session selection with cleanup
+  const handleSessionSelect = useCallback((sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    setSocketMessages([]); // Clear socket messages when switching sessions
+  }, []);
+
   // Handle new chat creation
   const handleNewChat = useCallback(() => {
     setCurrentSessionId(null);
-    setSocketMessages([]);
+    setSocketMessages([]); // Clear socket messages for new chat
   }, []);
 
   // Handle settings navigation
@@ -113,7 +119,7 @@ const ChatApp: React.FC = () => {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           currentSessionId={currentSessionId}
-          onSessionSelect={setCurrentSessionId}
+          onSessionSelect={handleSessionSelect}
           onNewChat={handleNewChat}
           onLogout={logout}
           onSettings={handleSettings}

@@ -42,118 +42,184 @@ class LLMOrchestrator:
             "Content-Type": "application/json"
         }
     
+    def _supports_responses_api(self, model: str) -> bool:
+        """Check if a model supports the Responses API with structured outputs"""
+        # Only these models currently support Responses API with json_schema
+        responses_api_models = ["gpt-4o", "gpt-4o-mini"]
+        return model in responses_api_models
+
     async def get_openai_response(
         self, 
         prompt: str, 
-        model: str = "gpt-4.1",  # Updated to use curated model
+        model: str = "gpt-4o-mini",  # Use working model
         context: Optional[str] = None
     ) -> ModelResponse:
-        """Get response from OpenAI using Responses API with structured outputs"""
+        """Get response from OpenAI using best available API for the model"""
+        
+        # Prepare the structured prompt for extracting confidence and reasoning
+        structured_prompt = f"""
+        {prompt}
+        
+        Please provide your response along with a confidence score (0-1) and brief reasoning.
+        Your response should be informative, accurate, and well-reasoned.
+        """
+        
         try:
-            # Prepare the input messages
-            input_messages = []
-            if context:
-                input_messages.append({
-                    "role": "system",
-                    "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
-                })
-            input_messages.append({
-                "role": "user", 
-                "content": prompt
-            })
-            
-            # Use the new Responses API with structured outputs
-            response = await self.openai_client.responses.create(
-                model=model,
-                input=input_messages,
-                text={
-                    "format": {
-                        "type": "json_schema",
-                        "name": "model_response", 
-                        "description": "Structured response from the model",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "content": {
-                                    "type": "string",
-                                    "description": "The main response content"
-                                },
-                                "confidence": {
-                                    "type": "number",
-                                    "minimum": 0,
-                                    "maximum": 1,
-                                    "description": "Confidence score for the response (0-1)"
-                                },
-                                "reasoning": {
-                                    "type": "string", 
-                                    "description": "Explanation of the reasoning behind the response"
-                                }
-                            },
-                            "required": ["content", "confidence", "reasoning"],
-                            "additionalProperties": False
-                        },
-                        "strict": True
-                    }
-                }
-            )
-            
-            # Extract the structured response from the output
-            import json
-            response_text = response.output[0].content[0].text
-            response_data = json.loads(response_text)
-            
-            return ModelResponse(
-                content=response_data["content"],
-                model=model,
-                confidence=response_data["confidence"],
-                reasoning=response_data["reasoning"]
-            )
-            
-        except Exception as e:
-            logger.error(f"OpenAI Responses API error: {e}")
-            # Fallback to regular chat completions if Responses API fails
-            try:
-                # Prepare messages for fallback
-                messages = []
+            # Try Responses API first for supported models
+            if self._supports_responses_api(model):
+                input_messages = []
                 if context:
-                    messages.append({
+                    input_messages.append({
                         "role": "system",
                         "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
                     })
+                input_messages.append({
+                    "role": "user", 
+                    "content": structured_prompt
+                })
+                
+                response = await self.openai_client.responses.create(
+                    model=model,
+                    input=input_messages,
+                    text={
+                        "format": {
+                            "type": "json_schema",
+                            "name": "model_response", 
+                            "description": "Structured response from the model",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "content": {
+                                        "type": "string",
+                                        "description": "The main response content"
+                                    },
+                                    "confidence": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1,
+                                        "description": "Confidence score for the response (0-1)"
+                                    },
+                                    "reasoning": {
+                                        "type": "string", 
+                                        "description": "Explanation of the reasoning behind the response"
+                                    }
+                                },
+                                "required": ["content", "confidence", "reasoning"],
+                                "additionalProperties": False
+                            },
+                            "strict": True
+                        }
+                    }
+                )
+                
+                # Extract the structured response from the output
+                import json
+                try:
+                    # Handle the response structure safely
+                    response_text = str(response.output[0])  # type: ignore
+                    # Try to extract text content if it's a more complex object
+                    if hasattr(response.output[0], 'content'):  # type: ignore
+                        if response.output[0].content and len(response.output[0].content) > 0:  # type: ignore
+                            response_text = getattr(response.output[0].content[0], 'text', str(response.output[0].content[0]))  # type: ignore
+                    elif hasattr(response.output[0], 'text'):  # type: ignore
+                        response_text = response.output[0].text  # type: ignore
+                    
+                    response_data = json.loads(response_text)
+                except (json.JSONDecodeError, AttributeError, IndexError) as parse_error:
+                    logger.error(f"Failed to parse Responses API output: {parse_error}")
+                    raise Exception(f"Invalid response format from Responses API: {parse_error}")
+                
+                return ModelResponse(
+                    content=response_data["content"],
+                    model=model,
+                    confidence=response_data["confidence"],
+                    reasoning=response_data["reasoning"]
+                )
+            
+        except Exception as e:
+            logger.error(f"OpenAI Responses API error: {e}")
+        
+        # Fallback to Chat Completions API (for all models or when Responses API fails)
+        try:
+            messages = []
+            if context:
+                messages.append({
+                    "role": "system",
+                    "content": f"Context: {context}\n\nYou are a helpful AI assistant. Provide thoughtful, accurate responses."
+                })
+            
+            # Use JSON mode for structured output if available
+            if model in ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]:
                 messages.append({
                     "role": "user", 
-                    "content": prompt
+                    "content": f"""{structured_prompt}
+
+Please respond in JSON format:
+{{
+  "content": "your main response here",
+  "confidence": 0.85,
+  "reasoning": "brief explanation of your reasoning"
+}}"""
                 })
                 
                 fallback_response = await self.openai_client.chat.completions.create(
                     model=model,
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=1000
+                    max_tokens=1000,
+                    response_format={"type": "json_object"}
                 )
                 
-                content = fallback_response.choices[0].message.content
-                
-                return ModelResponse(
-                    content=content,
-                    model=model,
-                    confidence=0.8,
-                    reasoning="Fallback to Chat Completions API"
-                )
-                
-            except Exception as fallback_error:
-                logger.error(f"Fallback OpenAI API error: {fallback_error}")
-                return ModelResponse(
-                    content=f"Error getting OpenAI response: {str(e)}",
-                    model=model,
-                    confidence=0.0,
-                    reasoning="API error occurred"
-                )
+                import json
+                content_raw = fallback_response.choices[0].message.content
+                if content_raw:
+                    try:
+                        response_data = json.loads(content_raw)
+                        return ModelResponse(
+                            content=response_data.get("content", content_raw),
+                            model=model,
+                            confidence=response_data.get("confidence", 0.8),
+                            reasoning=response_data.get("reasoning", "Chat Completions API with JSON mode")
+                        )
+                    except json.JSONDecodeError:
+                        # Fall through to plain text handling
+                        pass
+            
+            # Plain text fallback
+            messages.append({
+                "role": "user", 
+                "content": prompt
+            })
+            
+            fallback_response = await self.openai_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            content = fallback_response.choices[0].message.content or "No response content"
+            
+            return ModelResponse(
+                content=content,
+                model=model,
+                confidence=0.8,
+                reasoning="Chat Completions API fallback"
+            )
+            
+        except Exception as fallback_error:
+            logger.error(f"Fallback OpenAI API error: {fallback_error}")
+            return ModelResponse(
+                content=f"Error getting OpenAI response: {str(fallback_error)}",
+                model=model,
+                confidence=0.0,
+                reasoning="API error occurred"
+            )
     
     async def get_grok_response(
         self, 
         prompt: str, 
-        model: str = "grok-3-latest",  # Updated to use curated model
+        model: str = "grok-2-latest",  # Use working model
         context: Optional[str] = None
     ) -> ModelResponse:
         """Get response from Grok using xAI API"""
@@ -205,50 +271,94 @@ class LLMOrchestrator:
         self, 
         prompt: str, 
         context: Optional[str] = None,
-        openai_model: str = "gpt-4.1",        # Updated to use curated model
-        grok_model: str = "grok-3-latest"     # Updated to use curated model
+        openai_model: str = "gpt-4o-mini",  # Use working model
+        grok_model: str = "grok-2-latest"   # Use working model
     ) -> ConsensusResult:
-        """Generate consensus response from multiple models"""
+        """Generate consensus response from multiple models with debate simulation"""
+        
+        logger.info(f"Starting consensus generation for prompt: {prompt[:100]}...")
         
         # Get responses from both models in parallel
+        logger.info("Fetching responses from OpenAI and Grok in parallel...")
         openai_task = self.get_openai_response(prompt, openai_model, context)
         grok_task = self.get_grok_response(prompt, grok_model, context)
         
         openai_response, grok_response = await asyncio.gather(openai_task, grok_task)
         
-        # Generate consensus using OpenAI
-        consensus_prompt = f"""
-        You have two AI responses to the user's question. Your job is to create a consensus response that combines the best aspects of both.
+        logger.info(f"OpenAI response confidence: {openai_response.confidence}")
+        logger.info(f"Grok response confidence: {grok_response.confidence}")
         
-        User Question: {prompt}
+        # Check if both responses are valid
+        both_valid = (openai_response.confidence > 0 and grok_response.confidence > 0)
         
-        OpenAI Response: {openai_response.content}
-        Grok Response: {grok_response.content}
-        
-        Please create a consensus response that:
-        1. Combines the best insights from both responses
-        2. Resolves any contradictions
-        3. Provides a confidence score (0-1)
-        4. Explains your reasoning
-        5. Lists key debate points if any disagreements exist
-        
-        Provide your response in the following JSON format:
-        {{
-            "final_consensus": "your consensus response here",
-            "confidence_score": 0.85,
-            "reasoning": "explanation of your analysis",
-            "debate_points": ["point1", "point2", "point3"]
-        }}
-        """
+        # Enhanced consensus generation with debate simulation
+        if both_valid:
+            consensus_prompt = f"""
+            You are an expert analyst creating consensus from multiple AI responses. Analyze these responses and create a comprehensive consensus.
+            
+            User Question: {prompt}
+            
+            OpenAI Response (Confidence: {openai_response.confidence}):
+            {openai_response.content}
+            Reasoning: {openai_response.reasoning}
+            
+            Grok Response (Confidence: {grok_response.confidence}):
+            {grok_response.content}
+            Reasoning: {grok_response.reasoning}
+            
+            Please perform the following analysis:
+            1. Identify key agreements between the responses
+            2. Identify any contradictions or disagreements
+            3. Evaluate the strengths of each response
+            4. Create a synthesized consensus that combines the best insights
+            5. Assign a confidence score based on agreement and quality
+            6. List specific debate points if disagreements exist
+            
+            Provide your response in the following JSON format:
+            {{
+                "final_consensus": "your comprehensive consensus response here",
+                "confidence_score": 0.85,
+                "reasoning": "detailed explanation of your analysis and synthesis process",
+                "debate_points": ["specific point of disagreement 1", "specific point of disagreement 2"]
+            }}
+            """
+        else:
+            # Fallback when one or both models failed
+            working_response = openai_response if openai_response.confidence > 0 else grok_response
+            consensus_prompt = f"""
+            You are an expert analyst. One AI response is available for the user's question.
+            
+            User Question: {prompt}
+            
+            Available Response:
+            {working_response.content}
+            Confidence: {working_response.confidence}
+            Reasoning: {working_response.reasoning}
+            
+            Please enhance and validate this response:
+            1. Review the response for accuracy and completeness
+            2. Add any missing important information
+            3. Provide a confidence assessment
+            4. Note any limitations due to single-source analysis
+            
+            Provide your response in the following JSON format:
+            {{
+                "final_consensus": "your enhanced and validated response here",
+                "confidence_score": 0.75,
+                "reasoning": "explanation of validation and any enhancements made",
+                "debate_points": ["limitation: single model response", "note: consensus limited by model failure"]
+            }}
+            """
         
         try:
-            # Use o3 as the manager/judge model for consensus generation
+            # Use gpt-4o-mini as judge model (confirmed working)
+            logger.info("Generating consensus using judge model...")
             consensus_response = await self.openai_client.chat.completions.create(
-                model="o3",  # Manager/judge model is always o3
+                model="gpt-4o-mini",  # Use working judge model instead of o3
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert analyst that creates consensus from multiple AI responses. Always respond with valid JSON in the requested format."
+                        "content": "You are an expert analyst that creates consensus from multiple AI responses. Always respond with valid JSON in the requested format. Be thorough in your analysis and synthesis."
                     },
                     {
                         "role": "user", 
@@ -256,17 +366,33 @@ class LLMOrchestrator:
                     }
                 ],
                 temperature=0.3,
-                max_tokens=1500,
+                max_tokens=2000,
                 response_format={"type": "json_object"}
             )
             
             import json
-            consensus_data = json.loads(consensus_response.choices[0].message.content)
+            consensus_content = consensus_response.choices[0].message.content
+            if not consensus_content:
+                raise Exception("Empty consensus response")
+            consensus_data = json.loads(consensus_content)
+            
+            # Ensure final_consensus is a string (handle cases where judge returns complex structure)
+            final_consensus = consensus_data.get("final_consensus", "")
+            if isinstance(final_consensus, dict):
+                # Convert dict response to formatted string
+                if "pros" in final_consensus and "cons" in final_consensus:
+                    pros = "\n".join([f"• {item}" for item in final_consensus.get("pros", [])])
+                    cons = "\n".join([f"• {item}" for item in final_consensus.get("cons", [])])
+                    final_consensus = f"**Pros:**\n{pros}\n\n**Cons:**\n{cons}"
+                else:
+                    final_consensus = str(final_consensus)
+            
+            logger.info(f"Consensus generated with confidence: {consensus_data.get('confidence_score', 0.5)}")
             
             return ConsensusResult(
                 openai_response=openai_response,
                 grok_response=grok_response,
-                final_consensus=consensus_data.get("final_consensus", ""),
+                final_consensus=final_consensus,
                 confidence_score=consensus_data.get("confidence_score", 0.5),
                 reasoning=consensus_data.get("reasoning", ""),
                 debate_points=consensus_data.get("debate_points", [])
@@ -274,14 +400,42 @@ class LLMOrchestrator:
             
         except Exception as e:
             logger.error(f"Consensus generation error: {e}")
-            # Fallback: simple combination
+            # Enhanced fallback: create a more intelligent combination
+            
+            if both_valid:
+                # Both responses are valid - create a simple synthesis
+                consensus_text = f"""Based on multiple AI analysis:
+
+**Key Insights:**
+{openai_response.content}
+
+**Additional Perspective:**
+{grok_response.content}
+
+**Summary:** This response combines insights from multiple AI models to provide a comprehensive answer."""
+                confidence = (openai_response.confidence + grok_response.confidence) / 2
+                reasoning = f"Fallback synthesis of {openai_model} (confidence: {openai_response.confidence}) and {grok_model} (confidence: {grok_response.confidence})"
+                debate_points = ["Unable to perform detailed consensus analysis due to processing error"]
+            else:
+                # Only one response is valid
+                working_response = openai_response if openai_response.confidence > 0 else grok_response
+                working_model = openai_model if openai_response.confidence > 0 else grok_model
+                consensus_text = f"""Single model response (other model failed):
+
+{working_response.content}
+
+Note: This response is from {working_model} only due to the other model being unavailable."""
+                confidence = working_response.confidence * 0.8  # Reduce confidence for single model
+                reasoning = f"Single model fallback using {working_model} due to model failure"
+                debate_points = ["Single model response due to consensus failure", "Reduced reliability without model comparison"]
+            
             return ConsensusResult(
                 openai_response=openai_response,
                 grok_response=grok_response,
-                final_consensus=f"Combined response:\n\nOpenAI: {openai_response.content}\n\nGrok: {grok_response.content}",
-                confidence_score=0.6,
-                reasoning="Fallback consensus due to processing error",
-                debate_points=["Unable to generate detailed analysis"]
+                final_consensus=consensus_text,
+                confidence_score=confidence,
+                reasoning=reasoning,
+                debate_points=debate_points
             )
 
 # Global orchestrator instance

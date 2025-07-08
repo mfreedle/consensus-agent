@@ -81,13 +81,15 @@ class SocketService {
     }
   }
 
-  sendMessage(sessionId: string | null, message: string, token: string, attachedFileIds?: string[]): void {
+  sendMessage(sessionId: string | null, message: string, token: string, attachedFileIds?: string[], useConsensus?: boolean, selectedModels?: string[]): void {
     if (this.socket && this.isConnected) {
       this.socket.emit('send_message', {
         session_id: sessionId,
         message,
         token,
         attached_file_ids: attachedFileIds || [],
+        use_consensus: useConsensus,
+        selected_models: selectedModels || [],
       });
     }
   }

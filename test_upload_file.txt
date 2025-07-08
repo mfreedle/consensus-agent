@@ -1,0 +1,12 @@
+Test File for Consensus Agent Upload
+
+This is a test document to verify the file upload functionality in the Consensus Agent application.
+
+Content includes:
+- Testing file upload workflow
+- Verifying file processing capabilities
+- Checking AI model integration with uploaded documents
+
+Test data: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+End of test file.
