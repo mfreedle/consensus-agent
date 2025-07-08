@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { socketService } from '../services/socket';
-import { SocketMessage, SocketError } from '../types';
+import { SocketMessage, SocketError, ProcessingStatus } from '../types';
 
 interface UseSocketProps {
   isAuthenticated: boolean;
@@ -9,6 +9,7 @@ interface UseSocketProps {
   onNewMessage?: (message: SocketMessage) => void;
   onError?: (error: SocketError) => void;
   onSessionCreated?: (data: { session_id: number; title: string }) => void;
+  onProcessingStatus?: (status: ProcessingStatus) => void;
 }
 
 export const useSocket = ({
@@ -18,6 +19,7 @@ export const useSocket = ({
   onNewMessage,
   onError,
   onSessionCreated,
+  onProcessingStatus,
 }: UseSocketProps) => {
   const socketRef = useRef(socketService);
   const currentSessionRef = useRef<string | null>(null);
@@ -74,6 +76,11 @@ export const useSocket = ({
         socketInstance.onSessionCreated(onSessionCreated);
       }
 
+      // Set up processing status listener
+      if (onProcessingStatus) {
+        socketInstance.onProcessingStatus(onProcessingStatus);
+      }
+
       return () => {
         console.log('Cleaning up Socket.IO listeners...');
         socketInstance.removeAllListeners();
@@ -105,8 +112,11 @@ export const useSocket = ({
       if (onSessionCreated) {
         socketInstance.onSessionCreated(onSessionCreated);
       }
+      if (onProcessingStatus) {
+        socketInstance.onProcessingStatus(onProcessingStatus);
+      }
     }
-  }, [onNewMessage, onError, onSessionCreated]);
+  }, [onNewMessage, onError, onSessionCreated, onProcessingStatus]);
 
   // Join session room when session changes
   useEffect(() => {

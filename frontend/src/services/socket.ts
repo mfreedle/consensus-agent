@@ -1,21 +1,10 @@
 import { io, Socket } from 'socket.io-client';
+import { SocketMessage, SocketError, ProcessingStatus } from '../types';
 
 // Use environment variable or current domain for socket connection
 const SOCKET_URL = process.env.REACT_APP_API_URL 
   ? process.env.REACT_APP_API_URL.replace('/api', '') 
   : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000');
-
-export interface SocketMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  session_id: number;
-  timestamp?: string;
-  consensus?: any; // ConsensusResponse type
-}
-
-export interface SocketError {
-  error: string;
-}
 
 class SocketService {
   private socket: Socket | null = null;
@@ -97,6 +86,12 @@ class SocketService {
   onNewMessage(callback: (message: SocketMessage) => void): void {
     if (this.socket) {
       this.socket.on('new_message', callback);
+    }
+  }
+
+  onProcessingStatus(callback: (status: ProcessingStatus) => void): void {
+    if (this.socket) {
+      this.socket.on('processing_status', callback);
     }
   }
 

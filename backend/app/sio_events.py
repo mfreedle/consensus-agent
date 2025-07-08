@@ -159,11 +159,39 @@ def register_sio_events(sio):
                         full_prompt = message + file_context
                         
                         if use_consensus:
+                            # Send initial processing status
+                            await sio.emit('processing_status', {
+                                "status": "analyzing",
+                                "message": "Analyzing your request...",
+                                "session_id": session_id
+                            }, room=str(session_id))
+                            
+                            # Send processing status
+                            await sio.emit('processing_status', {
+                                "status": "processing", 
+                                "message": f"Consulting {len(selected_models)} AI models...",
+                                "session_id": session_id
+                            }, room=str(session_id))
+                            
                             # Get consensus response from multiple models
                             consensus_result = await llm_orchestrator.generate_consensus(
                                 prompt=full_prompt,
                                 context=None
                             )
+                            
+                            # Send consensus building status
+                            await sio.emit('processing_status', {
+                                "status": "consensus",
+                                "message": "Building consensus from model responses...",
+                                "session_id": session_id
+                            }, room=str(session_id))
+                            
+                            # Send finalizing status
+                            await sio.emit('processing_status', {
+                                "status": "finalizing",
+                                "message": "Finalizing response...",
+                                "session_id": session_id
+                            }, room=str(session_id))
                             
                             # Save AI response with consensus data
                             ai_message = Message(
@@ -210,8 +238,17 @@ def register_sio_events(sio):
                             }, room=str(session_id))
                             
                         else:
-                            # Get single model response
+                            # Send processing status for single model
                             model = selected_models[0] if selected_models else "gpt-4o"
+                            model_display = model.replace("-", " ").title()
+                            
+                            await sio.emit('processing_status', {
+                                "status": "processing",
+                                "message": f"Consulting {model_display}...",
+                                "session_id": session_id
+                            }, room=str(session_id))
+                            
+                            # Get single model response
                             if model.startswith("gpt"):
                                 response = await llm_orchestrator.get_openai_response(
                                     prompt=full_prompt,

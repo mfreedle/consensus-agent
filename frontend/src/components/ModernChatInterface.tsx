@@ -17,7 +17,7 @@ import remarkGfm from "remark-gfm";
 import { ConsensusResponse } from "../services/api";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
-import { SocketMessage, ModelSelectionState } from "../types";
+import { SocketMessage, ModelSelectionState, ProcessingStatus } from "../types";
 import ConsensusDebateVisualizer from "./ConsensusDebateVisualizer";
 import ConsensusProcessingIndicator from "./ConsensusProcessingIndicator";
 import FileUploadModal from "./FileUploadModal";
@@ -34,6 +34,7 @@ interface ModernChatInterfaceProps {
   ) => boolean;
   isSocketConnected?: boolean;
   modelSelection?: ModelSelectionState;
+  processingStatus?: ProcessingStatus | null;
 }
 
 interface AttachedFile {
@@ -62,12 +63,23 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   onSendSocketMessage,
   isSocketConnected = false,
   modelSelection,
+  processingStatus,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [consensusPhase, setConsensusPhase] = useState<
     "analyzing" | "processing" | "consensus" | "finalizing"
   >("processing");
+  const [processingMessage, setProcessingMessage] =
+    useState<string>("AI is thinking...");
+
+  // Update processing state when status changes
+  useEffect(() => {
+    if (processingStatus) {
+      setConsensusPhase(processingStatus.status);
+      setProcessingMessage(processingStatus.message);
+    }
+  }, [processingStatus]);
   const [fileUploadModal, setFileUploadModal] = useState<{
     isOpen: boolean;
     mode: "attach" | "knowledge";
@@ -607,7 +619,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           </div>
           <div className="message-content">
             <ConsensusProcessingIndicator
-              message={`Consulting ${modelSelection.selectedModels.length} AI models for consensus`}
+              message={processingMessage}
               phase={consensusPhase}
             />
           </div>
@@ -626,7 +638,9 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           <div className="typing-dot"></div>
           <div className="typing-dot"></div>
         </div>
-        <span className="text-text-muted text-sm ml-2">AI is thinking...</span>
+        <span className="text-text-muted text-sm ml-2">
+          {processingMessage}
+        </span>
       </div>
     );
   };

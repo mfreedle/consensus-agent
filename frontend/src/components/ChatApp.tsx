@@ -2,7 +2,12 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { useResponsive } from "../hooks/useResponsive";
-import { SocketMessage, SocketError, ModelSelectionState } from "../types";
+import {
+  SocketMessage,
+  SocketError,
+  ProcessingStatus,
+  ModelSelectionState,
+} from "../types";
 import ModernHeader from "./ModernHeader";
 import ModernChatInterface from "./ModernChatInterface";
 import ModernSidebar from "./ModernSidebar";
@@ -17,6 +22,8 @@ const ChatApp: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [socketMessages, setSocketMessages] = useState<SocketMessage[]>([]);
+  const [processingStatus, setProcessingStatus] =
+    useState<ProcessingStatus | null>(null);
   const [currentView, setCurrentView] = useState<ViewMode>("chat");
   const [modelSelection, setModelSelection] = useState<ModelSelectionState>({
     selectedModels: ["gpt-4.1"], // Use one of our curated models
@@ -35,6 +42,11 @@ const ChatApp: React.FC = () => {
   const handleNewMessage = useCallback((message: SocketMessage) => {
     console.log("Received Socket.IO message:", message);
     setSocketMessages((prev) => [...prev, message]);
+
+    // Clear processing status when we receive a response
+    if (message.role === "assistant") {
+      setProcessingStatus(null);
+    }
   }, []);
 
   // Handle Socket.IO errors
@@ -50,6 +62,18 @@ const ChatApp: React.FC = () => {
       setCurrentSessionId(data.session_id.toString());
     },
     []
+  );
+
+  // Handle processing status updates
+  const handleProcessingStatus = useCallback(
+    (status: ProcessingStatus) => {
+      console.log("Processing status:", status);
+      // Update status for the current session
+      if (status.session_id.toString() === currentSessionId) {
+        setProcessingStatus(status);
+      }
+    },
+    [currentSessionId]
   );
 
   // Handle session selection with cleanup
@@ -83,6 +107,7 @@ const ChatApp: React.FC = () => {
       onNewMessage: handleNewMessage,
       onError: handleSocketError,
       onSessionCreated: handleSessionCreated,
+      onProcessingStatus: handleProcessingStatus,
     });
 
   const isSocketConnected = getIsConnected();
@@ -149,6 +174,7 @@ const ChatApp: React.FC = () => {
               onSendSocketMessage={sendSocketMessage}
               isSocketConnected={isSocketConnected}
               modelSelection={modelSelection}
+              processingStatus={processingStatus}
             />
           ) : (
             <AdminPanel onBack={handleBackToChat} />

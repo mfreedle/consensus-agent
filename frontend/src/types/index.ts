@@ -19,6 +19,13 @@ export interface SocketError {
   error: string;
 }
 
+export interface ProcessingStatus {
+  status: 'analyzing' | 'processing' | 'consensus' | 'finalizing';
+  message: string;
+  session_id: number | string;
+  progress?: number; // 0-100 for determinate progress
+}
+
 export interface SocketJoinData {
   session_id: string;
 }
