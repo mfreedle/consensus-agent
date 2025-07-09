@@ -166,7 +166,7 @@ Please respond in JSON format:
                     model=model,
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=1000,
+                    max_tokens=2000,  # Increased for better responses
                     response_format={"type": "json_object"}
                 )
                 
@@ -195,7 +195,7 @@ Please respond in JSON format:
                 model=model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=1000
+                max_tokens=2000  # Increased for better responses
             )
             
             content = fallback_response.choices[0].message.content or "No response content"
@@ -240,7 +240,8 @@ Please respond in JSON format:
                         "model": model,
                         "messages": messages,
                         "stream": False,
-                        "temperature": 0.7
+                        "temperature": 0.7,
+                        "max_tokens": 2000  # Increased for better responses
                     },
                     timeout=30.0
                 )

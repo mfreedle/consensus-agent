@@ -14,6 +14,57 @@ def register_sio_events(sio):
     # Initialize LLM orchestrator
     llm_orchestrator = LLMOrchestrator()
     
+    async def build_conversation_context(db, session_id, max_messages: int = 6) -> str:
+        """Build conversation context from recent messages in the session"""
+        try:
+            # Ensure session_id is an integer
+            if hasattr(session_id, '__int__'):
+                actual_id = int(session_id)
+            elif isinstance(session_id, int):
+                actual_id = session_id
+            else:
+                actual_id = int(str(session_id))
+            
+            # Get recent messages from the session (excluding the current message being processed)
+            messages_stmt = select(Message).where(
+                Message.session_id == actual_id
+            ).order_by(Message.created_at.desc()).limit(max_messages)
+            
+            messages_result = await db.execute(messages_stmt)
+            messages = list(messages_result.scalars().all())
+            
+            if not messages:
+                return ""
+            
+            # Reverse to get chronological order
+            messages.reverse()
+            
+            # Build context string with smart truncation
+            context_parts = ["Previous conversation context:"]
+            total_length = 0
+            max_context_length = 2000  # Reasonable limit to prevent token overflow
+            
+            for msg in messages:
+                role_label = "User" if msg.role == "user" else "Assistant"
+                # Truncate individual messages and calculate total length
+                content = msg.content[:300] + "..." if len(msg.content) > 300 else msg.content
+                message_part = f"{role_label}: {content}"
+                
+                # Check if adding this message would exceed our limit
+                if total_length + len(message_part) > max_context_length:
+                    break
+                    
+                context_parts.append(message_part)
+                total_length += len(message_part)
+            
+            context = "\n".join(context_parts)
+            logger.info(f"Built conversation context with {len(context_parts)-1} messages, {total_length} chars")
+            return context
+            
+        except Exception as e:
+            logger.error(f"Error building conversation context: {e}")
+            return ""
+    
     @sio.on('connect')
     async def connect(sid, environ):
         print(f"Socket connected: {sid}")
@@ -156,6 +207,11 @@ def register_sio_events(sio):
                     
                     # Generate AI response
                     try:
+                        # Build conversation context from previous messages  
+                        # Get the actual session ID value
+                        actual_session_id = session_id if hasattr(session_id, '__int__') or isinstance(session_id, int) else int(str(session_id))
+                        conversation_context = await build_conversation_context(db, actual_session_id)
+                        
                         # Combine user message with file context
                         full_prompt = message + file_context
                         
@@ -177,10 +233,10 @@ def register_sio_events(sio):
                                 "session_id": session_id
                             }, room=str(session_id))
                             
-                            # Get consensus response from multiple models
+                            # Get consensus response from multiple models with conversation context
                             consensus_result = await llm_orchestrator.generate_consensus(
                                 prompt=full_prompt,
-                                context=None
+                                context=conversation_context
                             )
                             
                             # Debug: Log the consensus result content
@@ -272,16 +328,18 @@ This response synthesizes insights from multiple AI perspectives to provide a co
                             # Small delay to show status
                             await asyncio.sleep(0.3)
                             
-                            # Get single model response
+                            # Get single model response with conversation context
                             if model.startswith("gpt"):
                                 response = await llm_orchestrator.get_openai_response(
                                     prompt=full_prompt,
-                                    model=model
+                                    model=model,
+                                    context=conversation_context
                                 )
                             else:
                                 response = await llm_orchestrator.get_grok_response(
                                     prompt=full_prompt,
-                                    model=model
+                                    model=model,
+                                    context=conversation_context
                                 )
                             
                             # Save AI response for single model
@@ -307,12 +365,14 @@ This response synthesizes insights from multiple AI perspectives to provide a co
                         
                     except Exception as llm_error:
                         logger.error(f"Error generating AI response: {llm_error}")
+                        logger.error(f"Session ID: {session_id}, Message length: {len(message)}")
+                        logger.error(f"Use consensus: {use_consensus}, Models: {selected_models}")
                         
                         # Save error message
                         error_message = Message(
                             session_id=session_id,
                             role="assistant",
-                            content=f"I'm sorry, I encountered an error while processing your request: {str(llm_error)}",
+                            content="I'm sorry, I encountered an error while processing your request. Please try again.",
                             model_used="error"
                         )
                         db.add(error_message)
