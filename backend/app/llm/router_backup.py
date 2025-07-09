@@ -19,7 +19,7 @@ class ProviderConfigRequest(BaseModel):
     organization_id: Optional[str] = None
     is_active: bool = True
     max_requests_per_minute: int = 60
-    max_tokens_per_request: int = 4000
+    max_tokens_per_request: int = 64000
 
 
 class ModelRequest(BaseModel):

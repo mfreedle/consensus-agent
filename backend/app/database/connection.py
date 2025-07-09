@@ -100,10 +100,10 @@ async def seed_models():
         models = [
             LLMModel(
                 provider="openai",
-                model_id="gpt-4o",
-                display_name="GPT-4o",
+                model_id="gpt-4.1",
+                display_name="GPT-4.1",
                 description="Most capable OpenAI model for complex tasks",
-                max_tokens=128000,
+                max_tokens=1047576,
                 supports_streaming=True,
                 supports_function_calling=True,
                 supports_vision=True,
@@ -111,10 +111,10 @@ async def seed_models():
             ),
             LLMModel(
                 provider="openai",
-                model_id="gpt-4o-mini",
-                display_name="GPT-4o Mini",
+                model_id="gpt-4.1-mini",
+                display_name="GPT-4.1 Mini",
                 description="Fast and efficient model for simpler tasks",
-                max_tokens=128000,
+                max_tokens=1047576,
                 supports_streaming=True,
                 supports_function_calling=True,
                 supports_vision=True,
@@ -122,8 +122,8 @@ async def seed_models():
             ),
             LLMModel(
                 provider="grok",
-                model_id="grok-beta",
-                display_name="Grok Beta",
+                model_id="grok-3-latest",
+                display_name="Grok 3",
                 description="xAI's powerful language model",
                 max_tokens=131072,
                 supports_streaming=True,

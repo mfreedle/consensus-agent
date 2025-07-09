@@ -30,7 +30,7 @@ const defaultProviders: ProviderConfig[] = [
     api_base_url: "https://api.openai.com/v1",
     is_active: true,
     max_requests_per_minute: 60,
-    max_tokens_per_request: 4000,
+    max_tokens_per_request: 64000,
     has_api_key: false,
   },
   {
@@ -39,7 +39,7 @@ const defaultProviders: ProviderConfig[] = [
     api_base_url: "https://api.x.ai/v1",
     is_active: true,
     max_requests_per_minute: 60,
-    max_tokens_per_request: 4000,
+    max_tokens_per_request: 64000,
     has_api_key: false,
   },
   {
@@ -48,7 +48,7 @@ const defaultProviders: ProviderConfig[] = [
     api_base_url: "https://api.deepseek.com/v1",
     is_active: true,
     max_requests_per_minute: 60,
-    max_tokens_per_request: 4000,
+    max_tokens_per_request: 64000,
     has_api_key: false,
   },
   {
@@ -57,7 +57,7 @@ const defaultProviders: ProviderConfig[] = [
     api_base_url: "https://api.anthropic.com/v1",
     is_active: true,
     max_requests_per_minute: 60,
-    max_tokens_per_request: 4000,
+    max_tokens_per_request: 64000,
     has_api_key: false,
   },
 ];
@@ -383,7 +383,7 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
                       </label>
                       <input
                         type="number"
-                        value={config.max_tokens_per_request || 4000}
+                        value={config.max_tokens_per_request || 64000}
                         onChange={(e) =>
                           handleFormChange(
                             provider.provider,

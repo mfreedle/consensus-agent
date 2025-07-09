@@ -150,7 +150,7 @@ class LLMOrchestrator:
                         "content": full_input
                     }
                 ],
-                "max_tokens": 1000,
+                "max_tokens": 64000,  # Adjusted for Grok's capabilities
                 "temperature": 0.7
             }
             

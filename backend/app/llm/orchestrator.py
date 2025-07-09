@@ -45,13 +45,13 @@ class LLMOrchestrator:
     def _supports_responses_api(self, model: str) -> bool:
         """Check if a model supports the Responses API with structured outputs"""
         # Only these models currently support Responses API with json_schema
-        responses_api_models = ["gpt-4o", "gpt-4o-mini"]
+        responses_api_models = ["gpt-4.1", "gpt-4.1-mini"]
         return model in responses_api_models
 
     async def get_openai_response(
         self, 
-        prompt: str, 
-        model: str = "gpt-4o-mini",  # Use working model
+        prompt: str,
+        model: str = "gpt-4.1",  # Use working model
         context: Optional[str] = None
     ) -> ModelResponse:
         """Get response from OpenAI using best available API for the model"""
@@ -166,7 +166,7 @@ Please respond in JSON format:
                     model=model,
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=2000,  # Increased for better responses
+                    max_tokens=64000,  # Increased for better responses
                     response_format={"type": "json_object"}
                 )
                 
@@ -195,7 +195,7 @@ Please respond in JSON format:
                 model=model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=2000  # Increased for better responses
+                max_tokens=64000  # Increased for better responses
             )
             
             content = fallback_response.choices[0].message.content or "No response content"
@@ -218,8 +218,8 @@ Please respond in JSON format:
     
     async def get_grok_response(
         self, 
-        prompt: str, 
-        model: str = "grok-2-latest",  # Use working model
+        prompt: str,
+        model: str = "grok-3-latest",  # Use working model
         context: Optional[str] = None
     ) -> ModelResponse:
         """Get response from Grok using xAI API"""
@@ -241,7 +241,7 @@ Please respond in JSON format:
                         "messages": messages,
                         "stream": False,
                         "temperature": 0.7,
-                        "max_tokens": 2000  # Increased for better responses
+                        "max_tokens": 64000  # Increased for better responses
                     },
                     timeout=30.0
                 )
@@ -270,10 +270,10 @@ Please respond in JSON format:
     
     async def generate_consensus(
         self, 
-        prompt: str, 
+        prompt: str,
         context: Optional[str] = None,
-        openai_model: str = "gpt-4o-mini",  # Use working model
-        grok_model: str = "grok-2-latest"   # Use working model
+        openai_model: str = "gpt-4.1",  # Use working model
+        grok_model: str = "grok-3-latest"   # Use working model
     ) -> ConsensusResult:
         """Generate consensus response from multiple models with debate simulation"""
         
@@ -352,10 +352,10 @@ Please respond in JSON format:
             """
         
         try:
-            # Use gpt-4o-mini as judge model (confirmed working)
+            # Use gpt-4.1-mini as judge model (confirmed working)
             logger.info("Generating consensus using judge model...")
             consensus_response = await self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # Use working judge model instead of o3
+                model="gpt-4.1-mini",  # Use working judge model instead of o3
                 messages=[
                     {
                         "role": "system",
