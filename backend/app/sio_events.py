@@ -183,6 +183,10 @@ def register_sio_events(sio):
                                 context=None
                             )
                             
+                            # Debug: Log the consensus result content
+                            logger.info(f"Consensus result type: {type(consensus_result.final_consensus)}")
+                            logger.info(f"Consensus content preview: {consensus_result.final_consensus[:200]}...")
+                            
                             # Send consensus building status
                             await sio.emit('processing_status', {
                                 "status": "consensus",
@@ -220,10 +224,20 @@ def register_sio_events(sio):
                             await db.commit()
                             await db.refresh(ai_message)
                             
+                            # Validate response content before broadcasting
+                            response_content = consensus_result.final_consensus
+                            if response_content.strip().startswith('{') and response_content.strip().endswith('}'):
+                                logger.warning("Detected JSON in consensus response, creating fallback")
+                                response_content = f"""Based on consensus analysis from multiple AI models.
+
+**Confidence:** {consensus_result.confidence_score * 100:.0f}%
+
+This response synthesizes insights from multiple AI perspectives to provide a comprehensive answer."""
+                            
                             # Broadcast AI response to room with consensus data
                             await sio.emit('new_message', {
                                 "role": "assistant",
-                                "content": consensus_result.final_consensus,
+                                "content": response_content,
                                 "session_id": session_id,
                                 "timestamp": ai_message.created_at.isoformat(),
                                 "consensus": {

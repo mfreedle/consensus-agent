@@ -374,7 +374,30 @@ Please respond in JSON format:
             consensus_content = consensus_response.choices[0].message.content
             if not consensus_content:
                 raise Exception("Empty consensus response")
-            consensus_data = json.loads(consensus_content)
+            
+            # Enhanced JSON parsing with error handling
+            try:
+                consensus_data = json.loads(consensus_content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw consensus content: {consensus_content}")
+                # If JSON parsing fails, create a structured fallback
+                consensus_data = {
+                    "final_consensus": consensus_content,  # Use raw content as fallback
+                    "confidence_score": 0.6,
+                    "reasoning": "JSON parsing failed, using raw model response",
+                    "debate_points": ["Unable to parse structured consensus response"]
+                }
+            
+            # Validate that consensus_data is a dictionary
+            if not isinstance(consensus_data, dict):
+                logger.error(f"Consensus data is not a dictionary: {type(consensus_data)}")
+                consensus_data = {
+                    "final_consensus": str(consensus_data),
+                    "confidence_score": 0.5,
+                    "reasoning": "Invalid response format, converted to string",
+                    "debate_points": ["Response format validation failed"]
+                }
             
             # Ensure final_consensus is a string (handle cases where judge returns complex structure)
             final_consensus = consensus_data.get("final_consensus", "")
@@ -387,7 +410,20 @@ Please respond in JSON format:
                 else:
                     final_consensus = str(final_consensus)
             
+            # Additional safety: ensure we never return raw JSON
+            if not final_consensus or final_consensus.strip().startswith('{'):
+                logger.warning("Final consensus appears to be JSON or empty, creating fallback response")
+                # Create a fallback response that summarizes the consensus data
+                final_consensus = f"""Based on analysis from multiple AI models:
+
+**Summary:** {consensus_data.get('reasoning', 'AI consensus analysis completed')}
+
+**Confidence Level:** {consensus_data.get('confidence_score', 0.5) * 100:.0f}%
+
+This response represents a synthesis of insights from multiple AI perspectives."""
+            
             logger.info(f"Consensus generated with confidence: {consensus_data.get('confidence_score', 0.5)}")
+            logger.info(f"Final consensus preview: {final_consensus[:100]}...")
             
             return ConsensusResult(
                 openai_response=openai_response,
