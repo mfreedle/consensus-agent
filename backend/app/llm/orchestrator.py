@@ -60,15 +60,14 @@ class LLMOrchestrator:
         structured_prompt = f"""
         {prompt}
         
-        Please provide your response in well-formatted Markdown with proper:
-        - Headers (# ## ###) for section organization
-        - Lists with bullet points or numbers where appropriate
-        - Code blocks with ```language syntax for any code examples
-        - **Bold** and *italic* text for emphasis
-        - > Blockquotes for important notes or quotes
-        - Line breaks and paragraphs for readability
+        Please provide a clear, helpful response. Use markdown formatting naturally where it enhances readability:
+        - Use headers only if you're organizing complex information into sections
+        - Use lists only when presenting multiple related items or steps
+        - Use code blocks only when showing actual code, commands, or structured data
+        - Use emphasis (bold/italic) only for genuinely important points
+        - Use blockquotes only when quoting sources or highlighting key information
         
-        Your response should be informative, accurate, and well-reasoned.
+        Focus on being natural and conversational while remaining informative and accurate.
         """
         
         try:
@@ -244,9 +243,14 @@ Please respond in JSON format:
             formatted_prompt = f"""
             {prompt}
             
-            Please format your response in clear, well-structured Markdown for easy reading.
-            Use appropriate headers, lists, code blocks, and emphasis where helpful.
-            Provide detailed, informative responses with good organization.
+            Please provide a helpful, natural response. Use markdown formatting only when it genuinely improves clarity:
+            - Headers for organizing complex topics into clear sections
+            - Lists when presenting multiple related items or sequential steps  
+            - Code blocks when showing actual code, commands, or technical examples
+            - Tables when comparing data or presenting structured information
+            - Emphasis when highlighting truly important points
+            
+            Be conversational and focus on directly answering the question rather than forcing formatting.
             """
             
             messages.append({"role": "user", "content": formatted_prompt})
@@ -372,10 +376,10 @@ Please respond in JSON format:
             """
         
         try:
-            # Use gpt-4.1-mini as judge model (confirmed working)
-            logger.info("Generating consensus using judge model...")
+            # Use o3 as judge model for superior reasoning and consensus analysis
+            logger.info("Generating consensus using o3 judge model...")
             consensus_response = await self.openai_client.chat.completions.create(
-                model="gpt-4.1-mini",  # Use working judge model instead of o3
+                model="o3",  # Use o3 for best reasoning and synthesis capabilities
                 messages=[
                     {
                         "role": "system",
