@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import MarkdownRenderer from "./MarkdownRenderer";
 import {
   Bot,
   Brain,
@@ -202,9 +203,11 @@ const ConsensusDebateVisualizer: React.FC<ConsensusDebateVisualizerProps> = ({
                         </div>
                       </div>
 
-                      <div className="text-sm text-gray-300 mb-2">
-                        {step.content}
-                      </div>
+                      <MarkdownRenderer
+                        content={step.content}
+                        className="text-gray-300 mb-2"
+                        size="sm"
+                      />
 
                       {step.reasoning && (
                         <div className="text-xs text-gray-400 italic">
@@ -263,9 +266,11 @@ const ConsensusDebateVisualizer: React.FC<ConsensusDebateVisualizerProps> = ({
                       %
                     </div>
                   </div>
-                  <div className="text-sm text-gray-300 mb-2">
-                    {consensusData.openai_response.content}
-                  </div>
+                  <MarkdownRenderer
+                    content={consensusData.openai_response.content}
+                    className="text-gray-300 mb-2"
+                    size="sm"
+                  />
                   <div className="text-xs text-gray-400 italic">
                     {consensusData.openai_response.reasoning}
                   </div>
@@ -290,9 +295,11 @@ const ConsensusDebateVisualizer: React.FC<ConsensusDebateVisualizerProps> = ({
                       %
                     </div>
                   </div>
-                  <div className="text-sm text-gray-300 mb-2">
-                    {consensusData.grok_response.content}
-                  </div>
+                  <MarkdownRenderer
+                    content={consensusData.grok_response.content}
+                    className="text-gray-300 mb-2"
+                    size="sm"
+                  />
                   <div className="text-xs text-gray-400 italic">
                     {consensusData.grok_response.reasoning}
                   </div>
@@ -317,9 +324,11 @@ const ConsensusDebateVisualizer: React.FC<ConsensusDebateVisualizerProps> = ({
                   </div>
                 </div>
 
-                <div className="text-gray-300 mb-3">
-                  {consensusData.final_consensus}
-                </div>
+                <MarkdownRenderer
+                  content={consensusData.final_consensus}
+                  className="text-gray-300 mb-3"
+                  size="sm"
+                />
 
                 <div className="text-sm text-gray-400 mb-3">
                   <strong>Reasoning:</strong> {consensusData.reasoning}

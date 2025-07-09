@@ -1816,8 +1816,8 @@ code {
 .message-text h6 {
   font-weight: 600;
   line-height: 1.3;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .message-text h1:first-child,
@@ -1853,8 +1853,8 @@ code {
 }
 
 .message-text p {
-  margin-bottom: 1rem;
-  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
 }
 
 .message-text p:last-child {
@@ -1863,7 +1863,7 @@ code {
 
 .message-text ul,
 .message-text ol {
-  margin: 1rem 0;
+  margin: 0.75rem 0;
   padding-left: 2rem;
   list-style-position: outside;
 }

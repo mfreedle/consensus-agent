@@ -14,7 +14,7 @@ def register_sio_events(sio):
     # Initialize LLM orchestrator
     llm_orchestrator = LLMOrchestrator()
     
-    async def build_conversation_context(db, session_id, max_messages: int = 6) -> str:
+    async def build_conversation_context(db, session_id, max_messages: int = 25) -> str:
         """Build conversation context from recent messages in the session"""
         try:
             # Ensure session_id is an integer
@@ -42,12 +42,12 @@ def register_sio_events(sio):
             # Build context string with smart truncation
             context_parts = ["Previous conversation context:"]
             total_length = 0
-            max_context_length = 2000  # Reasonable limit to prevent token overflow
+            max_context_length = 50000  # Increased to 50k chars (~12.5k tokens) - still very conservative
             
             for msg in messages:
                 role_label = "User" if msg.role == "user" else "Assistant"
-                # Truncate individual messages and calculate total length
-                content = msg.content[:300] + "..." if len(msg.content) > 300 else msg.content
+                # Allow much longer individual messages for better context preservation
+                content = msg.content[:2000] + "..." if len(msg.content) > 2000 else msg.content
                 message_part = f"{role_label}: {content}"
                 
                 # Check if adding this message would exceed our limit
