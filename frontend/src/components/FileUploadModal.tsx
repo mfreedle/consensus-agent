@@ -26,9 +26,9 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
   const handleFileAttached = (file: File) => {
     onFileAttached?.(file);
-    // For attach mode, close modal after attaching
+    // For attach mode, close modal immediately after attaching
     if (mode === "attach") {
-      setTimeout(() => onClose(), 1000);
+      onClose();
     }
   };
 

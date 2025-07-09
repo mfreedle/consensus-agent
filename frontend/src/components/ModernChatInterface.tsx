@@ -752,6 +752,36 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             )}
           </div>
 
+          {/* Attached Files Display - Moved above input */}
+          {attachedFiles.length > 0 && (
+            <div className="attached-files">
+              <div className="attached-files-label">
+                Attached files ({attachedFiles.length}):
+              </div>
+              <div className="attached-files-list">
+                {attachedFiles.map((attachedFile, index) => (
+                  <div key={index} className="attached-file-item">
+                    <Paperclip className="w-4 h-4 text-primary-cyan" />
+                    <span className="attached-file-name">
+                      {attachedFile.file.name}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setAttachedFiles((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        )
+                      }
+                      className="remove-attached-file"
+                      aria-label={`Remove ${attachedFile.file.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Input Field */}
           <form onSubmit={handleSubmit(onSubmit)} className="relative">
             <div className="modern-input-field">
@@ -803,36 +833,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             )}
           </form>
         </div>
-
-        {/* Attached Files Display */}
-        {attachedFiles.length > 0 && (
-          <div className="attached-files">
-            <div className="attached-files-label">
-              Attached files ({attachedFiles.length}):
-            </div>
-            <div className="attached-files-list">
-              {attachedFiles.map((attachedFile, index) => (
-                <div key={index} className="attached-file-item">
-                  <Paperclip className="w-4 h-4 text-primary-cyan" />
-                  <span className="attached-file-name">
-                    {attachedFile.file.name}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setAttachedFiles((prev) =>
-                        prev.filter((_, i) => i !== index)
-                      )
-                    }
-                    className="remove-attached-file"
-                    aria-label={`Remove ${attachedFile.file.name}`}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* File Upload Modal */}

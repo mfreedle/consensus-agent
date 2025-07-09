@@ -717,11 +717,12 @@ code {
 
 /* Attached Files Display */
 .attached-files {
-  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
   padding: 0.75rem;
-  background: var(--bg-dark-secondary);
+  background: var(--bg-card);
   border: 1px solid var(--primary-cyan);
   border-radius: var(--border-radius-md);
+  position: relative;
 }
 
 .attached-files-label {
@@ -729,6 +730,14 @@ code {
   font-weight: 600;
   color: var(--primary-cyan);
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.attached-files-label::before {
+  content: "📎";
+  font-size: 0.875rem;
 }
 
 .attached-files-list {
@@ -741,40 +750,49 @@ code {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  background: var(--bg-card);
-  border: 1px solid var(--bg-hover);
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-dark-secondary);
+  border: 1px solid var(--primary-cyan);
   border-radius: var(--border-radius-sm);
   font-size: 0.875rem;
+  transition: all var(--transition-fast);
+}
+
+.attached-file-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-teal);
 }
 
 .attached-file-name {
   color: var(--text-primary);
-  max-width: 150px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .remove-attached-file {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border: none;
-  background: var(--bg-hover);
+  background: rgba(239, 68, 68, 0.1);
   border-radius: 50%;
-  color: var(--text-muted);
+  color: var(--error);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1;
   transition: all var(--transition-fast);
+  font-weight: bold;
 }
 
 .remove-attached-file:hover {
   background: var(--error);
   color: white;
+  transform: scale(1.1);
 }
 
 /* Responsive Layout System */
