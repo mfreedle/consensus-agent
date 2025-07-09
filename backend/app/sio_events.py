@@ -178,7 +178,7 @@ def register_sio_events(sio):
                     }, room=str(session_id))
                     
                     # Get attached files context if any
-                    file_context = ""
+                    attached_files_context = ""
                     if attached_file_ids:
                         print(f"DEBUG Socket.IO: Processing {len(attached_file_ids)} attached file IDs: {attached_file_ids}")
                         file_ids = [int(fid) for fid in attached_file_ids]
@@ -191,19 +191,59 @@ def register_sio_events(sio):
                         
                         if files:
                             print(f"DEBUG Socket.IO: Found {len(files)} attached files")
-                            file_context = "\n\nAttached files context:\n"
+                            attached_files_context = "\n\nAttached files for this message:\n"
                             for file in files:
-                                print(f"DEBUG Socket.IO: Processing file: {file.original_filename}")
-                                file_context += f"\n--- {file.original_filename} ---\n"
+                                print(f"DEBUG Socket.IO: Processing attached file: {file.original_filename}")
+                                attached_files_context += f"\n--- {file.original_filename} ---\n"
                                 if file.extracted_text:
                                     # Limit file content to prevent context overflow
                                     content = file.extracted_text[:5000]
                                     if len(file.extracted_text) > 5000:
                                         content += "\n... (content truncated)"
-                                    file_context += content
+                                    attached_files_context += content
                                 else:
-                                    file_context += "(File not yet processed or could not extract text)"
-                                file_context += "\n"
+                                    attached_files_context += "(File not yet processed or could not extract text)"
+                                attached_files_context += "\n"
+                    
+                    # Get ALL knowledge base files for this user (for persistent context)
+                    knowledge_base_context = ""
+                    all_files_stmt = select(File).where(
+                        File.user_id == user.id,
+                        File.is_processed.is_(True),
+                        File.extracted_text.is_not(None)
+                    ).order_by(File.uploaded_at.desc())
+                    
+                    all_files_result = await db.execute(all_files_stmt)
+                    all_files = all_files_result.scalars().all()
+                    
+                    if all_files:
+                        print(f"DEBUG Socket.IO: Found {len(all_files)} knowledge base files")
+                        knowledge_base_context = "\n\nKnowledge Base Files (available for reference):\n"
+                        total_kb_length = 0
+                        max_kb_length = 15000  # Limit knowledge base context to prevent overflow
+                        
+                        for file in all_files:
+                            if file.extracted_text:
+                                # Skip files that were already included as attachments
+                                if attached_file_ids and str(file.id) in attached_file_ids:
+                                    continue
+                                    
+                                # Limit individual file content and check total length
+                                content = file.extracted_text[:3000]
+                                if len(file.extracted_text) > 3000:
+                                    content += "\n... (content truncated)"
+                                
+                                file_entry = f"\n--- {file.original_filename} ---\n{content}\n"
+                                
+                                if total_kb_length + len(file_entry) > max_kb_length:
+                                    knowledge_base_context += "\n... (additional files available but truncated to prevent context overflow)\n"
+                                    break
+                                    
+                                knowledge_base_context += file_entry
+                                total_kb_length += len(file_entry)
+                    
+                    # Combine all file contexts
+                    file_context = attached_files_context + knowledge_base_context
                     
                     # Generate AI response
                     try:
