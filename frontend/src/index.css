@@ -1816,8 +1816,8 @@ code {
 .message-text h6 {
   font-weight: 600;
   line-height: 1.3;
-  margin-top: 0.75rem;
-  margin-bottom: 0.375rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .message-text h1:first-child,
@@ -1830,18 +1830,31 @@ code {
 }
 
 .message-text h1 {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
+  border-bottom: 1px solid var(--bg-hover);
+  padding-bottom: 0.5rem;
 }
 .message-text h2 {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--bg-hover);
+  padding-bottom: 0.25rem;
 }
 .message-text h3 {
+  font-size: 1.125rem;
+}
+.message-text h4 {
   font-size: 1rem;
+}
+.message-text h5 {
+  font-size: 0.875rem;
+}
+.message-text h6 {
+  font-size: 0.75rem;
 }
 
 .message-text p {
-  margin-bottom: 0.5rem;
-  line-height: 1.6;
+  margin-bottom: 1rem;
+  line-height: 1.7;
 }
 
 .message-text p:last-child {
@@ -1850,7 +1863,7 @@ code {
 
 .message-text ul,
 .message-text ol {
-  margin: 0.5rem 0;
+  margin: 1rem 0;
   padding-left: 2rem;
   list-style-position: outside;
 }
@@ -1864,8 +1877,8 @@ code {
 }
 
 .message-text li {
-  margin-bottom: 0.125rem;
-  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
   padding-left: 0.5rem;
   display: list-item;
   text-align: left;
@@ -1885,38 +1898,58 @@ code {
 /* Nested lists */
 .message-text li > ul,
 .message-text li > ol {
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+/* Better spacing for nested list items */
+.message-text li li {
   margin-bottom: 0.25rem;
-  padding-left: 1rem;
 }
 
 .message-text code {
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 0.875rem;
-  border-radius: 3px;
+  border-radius: 4px;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--bg-hover);
 }
 
 .message-text pre {
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 0.875rem;
-  line-height: 1.4;
-  border-radius: 6px;
+  line-height: 1.5;
+  border-radius: 8px;
   overflow-x: auto;
-  margin: 0.75rem 0;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--bg-hover);
+  position: relative;
 }
 
 .message-text pre code {
   background: none !important;
   padding: 0 !important;
   border-radius: 0;
+  border: none !important;
 }
 
 .message-text blockquote {
-  margin: 0.75rem 0;
-  padding-left: 1rem;
-  border-left: 3px solid var(--text-muted);
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--primary-teal);
+  background: rgba(39, 245, 215, 0.05);
   font-style: italic;
-  opacity: 0.8;
+  border-radius: 0 4px 4px 0;
+}
+
+.message-text blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+.message-text blockquote p:last-child {
+  margin-bottom: 0;
 }
 
 .message-text strong {
@@ -1940,21 +1973,45 @@ code {
 /* Tables in messages */
 .message-text table {
   border-collapse: collapse;
-  margin: 0.75rem 0;
+  margin: 1rem 0;
   width: 100%;
   font-size: 0.875rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--bg-hover);
 }
 
 .message-text th,
 .message-text td {
   border: 1px solid var(--bg-hover);
-  padding: 0.5rem;
+  padding: 0.75rem;
   text-align: left;
 }
 
 .message-text th {
   background: var(--bg-hover);
   font-weight: 600;
+}
+
+.message-text tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Horizontal rules */
+.message-text hr {
+  border: none;
+  height: 1px;
+  background: var(--bg-hover);
+  margin: 1.5rem 0;
+}
+
+/* Better spacing for content sections */
+.message-text > *:first-child {
+  margin-top: 0;
+}
+
+.message-text > *:last-child {
+  margin-bottom: 0;
 }
 
 /* Inline code styling specific to user vs assistant messages */
@@ -2680,4 +2737,105 @@ code {
   .footer-actions .btn {
     flex: 1;
   }
+}
+
+/* Enhanced code styling classes */
+.message-text .code-block {
+  background: var(--bg-dark);
+  border: 1px solid var(--bg-hover);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.message-text .inline-code {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.875rem;
+  border: 1px solid var(--bg-hover);
+}
+
+/* User message code styling */
+.message-content.user .message-text .code-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-content.user .message-text .inline-code {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Table container for better responsive handling */
+.message-text .table-container {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border-radius: 6px;
+  border: 1px solid var(--bg-hover);
+}
+
+/* Enhanced spacing for markdown content */
+.message-text > div:first-child,
+.message-text > p:first-child,
+.message-text > h1:first-child,
+.message-text > h2:first-child,
+.message-text > h3:first-child,
+.message-text > h4:first-child,
+.message-text > h5:first-child,
+.message-text > h6:first-child {
+  margin-top: 0;
+}
+
+.message-text > div:last-child,
+.message-text > p:last-child,
+.message-text > ul:last-child,
+.message-text > ol:last-child,
+.message-text > blockquote:last-child,
+.message-text > pre:last-child,
+.message-text > table:last-child {
+  margin-bottom: 0;
+}
+
+/* Better spacing between different content types */
+.message-text h1 + p,
+.message-text h2 + p,
+.message-text h3 + p,
+.message-text h4 + p,
+.message-text h5 + p,
+.message-text h6 + p {
+  margin-top: 0.5rem;
+}
+
+.message-text p + h1,
+.message-text p + h2,
+.message-text p + h3,
+.message-text p + h4,
+.message-text p + h5,
+.message-text p + h6 {
+  margin-top: 1.5rem;
+}
+
+.message-text ul + p,
+.message-text ol + p,
+.message-text blockquote + p,
+.message-text pre + p {
+  margin-top: 1rem;
+}
+
+/* Better list item spacing for complex content */
+.message-text li > p + p {
+  margin-top: 0.5rem;
+}
+
+.message-text li > ul,
+.message-text li > ol {
+  margin-top: 0.5rem;
 }

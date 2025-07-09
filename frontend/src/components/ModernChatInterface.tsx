@@ -554,41 +554,78 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              // Customize components to ensure they work well in chat bubbles
+              // Enhanced paragraph handling
               p: ({ children, ...props }) => {
-                // Check if this paragraph is inside a list item
                 return <p {...props}>{children}</p>;
               },
+
+              // Enhanced heading components
               h1: ({ children }) => <h1>{children}</h1>,
               h2: ({ children }) => <h2>{children}</h2>,
               h3: ({ children }) => <h3>{children}</h3>,
+              h4: ({ children }) => <h4>{children}</h4>,
+              h5: ({ children }) => <h5>{children}</h5>,
+              h6: ({ children }) => <h6>{children}</h6>,
+
+              // Enhanced list components
               ul: ({ children }) => <ul>{children}</ul>,
               ol: ({ children }) => <ol>{children}</ol>,
-              li: ({ children }) => {
-                // Handle list items - ensure text flows inline with numbers
-                return <li>{children}</li>;
-              },
-              code: ({ children, className }) => {
+              li: ({ children }) => <li>{children}</li>,
+
+              // Enhanced code handling with syntax highlighting support
+              code: ({ children, className, ...props }) => {
                 const isBlock = className?.includes("language-");
-                return isBlock ? (
-                  <pre className="bg-black bg-opacity-20 rounded p-2 mb-2 overflow-x-auto">
-                    <code className={className}>{children}</code>
-                  </pre>
-                ) : (
-                  <code className="bg-black bg-opacity-20 px-1 py-0.5 rounded text-sm">
-                    {children}
-                  </code>
-                );
+
+                if (isBlock) {
+                  return (
+                    <pre className="code-block">
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  );
+                } else {
+                  return (
+                    <code className="inline-code" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
               },
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-2 border-gray-400 pl-4 italic mb-2">
+
+              // Enhanced blockquote styling
+              blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+
+              // Enhanced text formatting
+              strong: ({ children }) => <strong>{children}</strong>,
+              em: ({ children }) => <em>{children}</em>,
+
+              // Enhanced link handling
+              a: ({ children, href, ...props }) => (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  {...props}
+                >
                   {children}
-                </blockquote>
+                </a>
               ),
-              strong: ({ children }) => (
-                <strong className="font-bold">{children}</strong>
+
+              // Enhanced table components
+              table: ({ children }) => (
+                <div className="table-container">
+                  <table>{children}</table>
+                </div>
               ),
-              em: ({ children }) => <em className="italic">{children}</em>,
+              thead: ({ children }) => <thead>{children}</thead>,
+              tbody: ({ children }) => <tbody>{children}</tbody>,
+              tr: ({ children }) => <tr>{children}</tr>,
+              th: ({ children }) => <th>{children}</th>,
+              td: ({ children }) => <td>{children}</td>,
+
+              // Enhanced horizontal rule
+              hr: () => <hr />,
             }}
           >
             {message.content}

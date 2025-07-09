@@ -60,7 +60,14 @@ class LLMOrchestrator:
         structured_prompt = f"""
         {prompt}
         
-        Please provide your response along with a confidence score (0-1) and brief reasoning.
+        Please provide your response in well-formatted Markdown with proper:
+        - Headers (# ## ###) for section organization
+        - Lists with bullet points or numbers where appropriate
+        - Code blocks with ```language syntax for any code examples
+        - **Bold** and *italic* text for emphasis
+        - > Blockquotes for important notes or quotes
+        - Line breaks and paragraphs for readability
+        
         Your response should be informative, accurate, and well-reasoned.
         """
         
@@ -156,7 +163,7 @@ class LLMOrchestrator:
 
 Please respond in JSON format:
 {{
-  "content": "your main response here",
+  "content": "your main response here in well-formatted Markdown",
   "confidence": 0.85,
   "reasoning": "brief explanation of your reasoning"
 }}"""
@@ -188,7 +195,12 @@ Please respond in JSON format:
             # Plain text fallback
             messages.append({
                 "role": "user", 
-                "content": prompt
+                "content": f"""
+                {prompt}
+                
+                Please format your response in clear, well-structured Markdown for easy reading.
+                Use appropriate headers, lists, code blocks, and emphasis where helpful.
+                """
             })
             
             fallback_response = await self.openai_client.chat.completions.create(
@@ -229,7 +241,15 @@ Please respond in JSON format:
             if context:
                 messages.append({"role": "system", "content": f"Context: {context}"})
             
-            messages.append({"role": "user", "content": prompt})
+            formatted_prompt = f"""
+            {prompt}
+            
+            Please format your response in clear, well-structured Markdown for easy reading.
+            Use appropriate headers, lists, code blocks, and emphasis where helpful.
+            Provide detailed, informative responses with good organization.
+            """
+            
+            messages.append({"role": "user", "content": formatted_prompt})
             
             # Make request to Grok API
             async with httpx.AsyncClient() as client:
