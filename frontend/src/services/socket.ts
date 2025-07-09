@@ -112,6 +112,7 @@ class SocketService {
       this.socket.removeAllListeners('new_message');
       this.socket.removeAllListeners('error');
       this.socket.removeAllListeners('session_created');
+      this.socket.removeAllListeners('processing_status');
     }
   }
 

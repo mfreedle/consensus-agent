@@ -67,10 +67,21 @@ const ChatApp: React.FC = () => {
   // Handle processing status updates
   const handleProcessingStatus = useCallback(
     (status: ProcessingStatus) => {
-      console.log("Processing status:", status);
+      console.log("🔄 Processing status received:", status);
       // Update status for the current session
       if (status.session_id.toString() === currentSessionId) {
+        console.log(
+          "✅ Setting processing status for current session:",
+          status.message
+        );
         setProcessingStatus(status);
+      } else {
+        console.log(
+          "❌ Ignoring processing status for different session:",
+          status.session_id,
+          "vs",
+          currentSessionId
+        );
       }
     },
     [currentSessionId]

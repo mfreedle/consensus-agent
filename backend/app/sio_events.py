@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from app.auth.dependencies import get_current_user_from_token
@@ -166,6 +167,9 @@ def register_sio_events(sio):
                                 "session_id": session_id
                             }, room=str(session_id))
                             
+                            # Small delay to show status
+                            await asyncio.sleep(0.5)
+                            
                             # Send processing status
                             await sio.emit('processing_status', {
                                 "status": "processing", 
@@ -185,6 +189,9 @@ def register_sio_events(sio):
                                 "message": "Building consensus from model responses...",
                                 "session_id": session_id
                             }, room=str(session_id))
+                            
+                            # Small delay to show status
+                            await asyncio.sleep(0.5)
                             
                             # Send finalizing status
                             await sio.emit('processing_status', {
@@ -247,6 +254,9 @@ def register_sio_events(sio):
                                 "message": f"Consulting {model_display}...",
                                 "session_id": session_id
                             }, room=str(session_id))
+                            
+                            # Small delay to show status
+                            await asyncio.sleep(0.3)
                             
                             # Get single model response
                             if model.startswith("gpt"):

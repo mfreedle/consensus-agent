@@ -76,8 +76,14 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   // Update processing state when status changes
   useEffect(() => {
     if (processingStatus) {
+      console.log(
+        "🎯 ModernChatInterface: Processing status updated:",
+        processingStatus
+      );
       setConsensusPhase(processingStatus.status);
       setProcessingMessage(processingStatus.message);
+    } else {
+      console.log("🎯 ModernChatInterface: Processing status cleared");
     }
   }, [processingStatus]);
   const [fileUploadModal, setFileUploadModal] = useState<{
@@ -606,6 +612,19 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   );
 
   const renderTypingIndicator = () => {
+    console.log(
+      "🔍 Rendering typing indicator - isLoading:",
+      isLoading,
+      "processingStatus:",
+      !!processingStatus
+    );
+    console.log(
+      "🔍 Processing message:",
+      processingMessage,
+      "Phase:",
+      consensusPhase
+    );
+
     // Use enhanced consensus indicator for multi-model scenarios
     const isConsensusMode =
       modelSelection?.selectedModels?.length &&
@@ -655,7 +674,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           ) : (
             <>
               {messages.map(renderMessage)}
-              {isLoading && renderTypingIndicator()}
+              {(isLoading || processingStatus) && renderTypingIndicator()}
             </>
           )}
           <div ref={messagesEndRef} />
