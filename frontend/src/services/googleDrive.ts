@@ -125,6 +125,72 @@ class GoogleDriveService {
   }
 
   /**
+   * Search files in Google Drive
+   */
+  async searchFiles(token: string, searchQuery: string, options: {
+    file_type?: string;
+    limit?: number;
+  } = {}): Promise<GoogleDriveFileList> {
+    const params = new URLSearchParams();
+    params.append('q', searchQuery);
+    if (options.file_type) params.append('file_type', options.file_type);
+    if (options.limit) params.append('limit', options.limit.toString());
+
+    const response = await (apiService as any).request(`/google/files/search?${params.toString()}`);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * List contents of a specific folder
+   */
+  async listFolderContents(token: string, folderId: string, options: {
+    file_type?: string;
+    limit?: number;
+  } = {}): Promise<GoogleDriveFileList> {
+    const params = new URLSearchParams();
+    if (options.file_type) params.append('file_type', options.file_type);
+    if (options.limit) params.append('limit', options.limit.toString());
+
+    const response = await (apiService as any).request(`/google/folders/${folderId}/contents?${params.toString()}`);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Find a folder by name
+   */
+  async findFolderByName(token: string, folderName: string): Promise<GoogleDriveFile> {
+    const response = await (apiService as any).request(`/google/folders/find/${encodeURIComponent(folderName)}`);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * List all files with their full paths
+   */
+  async listFilesWithPaths(token: string, options: {
+    file_type?: string;
+    limit?: number;
+  } = {}): Promise<GoogleDriveFileList> {
+    const params = new URLSearchParams();
+    if (options.file_type) params.append('file_type', options.file_type);
+    if (options.limit) params.append('limit', options.limit.toString());
+
+    const response = await (apiService as any).request(`/google/files/with-paths?${params.toString()}`);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
    * Get Google Document content
    */
   async getDocumentContent(token: string, fileId: string): Promise<GoogleDocumentContent> {

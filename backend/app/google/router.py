@@ -184,6 +184,166 @@ async def list_google_drive_files(
         )
 
 
+@router.get("/files/search", response_model=GoogleDriveFileList)
+async def search_google_drive_files(
+    q: str = Query(..., description="Search query for file names or content"),
+    file_type: Optional[str] = Query(None, description="Filter by file type: document, spreadsheet, presentation, folder"),
+    limit: int = Query(25, ge=1, le=100, description="Maximum number of search results"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Search files in Google Drive by name or content"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Search files in Google Drive
+        files = await google_service.search_drive_files(
+            access_token=getattr(current_user, 'google_drive_token'),
+            search_query=q,
+            refresh_token=getattr(current_user, 'google_refresh_token', None),
+            file_type=file_type,
+            limit=limit
+        )
+        
+        # Convert to Pydantic models
+        drive_files = [GoogleDriveFile(**file_data) for file_data in files]
+        
+        return GoogleDriveFileList(
+            files=drive_files,
+            total_count=len(drive_files)
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to search Google Drive files: {str(e)}"
+        )
+
+
+@router.get("/folders/{folder_id}/contents", response_model=GoogleDriveFileList)
+async def list_folder_contents(
+    folder_id: str,
+    file_type: Optional[str] = Query(None, description="Filter by file type: document, spreadsheet, presentation, folder"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """List contents of a specific Google Drive folder"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # List folder contents
+        files = await google_service.list_folder_contents(
+            folder_id=folder_id,
+            access_token=getattr(current_user, 'google_drive_token'),
+            refresh_token=getattr(current_user, 'google_refresh_token', None),
+            file_type=file_type,
+            limit=limit
+        )
+        
+        # Convert to Pydantic models
+        drive_files = [GoogleDriveFile(**file_data) for file_data in files]
+        
+        return GoogleDriveFileList(
+            files=drive_files,
+            total_count=len(drive_files)
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list folder contents: {str(e)}"
+        )
+
+
+@router.get("/folders/find/{folder_name}", response_model=GoogleDriveFile)
+async def find_folder_by_name(
+    folder_name: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Find a folder in Google Drive by name"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Find folder by name
+        folder = await google_service.get_folder_by_name(
+            folder_name=folder_name,
+            access_token=getattr(current_user, 'google_drive_token'),
+            refresh_token=getattr(current_user, 'google_refresh_token', None)
+        )
+        
+        if not folder:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Folder '{folder_name}' not found"
+            )
+        
+        return GoogleDriveFile(**folder)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to find folder: {str(e)}"
+        )
+
+
+@router.get("/files/with-paths", response_model=GoogleDriveFileList)
+async def list_files_with_paths(
+    file_type: Optional[str] = Query(None, description="Filter by file type: document, spreadsheet, presentation"),
+    limit: int = Query(100, ge=1, le=200, description="Maximum number of files to return"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """List all files with their full folder paths"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Get files with paths from Google Drive
+        files = await google_service.list_all_files_with_paths(
+            access_token=getattr(current_user, 'google_drive_token'),
+            refresh_token=getattr(current_user, 'google_refresh_token', None),
+            file_type=file_type,
+            limit=limit
+        )
+        
+        # Convert to Pydantic models
+        drive_files = [GoogleDriveFile(**file_data) for file_data in files]
+        
+        return GoogleDriveFileList(
+            files=drive_files,
+            total_count=len(drive_files)
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list files with paths: {str(e)}"
+        )
+
+
 @router.get("/files/{file_id}/content", response_model=GoogleDocumentContent)
 async def get_google_document_content(
     file_id: str,

@@ -30,6 +30,13 @@ export const GoogleDriveLLMDemo: React.FC = () => {
 
   const examplePrompts = [
     "List my Google Drive files",
+    "Search for documents containing 'project proposal' in subfolders",
+    "Find all files in my Reports folder",
+    "Show me the full path of my budget spreadsheet",
+    "List all documents with 'meeting notes' anywhere in my Drive",
+    "Find the folder named 'Client Projects' and show its contents",
+    "Search for all presentations about Q4 results",
+    "Get all files with their full folder paths to see my Drive organization",
     "Read my latest Google Doc and summarize the key points",
     "Create a new Google Doc with a project proposal template",
     "Edit my spreadsheet to add a new budget category",
@@ -114,6 +121,10 @@ export const GoogleDriveLLMDemo: React.FC = () => {
           </h4>
           <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <li>✅ List and browse your Google Drive files</li>
+            <li>✅ Search for files by name or content in subfolders</li>
+            <li>✅ Navigate and explore folder contents</li>
+            <li>✅ Find folders by name anywhere in your Drive</li>
+            <li>✅ Get full file paths to understand organization</li>
             <li>✅ Read content from Google Docs, Sheets, and Slides</li>
             <li>✅ Edit existing documents with new content</li>
             <li>✅ Create new files with custom content</li>
@@ -127,7 +138,10 @@ export const GoogleDriveLLMDemo: React.FC = () => {
           </h4>
           <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <li>🔐 Secure OAuth authentication</li>
-            <li>🔄 Real-time file access in chat context</li>
+            <li>� Advanced search in subfolders and content</li>
+            <li>📁 Complete folder navigation and exploration</li>
+            <li>🗺️ Full path discovery for file organization</li>
+            <li>�🔄 Real-time file access in chat context</li>
             <li>🛡️ Permission-based access control</li>
             <li>⚡ Function calling for seamless integration</li>
             <li>📱 Mobile-friendly sidebar interface</li>

@@ -65,6 +65,107 @@ class GoogleDriveTools:
                 }
             ),
             GoogleDriveFunction(
+                name="search_google_drive_files",
+                description="Search for files in Google Drive by name or content. This can find files in subfolders and search within document content.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "search_query": {
+                            "type": "string",
+                            "description": "The search term to look for in file names or content"
+                        },
+                        "file_type": {
+                            "type": "string",
+                            "enum": ["document", "spreadsheet", "presentation", "folder", "all"],
+                            "description": "Filter search results by file type"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 25,
+                            "description": "Maximum number of search results to return"
+                        }
+                    },
+                    "required": ["search_query"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="list_folder_contents",
+                description="List all files and subfolders within a specific Google Drive folder. Use this to explore folder contents.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "folder_id": {
+                            "type": "string",
+                            "description": "The Google Drive folder ID to list contents of"
+                        },
+                        "file_type": {
+                            "type": "string",
+                            "enum": ["document", "spreadsheet", "presentation", "folder", "all"],
+                            "description": "Filter contents by file type"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 50,
+                            "description": "Maximum number of items to return"
+                        }
+                    },
+                    "required": ["folder_id"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="find_folder_by_name",
+                description="Find a folder in Google Drive by its name. Use this to locate folders before listing their contents.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "folder_name": {
+                            "type": "string",
+                            "description": "The name of the folder to find"
+                        }
+                    },
+                    "required": ["folder_name"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="get_file_path",
+                description="Get the full path/location of a file in Google Drive to understand its folder structure.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "file_id": {
+                            "type": "string",
+                            "description": "The Google Drive file ID to get the path for"
+                        }
+                    },
+                    "required": ["file_id"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="list_all_files_with_paths",
+                description="List all files with their full folder paths. Use this to get a comprehensive view of file organization.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "file_type": {
+                            "type": "string",
+                            "enum": ["document", "spreadsheet", "presentation", "all"],
+                            "description": "Filter files by type"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 200,
+                            "default": 100,
+                            "description": "Maximum number of files to return"
+                        }
+                    }
+                }
+            ),
+            GoogleDriveFunction(
                 name="read_google_document",
                 description="Read content from a Google Document. Use this to get the current content before editing.",
                 parameters={
@@ -240,6 +341,16 @@ class GoogleDriveTools:
         try:
             if function_name == "list_google_drive_files":
                 return await self._list_files(parameters, access_token, refresh_token)
+            elif function_name == "search_google_drive_files":
+                return await self._search_files(parameters, access_token, refresh_token)
+            elif function_name == "list_folder_contents":
+                return await self._list_folder_contents(parameters, access_token, refresh_token)
+            elif function_name == "find_folder_by_name":
+                return await self._find_folder_by_name(parameters, access_token, refresh_token)
+            elif function_name == "get_file_path":
+                return await self._get_file_path(parameters, access_token, refresh_token)
+            elif function_name == "list_all_files_with_paths":
+                return await self._list_all_files_with_paths(parameters, access_token, refresh_token)
             elif function_name == "read_google_document":
                 return await self._read_document(parameters, access_token, refresh_token)
             elif function_name == "read_google_spreadsheet":
@@ -462,4 +573,129 @@ class GoogleDriveTools:
                 "slide_title": title,
                 "web_view_link": f"https://docs.google.com/presentation/d/{file_id}/edit"
             }
+        )
+
+    async def _search_files(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Search for files in Google Drive"""
+        search_query = parameters.get("search_query", "")
+        file_type = parameters.get("file_type", "all")
+        limit = parameters.get("limit", 25)
+        
+        if not search_query:
+            return GoogleDriveToolResult(
+                success=False,
+                message="Search query is required",
+                error="MISSING_SEARCH_QUERY"
+            )
+        
+        files = await self.google_service.search_drive_files(
+            access_token=access_token,
+            search_query=search_query,
+            refresh_token=refresh_token,
+            file_type=file_type,
+            limit=limit
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=f"Found {len(files)} files matching '{search_query}'",
+            data={"files": files, "search_query": search_query, "total_count": len(files)}
+        )
+
+    async def _list_folder_contents(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """List contents of a specific folder"""
+        folder_id = parameters.get("folder_id", "")
+        file_type = parameters.get("file_type", "all")
+        limit = parameters.get("limit", 50)
+        
+        if not folder_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="Folder ID is required",
+                error="MISSING_FOLDER_ID"
+            )
+        
+        files = await self.google_service.list_folder_contents(
+            folder_id=folder_id,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            file_type=file_type,
+            limit=limit
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=f"Found {len(files)} items in folder",
+            data={"files": files, "folder_id": folder_id, "total_count": len(files)}
+        )
+
+    async def _find_folder_by_name(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Find a folder by name"""
+        folder_name = parameters.get("folder_name", "")
+        
+        if not folder_name:
+            return GoogleDriveToolResult(
+                success=False,
+                message="Folder name is required",
+                error="MISSING_FOLDER_NAME"
+            )
+        
+        folder = await self.google_service.get_folder_by_name(
+            folder_name=folder_name,
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
+        
+        if folder:
+            return GoogleDriveToolResult(
+                success=True,
+                message=f"Found folder: {folder_name}",
+                data={"folder": folder}
+            )
+        else:
+            return GoogleDriveToolResult(
+                success=False,
+                message=f"Folder '{folder_name}' not found",
+                error="FOLDER_NOT_FOUND"
+            )
+
+    async def _get_file_path(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Get the full path of a file"""
+        file_id = parameters.get("file_id", "")
+        
+        if not file_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="File ID is required",
+                error="MISSING_FILE_ID"
+            )
+        
+        path = await self.google_service.get_file_path(
+            file_id=file_id,
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message="File path retrieved",
+            data={"file_id": file_id, "path": path}
+        )
+
+    async def _list_all_files_with_paths(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """List all files with their full paths"""
+        file_type = parameters.get("file_type", "all")
+        limit = parameters.get("limit", 100)
+        
+        files = await self.google_service.list_all_files_with_paths(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            file_type=file_type,
+            limit=limit
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=f"Retrieved {len(files)} files with paths",
+            data={"files": files, "total_count": len(files)}
         )

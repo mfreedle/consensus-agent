@@ -119,7 +119,7 @@ class GoogleDriveService:
             results = service.files().list(
                 q=query,
                 pageSize=limit,
-                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners)"
+                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)"
             ).execute()
             
             files = results.get('files', [])
@@ -134,13 +134,274 @@ class GoogleDriveService:
                     "mime_type": file["mimeType"],
                     "modified_time": file.get("modifiedTime"),
                     "web_view_link": file.get("webViewLink"),
-                    "owners": file.get("owners", [])
+                    "owners": file.get("owners", []),
+                    "parents": file.get("parents", [])
                 })
             
             return formatted_files
             
         except HttpError as error:
             raise Exception(f"Google Drive API error: {error}")
+
+    async def search_drive_files(self, access_token: str, 
+                                 search_query: str,
+                                 refresh_token: Optional[str] = None,
+                                 file_type: Optional[str] = None,
+                                 limit: int = 50) -> List[Dict]:
+        """Search files in Google Drive by name or content"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Build search query
+            query = f"trashed=false and (name contains '{search_query}' or fullText contains '{search_query}')"
+            
+            if file_type == "document":
+                query += " and mimeType='application/vnd.google-apps.document'"
+            elif file_type == "spreadsheet":
+                query += " and mimeType='application/vnd.google-apps.spreadsheet'"
+            elif file_type == "presentation":
+                query += " and mimeType='application/vnd.google-apps.presentation'"
+            elif file_type == "folder":
+                query += " and mimeType='application/vnd.google-apps.folder'"
+            
+            # Execute the search
+            results = service.files().list(
+                q=query,
+                pageSize=limit,
+                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)",
+                orderBy="relevance"
+            ).execute()
+            
+            files = results.get('files', [])
+            
+            # Format file information
+            formatted_files = []
+            for file in files:
+                formatted_files.append({
+                    "id": file["id"],
+                    "name": file["name"],
+                    "type": self._get_file_type_from_mime(file["mimeType"]),
+                    "mime_type": file["mimeType"],
+                    "modified_time": file.get("modifiedTime"),
+                    "web_view_link": file.get("webViewLink"),
+                    "owners": file.get("owners", []),
+                    "parents": file.get("parents", [])
+                })
+            
+            return formatted_files
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error: {error}")
+
+    async def list_folder_contents(self, folder_id: str, access_token: str,
+                                   refresh_token: Optional[str] = None,
+                                   file_type: Optional[str] = None,
+                                   limit: int = 100) -> List[Dict]:
+        """List contents of a specific folder"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Build query to get files in the specific folder
+            query = f"trashed=false and '{folder_id}' in parents"
+            
+            if file_type == "document":
+                query += " and mimeType='application/vnd.google-apps.document'"
+            elif file_type == "spreadsheet":
+                query += " and mimeType='application/vnd.google-apps.spreadsheet'"
+            elif file_type == "presentation":
+                query += " and mimeType='application/vnd.google-apps.presentation'"
+            elif file_type == "folder":
+                query += " and mimeType='application/vnd.google-apps.folder'"
+            
+            # Execute the query
+            results = service.files().list(
+                q=query,
+                pageSize=limit,
+                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)",
+                orderBy="name"
+            ).execute()
+            
+            files = results.get('files', [])
+            
+            # Format file information
+            formatted_files = []
+            for file in files:
+                formatted_files.append({
+                    "id": file["id"],
+                    "name": file["name"],
+                    "type": self._get_file_type_from_mime(file["mimeType"]),
+                    "mime_type": file["mimeType"],
+                    "modified_time": file.get("modifiedTime"),
+                    "web_view_link": file.get("webViewLink"),
+                    "owners": file.get("owners", []),
+                    "parents": file.get("parents", [])
+                })
+            
+            return formatted_files
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error: {error}")
+
+    async def get_folder_by_name(self, folder_name: str, access_token: str,
+                                 refresh_token: Optional[str] = None) -> Optional[Dict]:
+        """Find a folder by name"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Search for folders with the given name
+            query = f"trashed=false and mimeType='application/vnd.google-apps.folder' and name='{folder_name}'"
+            
+            results = service.files().list(
+                q=query,
+                pageSize=10,
+                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)"
+            ).execute()
+            
+            folders = results.get('files', [])
+            
+            if folders:
+                folder = folders[0]  # Return the first match
+                return {
+                    "id": folder["id"],
+                    "name": folder["name"],
+                    "type": "folder",
+                    "mime_type": folder["mimeType"],
+                    "modified_time": folder.get("modifiedTime"),
+                    "web_view_link": folder.get("webViewLink"),
+                    "owners": folder.get("owners", []),
+                    "parents": folder.get("parents", [])
+                }
+            
+            return None
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error: {error}")
+
+    async def get_file_path(self, file_id: str, access_token: str,
+                            refresh_token: Optional[str] = None) -> str:
+        """Get the full path of a file in Google Drive"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            path_parts = []
+            current_id = file_id
+            
+            # Traverse up the folder hierarchy
+            while current_id:
+                file_info = service.files().get(
+                    fileId=current_id,
+                    fields="id,name,parents"
+                ).execute()
+                
+                path_parts.append(file_info.get('name', 'Unknown'))
+                
+                parents = file_info.get('parents', [])
+                if parents:
+                    current_id = parents[0]
+                else:
+                    break
+            
+            # Reverse to get the correct order (root to file)
+            path_parts.reverse()
+            
+            return '/'.join(path_parts)
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error: {error}")
+
+    async def list_all_files_with_paths(self, access_token: str,
+                                        refresh_token: Optional[str] = None,
+                                        file_type: Optional[str] = None,
+                                        limit: int = 200) -> List[Dict]:
+        """List all files with their full paths for better navigation"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Build query
+            query = "trashed=false"
+            if file_type == "document":
+                query += " and mimeType='application/vnd.google-apps.document'"
+            elif file_type == "spreadsheet":
+                query += " and mimeType='application/vnd.google-apps.spreadsheet'"
+            elif file_type == "presentation":
+                query += " and mimeType='application/vnd.google-apps.presentation'"
+            
+            # Execute the query
+            results = service.files().list(
+                q=query,
+                pageSize=limit,
+                fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)",
+                orderBy="name"
+            ).execute()
+            
+            files = results.get('files', [])
+            
+            # Build a cache of folder names to avoid repeated API calls
+            folder_cache = {}
+            
+            # Format file information with paths
+            formatted_files = []
+            for file in files:
+                file_info = {
+                    "id": file["id"],
+                    "name": file["name"],
+                    "type": self._get_file_type_from_mime(file["mimeType"]),
+                    "mime_type": file["mimeType"],
+                    "modified_time": file.get("modifiedTime"),
+                    "web_view_link": file.get("webViewLink"),
+                    "owners": file.get("owners", []),
+                    "parents": file.get("parents", [])
+                }
+                
+                # Try to build the path
+                try:
+                    path = await self._build_file_path(file["id"], service, folder_cache)
+                    file_info["path"] = path
+                except Exception:
+                    file_info["path"] = file["name"]  # Fallback to just filename
+                
+                formatted_files.append(file_info)
+            
+            return formatted_files
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error: {error}")
+
+    async def _build_file_path(self, file_id: str, service, folder_cache: Dict[str, str]) -> str:
+        """Helper method to build file path using cache"""
+        path_parts = []
+        current_id = file_id
+        
+        # Traverse up the folder hierarchy
+        while current_id:
+            if current_id in folder_cache:
+                path_parts.append(folder_cache[current_id])
+                break
+                
+            file_info = service.files().get(
+                fileId=current_id,
+                fields="id,name,parents"
+            ).execute()
+            
+            name = file_info.get('name', 'Unknown')
+            folder_cache[current_id] = name
+            path_parts.append(name)
+            
+            parents = file_info.get('parents', [])
+            if parents:
+                current_id = parents[0]
+            else:
+                break
+        
+        # Reverse to get the correct order (root to file)
+        path_parts.reverse()
+        
+        return '/'.join(path_parts)
 
     async def get_document_content(self, document_id: str, access_token: str, 
                                   refresh_token: Optional[str] = None) -> Dict:
@@ -270,8 +531,7 @@ class GoogleDriveService:
         except HttpError as error:
             raise Exception(f"Google Docs API error: {error}")
 
-    async def get_spreadsheet_content(self, spreadsheet_id: str, access_token: str,
-                                     refresh_token: Optional[str] = None) -> Dict:
+    async def get_spreadsheet_content(self, spreadsheet_id: str, access_token: str, refresh_token: Optional[str] = None) -> Dict:
         """Get content from a Google Spreadsheet"""
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
@@ -339,8 +599,7 @@ class GoogleDriveService:
         except HttpError as error:
             raise Exception(f"Google Sheets API error: {error}")
 
-    async def create_spreadsheet(self, access_token: str, title: str,
-                                refresh_token: Optional[str] = None) -> Dict:
+    async def create_spreadsheet(self, access_token: str, title: str, refresh_token: Optional[str] = None) -> Dict:
         """Create a new Google Spreadsheet"""
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)

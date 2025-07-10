@@ -77,7 +77,13 @@ async def test_end_to_end_integration():
         test_prompts = [
             "List my Google Drive files",
             "What Google Drive files do I have available?",
-            "Show me my Google Docs"
+            "Show me my Google Docs",
+            # New search and navigation prompts
+            "Search for documents containing 'project' in my Google Drive",
+            "Find all files in subfolders that mention 'meeting'",
+            "Show me all files with their full folder paths",
+            "Find the folder named 'Documents' and list its contents",
+            "Search for spreadsheets about budget or finance",
         ]
         
         print("\n🧪 Testing LLM Function Calling")
@@ -122,10 +128,14 @@ async def test_end_to_end_integration():
         print("\n🎉 End-to-End Integration Test Complete!")
         print("\n📋 What's Working:")
         print("   • LLMs can list Google Drive files")
+        print("   • LLMs can search for files by name and content in subfolders")
+        print("   • LLMs can navigate folder contents")
+        print("   • LLMs can find folders by name")
+        print("   • LLMs can get full file paths for organization")
         print("   • LLMs can read Google Docs, Sheets, and Slides")
         print("   • LLMs can edit and create Google Drive files")
         print("   • Socket.IO chat includes Google Drive context")
-        print("   • Frontend UI includes Google Drive file manager")
+        print("   • Frontend UI includes Google Drive file manager with search")
         print("   • OAuth authentication flow is complete")
         
         print("\n🚀 Ready for Production Use!")
