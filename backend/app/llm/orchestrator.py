@@ -531,7 +531,7 @@ Note: This response is from {working_model} only due to the other model being un
         self, 
         prompt: str,
         user,  # User object for Google Drive operations
-        model: str = "gpt-4.1",
+        model: str = "gpt-4o",  # Use gpt-4o for better function calling
         context: Optional[str] = None,
         enable_google_drive: bool = True
     ) -> ModelResponse:
@@ -541,7 +541,12 @@ Note: This response is from {working_model} only due to the other model being un
         if context:
             messages.append({
                 "role": "system",
-                "content": f"Context: {context}\n\nYou are a helpful AI assistant with access to Google Drive. You can read, edit, and create Google Drive files when requested by the user."
+                "content": f"Context: {context}\n\nYou are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform file operations (like copying, moving, searching for files), you MUST use the available functions to actually perform these tasks. Do not just say you will do something - execute the functions immediately to complete the requested actions.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nAlways use functions to complete user requests - don't just describe what you would do."
+            })
+        else:
+            messages.append({
+                "role": "system", 
+                "content": "You are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform file operations (like copying, moving, searching for files), you MUST use the available functions to actually perform these tasks. Do not just say you will do something - execute the functions immediately to complete the requested actions.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nAlways use functions to complete user requests - don't just describe what you would do."
             })
         
         messages.append({
@@ -565,9 +570,15 @@ Note: This response is from {working_model} only due to the other model being un
             
             if tools:
                 kwargs["tools"] = tools
+                # Be more aggressive about tool usage
                 kwargs["tool_choice"] = "auto"
             
-            response = await self.openai_client.chat.completions.create(**kwargs)
+            # Add timeout to prevent hanging
+            import asyncio
+            response = await asyncio.wait_for(
+                self.openai_client.chat.completions.create(**kwargs),
+                timeout=30.0  # 30 second timeout
+            )
             
             # Handle tool calls if present
             if response.choices[0].message.tool_calls:
@@ -609,11 +620,14 @@ Note: This response is from {working_model} only due to the other model being un
                         })
                 
                 # Get final response after tool execution
-                final_response = await self.openai_client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=4000
+                final_response = await asyncio.wait_for(
+                    self.openai_client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=4000
+                    ),
+                    timeout=30.0  # 30 second timeout
                 )
                 
                 content = final_response.choices[0].message.content or "No response content"

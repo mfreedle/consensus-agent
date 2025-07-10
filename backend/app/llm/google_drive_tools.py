@@ -322,6 +322,60 @@ class GoogleDriveTools:
                     },
                     "required": ["file_id", "title", "content"]
                 }
+            ),
+            GoogleDriveFunction(
+                name="copy_google_drive_file",
+                description="Copy a file in Google Drive to a new location with optional renaming. Use this to make copies of files.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "file_id": {
+                            "type": "string",
+                            "description": "The Google Drive file ID to copy"
+                        },
+                        "new_name": {
+                            "type": "string",
+                            "description": "Optional new name for the copied file. If not provided, will use 'Copy of [original name]'"
+                        },
+                        "target_folder_id": {
+                            "type": "string",
+                            "description": "Optional folder ID to copy the file to. Use 'root' for main Drive folder or get folder ID from find_folder_by_name"
+                        }
+                    },
+                    "required": ["file_id"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="move_google_drive_file",
+                description="Move a file from one folder to another in Google Drive. Use this to relocate files.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "file_id": {
+                            "type": "string",
+                            "description": "The Google Drive file ID to move"
+                        },
+                        "target_folder_id": {
+                            "type": "string",
+                            "description": "The folder ID to move the file to. Use 'root' for main Drive folder or get folder ID from find_folder_by_name"
+                        }
+                    },
+                    "required": ["file_id", "target_folder_id"]
+                }
+            ),
+            GoogleDriveFunction(
+                name="delete_google_drive_file",
+                description="Delete a file from Google Drive (moves to trash). Use this to remove unwanted files.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "file_id": {
+                            "type": "string",
+                            "description": "The Google Drive file ID to delete"
+                        }
+                    },
+                    "required": ["file_id"]
+                }
             )
         ]
     
@@ -369,6 +423,12 @@ class GoogleDriveTools:
                 return await self._create_presentation(parameters, access_token, refresh_token)
             elif function_name == "add_slide_to_presentation":
                 return await self._add_slide(parameters, access_token, refresh_token)
+            elif function_name == "copy_google_drive_file":
+                return await self._copy_file(parameters, access_token, refresh_token)
+            elif function_name == "move_google_drive_file":
+                return await self._move_file(parameters, access_token, refresh_token)
+            elif function_name == "delete_google_drive_file":
+                return await self._delete_file(parameters, access_token, refresh_token)
             else:
                 return GoogleDriveToolResult(
                     success=False,
@@ -698,4 +758,102 @@ class GoogleDriveTools:
             success=True,
             message=f"Retrieved {len(files)} files with paths",
             data={"files": files, "total_count": len(files)}
+        )
+
+    async def _copy_file(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Copy a file in Google Drive"""
+        file_id = parameters.get("file_id", "")
+        new_name = parameters.get("new_name")
+        target_folder_id = parameters.get("target_folder_id")
+        
+        if not file_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="File ID is required",
+                error="MISSING_FILE_ID"
+            )
+        
+        # Handle special case for root folder
+        if target_folder_id == "root":
+            root_id = await self.google_service.get_root_folder_id(
+                access_token=access_token,
+                refresh_token=refresh_token
+            )
+            target_folder_id = root_id
+        
+        copied_file = await self.google_service.copy_file(
+            file_id=file_id,
+            access_token=access_token,
+            new_name=new_name,
+            target_folder_id=target_folder_id,
+            refresh_token=refresh_token
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=f"File copied successfully: {copied_file['name']}",
+            data={"copied_file": copied_file}
+        )
+
+    async def _move_file(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Move a file in Google Drive"""
+        file_id = parameters.get("file_id", "")
+        target_folder_id = parameters.get("target_folder_id", "")
+        
+        if not file_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="File ID is required",
+                error="MISSING_FILE_ID"
+            )
+        
+        if not target_folder_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="Target folder ID is required",
+                error="MISSING_TARGET_FOLDER_ID"
+            )
+        
+        # Handle special case for root folder
+        if target_folder_id == "root":
+            root_id = await self.google_service.get_root_folder_id(
+                access_token=access_token,
+                refresh_token=refresh_token
+            )
+            target_folder_id = root_id
+        
+        moved_file = await self.google_service.move_file(
+            file_id=file_id,
+            access_token=access_token,
+            target_folder_id=target_folder_id,
+            refresh_token=refresh_token
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=f"File moved successfully: {moved_file['name']}",
+            data={"moved_file": moved_file}
+        )
+
+    async def _delete_file(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
+        """Delete a file in Google Drive"""
+        file_id = parameters.get("file_id", "")
+        
+        if not file_id:
+            return GoogleDriveToolResult(
+                success=False,
+                message="File ID is required",
+                error="MISSING_FILE_ID"
+            )
+        
+        result = await self.google_service.delete_file(
+            file_id=file_id,
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
+        
+        return GoogleDriveToolResult(
+            success=True,
+            message=result["message"],
+            data=result
         )

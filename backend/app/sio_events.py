@@ -262,7 +262,7 @@ def register_sio_events(sio):
                     # Add Google Drive context if user has Google Drive connected
                     google_drive_context = ""
                     try:
-                        google_drive_context = await google_drive_context_manager.get_google_drive_context(user, limit=10)
+                        google_drive_context = await google_drive_context_manager.get_google_drive_context(user, limit=5)
                         if google_drive_context:
                             logger.info(f"Added Google Drive context: {len(google_drive_context)} characters")
                     except Exception as e:

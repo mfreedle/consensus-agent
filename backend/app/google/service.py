@@ -753,3 +753,132 @@ class GoogleDriveService:
                                 content += elem["textRun"]["content"]
         
         return content
+
+    async def copy_file(self, file_id: str, access_token: str, 
+                        new_name: Optional[str] = None,
+                        target_folder_id: Optional[str] = None,
+                        refresh_token: Optional[str] = None) -> Dict:
+        """Copy a file to a new location with optional renaming"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Get original file info
+            original_file = service.files().get(
+                fileId=file_id,
+                fields="id,name,mimeType,parents"
+            ).execute()
+            
+            # Prepare copy metadata
+            copy_metadata = {}
+            
+            if new_name:
+                copy_metadata['name'] = new_name
+            else:
+                copy_metadata['name'] = f"Copy of {original_file['name']}"
+            
+            if target_folder_id:
+                copy_metadata['parents'] = [target_folder_id]
+            
+            # Copy the file
+            copied_file = service.files().copy(
+                fileId=file_id,
+                body=copy_metadata,
+                fields="id,name,mimeType,modifiedTime,webViewLink,parents"
+            ).execute()
+            
+            return {
+                "id": copied_file["id"],
+                "name": copied_file["name"],
+                "type": self._get_file_type_from_mime(copied_file["mimeType"]),
+                "mime_type": copied_file["mimeType"],
+                "modified_time": copied_file.get("modifiedTime"),
+                "web_view_link": copied_file.get("webViewLink"),
+                "parents": copied_file.get("parents", []),
+                "original_file_id": file_id
+            }
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error copying file: {error}")
+
+    async def move_file(self, file_id: str, access_token: str,
+                        target_folder_id: str,
+                        refresh_token: Optional[str] = None) -> Dict:
+        """Move a file to a different folder"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Get current file info including parents
+            file_info = service.files().get(
+                fileId=file_id,
+                fields="id,name,parents,mimeType,modifiedTime,webViewLink"
+            ).execute()
+            
+            # Remove from current parents and add to new parent
+            previous_parents = ','.join(file_info.get('parents', []))
+            
+            updated_file = service.files().update(
+                fileId=file_id,
+                addParents=target_folder_id,
+                removeParents=previous_parents,
+                fields="id,name,mimeType,modifiedTime,webViewLink,parents"
+            ).execute()
+            
+            return {
+                "id": updated_file["id"],
+                "name": updated_file["name"],
+                "type": self._get_file_type_from_mime(updated_file["mimeType"]),
+                "mime_type": updated_file["mimeType"],
+                "modified_time": updated_file.get("modifiedTime"),
+                "web_view_link": updated_file.get("webViewLink"),
+                "parents": updated_file.get("parents", []),
+                "moved_to_folder": target_folder_id
+            }
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error moving file: {error}")
+
+    async def get_root_folder_id(self, access_token: str,
+                                 refresh_token: Optional[str] = None) -> str:
+        """Get the root folder ID for Google Drive"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Get root folder info
+            root_info = service.files().get(
+                fileId='root',
+                fields="id"
+            ).execute()
+            
+            return root_info["id"]
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error getting root folder: {error}")
+
+    async def delete_file(self, file_id: str, access_token: str,
+                          refresh_token: Optional[str] = None) -> Dict:
+        """Delete a file or move it to trash"""
+        try:
+            credentials = self.get_credentials_from_tokens(access_token, refresh_token)
+            service = build('drive', 'v3', credentials=credentials)
+            
+            # Get file info before deletion
+            file_info = service.files().get(
+                fileId=file_id,
+                fields="id,name,mimeType"
+            ).execute()
+            
+            # Delete the file (moves to trash by default)
+            service.files().delete(fileId=file_id).execute()
+            
+            return {
+                "success": True,
+                "deleted_file_id": file_id,
+                "deleted_file_name": file_info["name"],
+                "message": f"File '{file_info['name']}' has been moved to trash"
+            }
+            
+        except HttpError as error:
+            raise Exception(f"Google Drive API error deleting file: {error}")

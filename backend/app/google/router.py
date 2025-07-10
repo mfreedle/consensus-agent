@@ -661,3 +661,116 @@ async def add_slide_to_presentation(
             status_code=500,
             detail=f"Failed to add slide to Google Slides presentation: {str(e)}"
         )
+
+
+@router.post("/files/{file_id}/copy", response_model=GoogleFileOperation)
+async def copy_google_drive_file(
+    file_id: str,
+    new_name: Optional[str] = None,
+    target_folder_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Copy a file in Google Drive"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Copy the file
+        copied_file = await google_service.copy_file(
+            file_id=file_id,
+            access_token=getattr(current_user, 'google_drive_token'),
+            new_name=new_name,
+            target_folder_id=target_folder_id,
+            refresh_token=getattr(current_user, 'google_refresh_token', None)
+        )
+        
+        return GoogleFileOperation(
+            success=True,
+            message=f"File copied successfully: {copied_file['name']}",
+            file_id=copied_file["id"],
+            web_view_link=copied_file.get("web_view_link")
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to copy Google Drive file: {str(e)}"
+        )
+
+
+@router.post("/files/{file_id}/move", response_model=GoogleFileOperation)
+async def move_google_drive_file(
+    file_id: str,
+    target_folder_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Move a file to a different folder in Google Drive"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Move the file
+        moved_file = await google_service.move_file(
+            file_id=file_id,
+            access_token=getattr(current_user, 'google_drive_token'),
+            target_folder_id=target_folder_id,
+            refresh_token=getattr(current_user, 'google_refresh_token', None)
+        )
+        
+        return GoogleFileOperation(
+            success=True,
+            message=f"File moved successfully: {moved_file['name']}",
+            file_id=moved_file["id"],
+            web_view_link=moved_file.get("web_view_link")
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to move Google Drive file: {str(e)}"
+        )
+
+
+@router.delete("/files/{file_id}", response_model=GoogleFileOperation)
+async def delete_google_drive_file(
+    file_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a file from Google Drive (moves to trash)"""
+    
+    # Check if user has Google Drive connected
+    if not getattr(current_user, 'google_drive_token', None):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Delete the file
+        result = await google_service.delete_file(
+            file_id=file_id,
+            access_token=getattr(current_user, 'google_drive_token'),
+            refresh_token=getattr(current_user, 'google_refresh_token', None)
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=result["message"],
+            file_id=result["deleted_file_id"]
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete Google Drive file: {str(e)}"
+        )
