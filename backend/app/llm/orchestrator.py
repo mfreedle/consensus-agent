@@ -52,12 +52,16 @@ class LLMOrchestrator:
     
     def _supports_responses_api(self, model: str) -> bool:
         """Check if a model supports the Responses API with structured outputs"""
-        # Only these models currently support Responses API with json_schema
-        responses_api_models = ["gpt-4.1", "gpt-4.1-mini"]
+        # Models that support Responses API based on OpenAI documentation
+        responses_api_models = [
+            "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
+            "o3", "o3-mini", "o4-mini", "o1",
+            "gpt-4o", "gpt-4o-mini"  # These also support Responses API
+        ]
         return model in responses_api_models
     
     def _get_google_drive_tools_for_openai(self) -> List[Dict[str, Any]]:
-        """Get Google Drive function definitions formatted for OpenAI function calling"""
+        """Get Google Drive function definitions formatted for OpenAI Chat Completions API"""
         if not self.google_drive_tools:
             return []
         
@@ -75,6 +79,36 @@ class LLMOrchestrator:
             })
         
         return openai_tools
+    
+    def _get_google_drive_tools_for_responses_api(self) -> List[Dict[str, Any]]:
+        """Get Google Drive function definitions formatted for OpenAI Responses API"""
+        if not self.google_drive_tools:
+            return []
+        
+        functions = self.google_drive_tools.get_available_functions()
+        responses_tools = []
+        
+        for func in functions:
+            # Ensure parameters have additionalProperties: false for strict mode
+            parameters = func.parameters.copy() if func.parameters else {}
+            if isinstance(parameters, dict) and parameters.get("type") == "object":
+                parameters["additionalProperties"] = False
+                
+                # Also ensure nested objects have additionalProperties: false
+                if "properties" in parameters:
+                    for prop_name, prop_def in parameters["properties"].items():
+                        if isinstance(prop_def, dict) and prop_def.get("type") == "object":
+                            prop_def["additionalProperties"] = False
+            
+            responses_tools.append({
+                "type": "function",
+                "name": func.name,
+                "description": func.description,
+                "parameters": parameters,
+                "strict": True  # Enable strict mode for better function calling
+            })
+        
+        return responses_tools
 
     async def get_openai_response(
         self, 
@@ -558,11 +592,15 @@ Note: This response is from {working_model} only due to the other model being un
         # Get Google Drive tools if enabled and available
         tools = []
         if enable_google_drive and self.google_drive_tools:
-            tools = self._get_google_drive_tools_for_openai()
+            # Use correct tool format based on API support
+            if self._supports_responses_api(model):
+                tools = self._get_google_drive_tools_for_responses_api()
+            else:
+                tools = self._get_google_drive_tools_for_openai()
         
         try:
-            # Use Responses API for GPT-4.1 and newer models with function calling
-            if model in ["gpt-4.1", "gpt-4.1-mini", "o3", "o3-mini"] and tools:
+            # Use Responses API for models that support it with function calling
+            if self._supports_responses_api(model) and tools:
                 logger.info(f"Using Responses API for {model} with {len(tools)} tools")
                 
                 kwargs = {

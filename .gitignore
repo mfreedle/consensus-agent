@@ -64,3 +64,4 @@ coverage.xml
 uploads/
 UI_UX_screenshots/
 things_to_fix.md
+.github/prompts/new_prompt_file.prompt.md
