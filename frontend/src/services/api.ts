@@ -13,8 +13,17 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   username: string;
-  email: string;
+  email?: string;
   password: string;
+}
+
+export interface PasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface ProfileUpdateRequest {
+  email?: string;
 }
 
 export interface AuthResponse {
@@ -176,6 +185,20 @@ class ApiService {
 
   async getCurrentUser(): Promise<ApiResponse<any>> {
     return this.request<any>('/auth/me');
+  }
+
+  async changePassword(passwordData: PasswordChangeRequest): Promise<ApiResponse<{message: string}>> {
+    return this.request<{message: string}>('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    });
+  }
+
+  async updateProfile(profileData: ProfileUpdateRequest): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
   }
 
   // Chat endpoints
