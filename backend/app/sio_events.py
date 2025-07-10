@@ -385,7 +385,7 @@ This response synthesizes insights from multiple AI perspectives to provide a co
                             
                         else:
                             # Send processing status for single model
-                            model = selected_models[0] if selected_models else "gpt-4o"
+                            model = selected_models[0] if selected_models else "gpt-4.1-mini"  # Use gpt-4.1-mini for better function calling
                             model_display = model.replace("-", " ").title()
                             
                             await sio.emit('processing_status', {
