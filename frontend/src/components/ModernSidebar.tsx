@@ -10,9 +10,14 @@ import {
   Brain,
   Shuffle,
   Trash2,
+  FolderOpen,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { apiService, ChatSession } from "../services/api";
 import { ModelSelectionState } from "../types";
+import { GoogleDriveFileManager } from "./GoogleDriveFileManager";
+import { GoogleDriveConnectionWidget } from "./GoogleDriveConnection";
 
 interface ModernSidebarProps {
   isOpen: boolean;
@@ -67,6 +72,8 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showGoogleDrive, setShowGoogleDrive] = useState(false);
+  const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -156,8 +163,54 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
             <Plus className="w-4 h-4" />
             <span>New chat</span>
           </button>
-        </div>
+        </div>{" "}
+        {/* Google Drive Section */}
+        <div className="google-drive-section">
+          <button
+            onClick={() => setShowGoogleDrive(!showGoogleDrive)}
+            className="section-toggle"
+            aria-label="Toggle Google Drive files"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span>Google Drive</span>
+            <div className="flex items-center space-x-1">
+              {isGoogleDriveConnected && (
+                <div
+                  className="w-2 h-2 bg-green-500 rounded-full"
+                  title="Connected"
+                />
+              )}
+              {showGoogleDrive ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </div>
+          </button>
 
+          {showGoogleDrive && (
+            <div className="google-drive-content">
+              {/* Connection Status */}
+              <div className="mb-3">
+                <GoogleDriveConnectionWidget
+                  onConnectionChange={setIsGoogleDriveConnected}
+                />
+              </div>
+
+              {/* File Manager */}
+              {isGoogleDriveConnected && (
+                <GoogleDriveFileManager
+                  compact={true}
+                  showCreateOptions={false}
+                  onFileSelect={(file) => {
+                    console.log("Selected Google Drive file:", file);
+                    // Could integrate with chat here - add file context
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </div>
         {/* Chat History */}
         <div className="chat-history">
           {isLoading ? (
@@ -227,7 +280,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
             </div>
           )}
         </div>
-
         {/* User Menu */}
         <div className="sidebar-footer">
           {currentUser && (

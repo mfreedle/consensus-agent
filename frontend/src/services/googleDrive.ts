@@ -150,6 +150,80 @@ class GoogleDriveService {
   }
 
   /**
+   * Create a new Google Document
+   */
+  async createDocument(token: string, title: string, content: string): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    const response = await (apiService as any).request('/google/documents/create', {
+      method: 'POST',
+      body: JSON.stringify({ title, content })
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Create a new Google Spreadsheet
+   */
+  async createSpreadsheet(token: string, title: string): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    const response = await (apiService as any).request('/google/spreadsheets/create', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Create a new Google Slides presentation
+   */
+  async createPresentation(token: string, title: string): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    const response = await (apiService as any).request('/google/presentations/create', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Edit Google Spreadsheet
+   */
+  async editSpreadsheet(token: string, fileId: string, sheetName: string, rangeName: string, values: string[][]): Promise<{ message: string }> {
+    const response = await (apiService as any).request(`/google/spreadsheets/${fileId}/edit`, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        sheet_name: sheetName, 
+        range_name: rangeName, 
+        values 
+      })
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Add slide to Google Presentation
+   */
+  async addSlideToPresentation(token: string, fileId: string, title: string, content: string): Promise<{ message: string }> {
+    const response = await (apiService as any).request(`/google/presentations/${fileId}/slides/add`, {
+      method: 'POST',
+      body: JSON.stringify({ title, content })
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
    * Handle OAuth popup callback
    * This method sets up a listener for the OAuth popup callback
    */

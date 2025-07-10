@@ -1,10 +1,11 @@
 import asyncio
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
 import httpx
 from app.config import settings
-from openai import AsyncOpenAI, OpenAI
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -41,12 +42,39 @@ class LLMOrchestrator:
             "Authorization": f"Bearer {settings.grok_api_key}",
             "Content-Type": "application/json"
         }
+        
+        # Initialize Google Drive tools - will be set later
+        self.google_drive_tools = None
+    
+    def set_google_drive_tools(self, google_drive_tools):
+        """Set Google Drive tools for function calling"""
+        self.google_drive_tools = google_drive_tools
     
     def _supports_responses_api(self, model: str) -> bool:
         """Check if a model supports the Responses API with structured outputs"""
         # Only these models currently support Responses API with json_schema
         responses_api_models = ["gpt-4.1", "gpt-4.1-mini"]
         return model in responses_api_models
+    
+    def _get_google_drive_tools_for_openai(self) -> List[Dict[str, Any]]:
+        """Get Google Drive function definitions formatted for OpenAI function calling"""
+        if not self.google_drive_tools:
+            return []
+        
+        functions = self.google_drive_tools.get_available_functions()
+        openai_tools = []
+        
+        for func in functions:
+            openai_tools.append({
+                "type": "function",
+                "function": {
+                    "name": func.name,
+                    "description": func.description,
+                    "parameters": func.parameters
+                }
+            })
+        
+        return openai_tools
 
     async def get_openai_response(
         self, 
@@ -497,6 +525,115 @@ Note: This response is from {working_model} only due to the other model being un
                 confidence_score=confidence,
                 reasoning=reasoning,
                 debate_points=debate_points
+            )
+    
+    async def get_openai_response_with_tools(
+        self, 
+        prompt: str,
+        user,  # User object for Google Drive operations
+        model: str = "gpt-4.1",
+        context: Optional[str] = None,
+        enable_google_drive: bool = True
+    ) -> ModelResponse:
+        """Get response from OpenAI with Google Drive function calling support"""
+        
+        messages = []
+        if context:
+            messages.append({
+                "role": "system",
+                "content": f"Context: {context}\n\nYou are a helpful AI assistant with access to Google Drive. You can read, edit, and create Google Drive files when requested by the user."
+            })
+        
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        
+        # Get Google Drive tools if enabled and available
+        tools = []
+        if enable_google_drive and self.google_drive_tools:
+            tools = self._get_google_drive_tools_for_openai()
+        
+        try:
+            # Make initial API call
+            kwargs = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 4000
+            }
+            
+            if tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
+            
+            response = await self.openai_client.chat.completions.create(**kwargs)
+            
+            # Handle tool calls if present
+            if response.choices[0].message.tool_calls:
+                # Add assistant message with tool calls
+                messages.append(response.choices[0].message)
+                
+                # Execute tool calls
+                for tool_call in response.choices[0].message.tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+                    
+                    # Execute Google Drive function
+                    if self.google_drive_tools:
+                        tool_result = await self.google_drive_tools.execute_function(
+                            function_name, function_args, user
+                        )
+                        
+                        # Add tool result to messages
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": json.dumps({
+                                "success": tool_result.success,
+                                "message": tool_result.message,
+                                "data": tool_result.data,
+                                "error": tool_result.error
+                            })
+                        })
+                    else:
+                        # Add error message if tools not available
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": json.dumps({
+                                "success": False,
+                                "message": "Google Drive tools not available",
+                                "error": "NO_TOOLS"
+                            })
+                        })
+                
+                # Get final response after tool execution
+                final_response = await self.openai_client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=4000
+                )
+                
+                content = final_response.choices[0].message.content or "No response content"
+            else:
+                content = response.choices[0].message.content or "No response content"
+            
+            return ModelResponse(
+                content=content,
+                model=model,
+                confidence=0.85,
+                reasoning="OpenAI response with Google Drive tools support"
+            )
+            
+        except Exception as e:
+            logger.error(f"OpenAI API error with tools: {e}")
+            return ModelResponse(
+                content=f"Error getting OpenAI response: {str(e)}",
+                model=model,
+                confidence=0.0,
+                reasoning="API error occurred"
             )
 
 # Global orchestrator instance

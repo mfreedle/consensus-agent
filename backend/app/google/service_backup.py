@@ -1,23 +1,23 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from app.config import Settings
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from app.config import Settings
+
 
 class GoogleDriveService:
-    """Enhanced Google Drive service with full editing capabilities for LLMs"""
+    """Service for Google Drive OAuth and API operations"""
     
-    # OAuth scopes for Google Drive, Docs, Sheets, and Slides
+    # OAuth scopes for Google Drive and Docs
     SCOPES = [
         'https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/documents',
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/presentations'
+        'https://www.googleapis.com/auth/spreadsheets'
     ]
     
     def __init__(self, settings: Settings):
@@ -31,9 +31,14 @@ class GoogleDriveService:
                 "redirect_uris": [settings.google_redirect_uri]
             }
         }
-
+    
     def get_authorization_url(self, state: Optional[str] = None) -> tuple[str, str]:
-        """Generate Google OAuth authorization URL"""
+        """
+        Generate Google OAuth authorization URL
+        
+        Returns:
+            tuple: (authorization_url, state)
+        """
         flow = Flow.from_client_config(
             self.client_config,
             scopes=self.SCOPES,
@@ -44,13 +49,22 @@ class GoogleDriveService:
         authorization_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
-            prompt='consent'
+            prompt='consent'  # Force consent to get refresh token
         )
         
-        return authorization_url, state or ""
-
+        return authorization_url, state
+    
     def exchange_code_for_tokens(self, authorization_code: str, state: str) -> Dict:
-        """Exchange authorization code for access tokens"""
+        """
+        Exchange authorization code for access tokens
+        
+        Args:
+            authorization_code: The authorization code from OAuth callback
+            state: The state parameter from OAuth callback
+            
+        Returns:
+            Dict containing token information
+        """
         flow = Flow.from_client_config(
             self.client_config,
             scopes=self.SCOPES,
@@ -58,7 +72,9 @@ class GoogleDriveService:
         )
         flow.redirect_uri = self.settings.google_redirect_uri
         
+        # Exchange code for tokens
         flow.fetch_token(code=authorization_code)
+        
         credentials = flow.credentials
         
         return {
@@ -67,25 +83,42 @@ class GoogleDriveService:
             "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
             "scope": " ".join(credentials._scopes) if credentials._scopes else ""
         }
-
+    
     def refresh_access_token(self, refresh_token: str) -> Dict:
-        """Refresh access token using refresh token"""
+        """
+        Refresh access token using refresh token
+        
+        Args:
+            refresh_token: The refresh token
+            
+        Returns:
+            Dict containing new token information
+        """
         credentials = Credentials.from_authorized_user_info({
             "refresh_token": refresh_token,
             "client_id": self.settings.google_client_id,
             "client_secret": self.settings.google_client_secret
         })
         
+        # Refresh the token
         credentials.refresh(Request())
         
         return {
             "access_token": credentials.token,
             "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None
         }
-
-    def get_credentials_from_tokens(self, access_token: str, 
-                                   refresh_token: Optional[str] = None) -> Credentials:
-        """Create Google credentials object from stored tokens"""
+    
+    def get_credentials_from_tokens(self, access_token: str, refresh_token: Optional[str] = None) -> Credentials:
+        """
+        Create Google credentials object from stored tokens
+        
+        Args:
+            access_token: The access token
+            refresh_token: The refresh token (optional)
+            
+        Returns:
+            Google Credentials object
+        """
         token_info = {
             "token": access_token,
             "client_id": self.settings.google_client_id,
@@ -96,12 +129,21 @@ class GoogleDriveService:
             token_info["refresh_token"] = refresh_token
             
         return Credentials.from_authorized_user_info(token_info)
-
-    async def list_drive_files(self, access_token: str, 
-                              refresh_token: Optional[str] = None,
-                              file_type: Optional[str] = None, 
-                              limit: int = 100) -> List[Dict]:
-        """List files from Google Drive"""
+    
+    async def list_drive_files(self, access_token: str, refresh_token: Optional[str] = None, 
+                              file_type: Optional[str] = None, limit: int = 100) -> List[Dict]:
+        """
+        List files from Google Drive
+        
+        Args:
+            access_token: User's access token
+            refresh_token: User's refresh token
+            file_type: Filter by file type (document, spreadsheet, presentation)
+            limit: Maximum number of files to return
+            
+        Returns:
+            List of file information dictionaries
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('drive', 'v3', credentials=credentials)
@@ -141,10 +183,20 @@ class GoogleDriveService:
             
         except HttpError as error:
             raise Exception(f"Google Drive API error: {error}")
-
+    
     async def get_document_content(self, document_id: str, access_token: str, 
                                   refresh_token: Optional[str] = None) -> Dict:
-        """Get content from a Google Document"""
+        """
+        Get content from a Google Document
+        
+        Args:
+            document_id: The Google Document ID
+            access_token: User's access token
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing document content and metadata
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('docs', 'v1', credentials=credentials)
@@ -165,11 +217,47 @@ class GoogleDriveService:
             
         except HttpError as error:
             raise Exception(f"Google Docs API error: {error}")
+    
+    def _get_file_type_from_mime(self, mime_type: str) -> str:
+        """Convert MIME type to readable file type"""
+        mime_mapping = {
+            "application/vnd.google-apps.document": "document",
+            "application/vnd.google-apps.spreadsheet": "spreadsheet", 
+            "application/vnd.google-apps.presentation": "presentation",
+            "application/vnd.google-apps.folder": "folder"
+        }
+        return mime_mapping.get(mime_type, "file")
+    
+    def _extract_text_from_document(self, document: Dict) -> str:
+        """Extract plain text from Google Document structure"""
+        content = ""
+        
+        if "body" in document and "content" in document["body"]:
+            for element in document["body"]["content"]:
+                if "paragraph" in element:
+                    paragraph = element["paragraph"]
+                    if "elements" in paragraph:
+                        for elem in paragraph["elements"]:
+                            if "textRun" in elem and "content" in elem["textRun"]:
+                                content += elem["textRun"]["content"]
+        
+        return content
 
     async def edit_document_content(self, document_id: str, access_token: str,
-                                   new_content: str, 
-                                   refresh_token: Optional[str] = None) -> Dict:
-        """Edit content in a Google Document"""
+                                    new_content: str, 
+                                    refresh_token: Optional[str] = None) -> Dict:
+        """
+        Edit content in a Google Document
+        
+        Args:
+            document_id: The Google Document ID
+            access_token: User's access token
+            new_content: New content to replace the document
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing success status and metadata
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('docs', 'v1', credentials=credentials)
@@ -231,7 +319,18 @@ class GoogleDriveService:
 
     async def create_document(self, access_token: str, title: str, content: str = "",
                              refresh_token: Optional[str] = None) -> Dict:
-        """Create a new Google Document"""
+        """
+        Create a new Google Document
+        
+        Args:
+            access_token: User's access token
+            title: Title for the new document
+            content: Initial content for the document
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing document information
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('docs', 'v1', credentials=credentials)
@@ -272,7 +371,17 @@ class GoogleDriveService:
 
     async def get_spreadsheet_content(self, spreadsheet_id: str, access_token: str,
                                      refresh_token: Optional[str] = None) -> Dict:
-        """Get content from a Google Spreadsheet"""
+        """
+        Get content from a Google Spreadsheet
+        
+        Args:
+            spreadsheet_id: The Google Spreadsheet ID
+            access_token: User's access token
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing spreadsheet content and metadata
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('sheets', 'v4', credentials=credentials)
@@ -307,10 +416,22 @@ class GoogleDriveService:
             raise Exception(f"Google Sheets API error: {error}")
 
     async def edit_spreadsheet_content(self, spreadsheet_id: str, access_token: str,
-                                      sheet_name: str, range_name: str, 
-                                      values: List[List],
+                                      sheet_name: str, range_name: str, values: List[List],
                                       refresh_token: Optional[str] = None) -> Dict:
-        """Edit content in a Google Spreadsheet"""
+        """
+        Edit content in a Google Spreadsheet
+        
+        Args:
+            spreadsheet_id: The Google Spreadsheet ID
+            access_token: User's access token
+            sheet_name: Name of the sheet to edit
+            range_name: Range to update (e.g., 'A1:C10')
+            values: 2D array of values to update
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing success status and metadata
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('sheets', 'v4', credentials=credentials)
@@ -341,7 +462,17 @@ class GoogleDriveService:
 
     async def create_spreadsheet(self, access_token: str, title: str,
                                 refresh_token: Optional[str] = None) -> Dict:
-        """Create a new Google Spreadsheet"""
+        """
+        Create a new Google Spreadsheet
+        
+        Args:
+            access_token: User's access token
+            title: Title for the new spreadsheet
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing spreadsheet information
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('sheets', 'v4', credentials=credentials)
@@ -367,7 +498,17 @@ class GoogleDriveService:
 
     async def get_presentation_content(self, presentation_id: str, access_token: str,
                                       refresh_token: Optional[str] = None) -> Dict:
-        """Get content from a Google Slides presentation"""
+        """
+        Get content from a Google Slides presentation
+        
+        Args:
+            presentation_id: The Google Slides presentation ID
+            access_token: User's access token
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing presentation content and metadata
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('slides', 'v1', credentials=credentials)
@@ -406,7 +547,17 @@ class GoogleDriveService:
 
     async def create_presentation(self, access_token: str, title: str,
                                  refresh_token: Optional[str] = None) -> Dict:
-        """Create a new Google Slides presentation"""
+        """
+        Create a new Google Slides presentation
+        
+        Args:
+            access_token: User's access token
+            title: Title for the new presentation
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing presentation information
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('slides', 'v1', credentials=credentials)
@@ -431,13 +582,27 @@ class GoogleDriveService:
     async def add_slide_with_text(self, presentation_id: str, access_token: str,
                                  title: str, content: str,
                                  refresh_token: Optional[str] = None) -> Dict:
-        """Add a new slide with text to a Google Slides presentation"""
+        """
+        Add a new slide with text to a Google Slides presentation
+        
+        Args:
+            presentation_id: The Google Slides presentation ID
+            access_token: User's access token
+            title: Title for the slide
+            content: Content for the slide
+            refresh_token: User's refresh token
+            
+        Returns:
+            Dict containing success status and slide information
+        """
         try:
             credentials = self.get_credentials_from_tokens(access_token, refresh_token)
             service = build('slides', 'v1', credentials=credentials)
             
             # Generate unique IDs
             slide_id = f"slide_{int(datetime.now().timestamp())}"
+            title_id = f"title_{int(datetime.now().timestamp())}"
+            content_id = f"content_{int(datetime.now().timestamp())}"
             
             requests = [
                 # Create new slide
@@ -448,17 +613,27 @@ class GoogleDriveService:
                             'predefinedLayout': 'TITLE_AND_BODY'
                         }
                     }
+                },
+                # Add title
+                {
+                    'insertText': {
+                        'objectId': title_id,
+                        'text': title
+                    }
+                },
+                # Add content
+                {
+                    'insertText': {
+                        'objectId': content_id,
+                        'text': content
+                    }
                 }
             ]
             
-            # Execute the slide creation first
-            result = service.presentations().batchUpdate(
+            service.presentations().batchUpdate(
                 presentationId=presentation_id,
                 body={'requests': requests}
             ).execute()
-            
-            # Now add text to the slide (this is complex with Slides API)
-            # For now, we'll return success with the slide ID
             
             return {
                 "success": True,
@@ -469,28 +644,3 @@ class GoogleDriveService:
             
         except HttpError as error:
             raise Exception(f"Google Slides API error: {error}")
-
-    def _get_file_type_from_mime(self, mime_type: str) -> str:
-        """Convert MIME type to readable file type"""
-        mime_mapping = {
-            "application/vnd.google-apps.document": "document",
-            "application/vnd.google-apps.spreadsheet": "spreadsheet", 
-            "application/vnd.google-apps.presentation": "presentation",
-            "application/vnd.google-apps.folder": "folder"
-        }
-        return mime_mapping.get(mime_type, "file")
-
-    def _extract_text_from_document(self, document: Dict) -> str:
-        """Extract plain text from Google Document structure"""
-        content = ""
-        
-        if "body" in document and "content" in document["body"]:
-            for element in document["body"]["content"]:
-                if "paragraph" in element:
-                    paragraph = element["paragraph"]
-                    if "elements" in paragraph:
-                        for elem in paragraph["elements"]:
-                            if "textRun" in elem and "content" in elem["textRun"]:
-                                content += elem["textRun"]["content"]
-        
-        return content

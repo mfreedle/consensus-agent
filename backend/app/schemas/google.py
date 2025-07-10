@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
@@ -41,6 +41,67 @@ class GoogleDocumentContent(BaseModel):
     title: str
     content: str
     revision_id: Optional[str] = None
+
+
+# Enhanced schemas for LLM editing capabilities
+class GoogleDocumentEdit(BaseModel):
+    """Schema for editing Google Document content"""
+    content: str
+
+
+class GoogleDocumentCreate(BaseModel):
+    """Schema for creating a new Google Document"""
+    title: str
+    content: Optional[str] = ""
+
+
+class GoogleSpreadsheetContent(BaseModel):
+    """Schema for Google Spreadsheet content"""
+    spreadsheet_id: str
+    title: str
+    sheets: dict  # Sheet name -> List of rows
+    sheet_count: int
+    web_view_link: str
+
+
+class GoogleSpreadsheetEdit(BaseModel):
+    """Schema for editing Google Spreadsheet content"""
+    sheet_name: str
+    range_name: str  # e.g., "A1:C10"
+    values: List[List[Any]]  # 2D array of values
+
+
+class GoogleSpreadsheetCreate(BaseModel):
+    """Schema for creating a new Google Spreadsheet"""
+    title: str
+
+
+class GooglePresentationContent(BaseModel):
+    """Schema for Google Slides presentation content"""
+    presentation_id: str
+    title: str
+    slides: List[dict]  # List of slide data
+    slide_count: int
+    web_view_link: str
+
+
+class GooglePresentationCreate(BaseModel):
+    """Schema for creating a new Google Slides presentation"""
+    title: str
+
+
+class GoogleSlideCreate(BaseModel):
+    """Schema for adding a slide to a presentation"""
+    title: str
+    content: str
+
+
+class GoogleFileOperation(BaseModel):
+    """Schema for file operation responses"""
+    success: bool
+    message: str
+    file_id: Optional[str] = None
+    web_view_link: Optional[str] = None
 
 
 class GoogleDriveConnection(BaseModel):

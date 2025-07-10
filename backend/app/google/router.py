@@ -7,13 +7,19 @@ from app.config import Settings, settings
 from app.database.connection import get_db
 from app.google.service import GoogleDriveService
 from app.models.user import User
-from app.schemas.google import (
-    GoogleAuthURL, GoogleDriveConnection, GoogleDriveError, GoogleDriveFile,
-    GoogleDriveFileList, GoogleDocumentContent, GoogleOAuthCallback, GoogleTokens
-)
+from app.schemas.google import (GoogleAuthURL, GoogleDocumentContent,
+                                GoogleDocumentCreate, GoogleDocumentEdit,
+                                GoogleDriveConnection, GoogleDriveError,
+                                GoogleDriveFile, GoogleDriveFileList,
+                                GoogleFileOperation, GoogleOAuthCallback,
+                                GooglePresentationContent,
+                                GooglePresentationCreate, GoogleSlideCreate,
+                                GoogleSpreadsheetContent,
+                                GoogleSpreadsheetCreate, GoogleSpreadsheetEdit,
+                                GoogleTokens)
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -209,13 +215,13 @@ async def get_google_document_content(
         )
 
 
-@router.post("/files/{file_id}/edit")
-async def edit_google_doc(
+@router.post("/files/{file_id}/edit", response_model=GoogleFileOperation)
+async def edit_google_document(
     file_id: str,
-    content: str,
+    edit_data: GoogleDocumentEdit,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Edit a Google Doc (placeholder for future implementation)"""
+    """Edit a Google Document"""
     
     # Check if user has Google Drive connected
     if not current_user.google_drive_token:
@@ -224,11 +230,274 @@ async def edit_google_doc(
             detail="Google Drive not connected. Please connect your Google Drive account first."
         )
     
-    # TODO: Implement Google Docs editing
-    # This would involve using the Google Docs API to make batch updates
+    try:
+        # Edit the document
+        result = await google_service.edit_document_content(
+            document_id=file_id,
+            access_token=current_user.google_drive_token,
+            new_content=edit_data.content,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=result["message"],
+            file_id=result["document_id"],
+            web_view_link=f"https://docs.google.com/document/d/{file_id}/edit"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to edit Google Document: {str(e)}"
+        )
+
+
+@router.post("/documents/create", response_model=GoogleFileOperation)
+async def create_google_document(
+    create_data: GoogleDocumentCreate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new Google Document"""
     
-    return {
-        "message": "Document editing will be implemented in the next phase",
-        "file_id": file_id,
-        "content_length": len(content)
-    }
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Create the document
+        result = await google_service.create_document(
+            access_token=current_user.google_drive_token,
+            title=create_data.title,
+            content=create_data.content,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=f"Document '{create_data.title}' created successfully",
+            file_id=result["document_id"],
+            web_view_link=result["web_view_link"]
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create Google Document: {str(e)}"
+        )
+
+
+@router.get("/spreadsheets/{spreadsheet_id}/content", response_model=GoogleSpreadsheetContent)
+async def get_google_spreadsheet_content(
+    spreadsheet_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get content from a Google Spreadsheet"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Get spreadsheet content
+        spreadsheet_data = await google_service.get_spreadsheet_content(
+            spreadsheet_id=spreadsheet_id,
+            access_token=current_user.google_drive_token,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleSpreadsheetContent(**spreadsheet_data)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get Google Spreadsheet content: {str(e)}"
+        )
+
+
+@router.post("/spreadsheets/{spreadsheet_id}/edit", response_model=GoogleFileOperation)
+async def edit_google_spreadsheet(
+    spreadsheet_id: str,
+    edit_data: GoogleSpreadsheetEdit,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Edit a Google Spreadsheet"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Edit the spreadsheet
+        result = await google_service.edit_spreadsheet_content(
+            spreadsheet_id=spreadsheet_id,
+            access_token=current_user.google_drive_token,
+            sheet_name=edit_data.sheet_name,
+            range_name=edit_data.range_name,
+            values=edit_data.values,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=result["message"],
+            file_id=result["spreadsheet_id"],
+            web_view_link=f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to edit Google Spreadsheet: {str(e)}"
+        )
+
+
+@router.post("/spreadsheets/create", response_model=GoogleFileOperation)
+async def create_google_spreadsheet(
+    create_data: GoogleSpreadsheetCreate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new Google Spreadsheet"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Create the spreadsheet
+        result = await google_service.create_spreadsheet(
+            access_token=current_user.google_drive_token,
+            title=create_data.title,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=f"Spreadsheet '{create_data.title}' created successfully",
+            file_id=result["spreadsheet_id"],
+            web_view_link=result["web_view_link"]
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create Google Spreadsheet: {str(e)}"
+        )
+
+
+@router.get("/presentations/{presentation_id}/content", response_model=GooglePresentationContent)
+async def get_google_presentation_content(
+    presentation_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get content from a Google Slides presentation"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Get presentation content
+        presentation_data = await google_service.get_presentation_content(
+            presentation_id=presentation_id,
+            access_token=current_user.google_drive_token,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GooglePresentationContent(**presentation_data)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get Google Slides presentation content: {str(e)}"
+        )
+
+
+@router.post("/presentations/create", response_model=GoogleFileOperation)
+async def create_google_presentation(
+    create_data: GooglePresentationCreate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new Google Slides presentation"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Create the presentation
+        result = await google_service.create_presentation(
+            access_token=current_user.google_drive_token,
+            title=create_data.title,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=f"Presentation '{create_data.title}' created successfully",
+            file_id=result["presentation_id"],
+            web_view_link=result["web_view_link"]
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create Google Slides presentation: {str(e)}"
+        )
+
+
+@router.post("/presentations/{presentation_id}/slides/add", response_model=GoogleFileOperation)
+async def add_slide_to_presentation(
+    presentation_id: str,
+    slide_data: GoogleSlideCreate,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Add a slide to a Google Slides presentation"""
+    
+    # Check if user has Google Drive connected
+    if not current_user.google_drive_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Drive not connected. Please connect your Google Drive account first."
+        )
+    
+    try:
+        # Add slide to presentation
+        result = await google_service.add_slide_with_text(
+            presentation_id=presentation_id,
+            access_token=current_user.google_drive_token,
+            title=slide_data.title,
+            content=slide_data.content,
+            refresh_token=current_user.google_refresh_token
+        )
+        
+        return GoogleFileOperation(
+            success=result["success"],
+            message=result["message"],
+            file_id=result["presentation_id"],
+            web_view_link=f"https://docs.google.com/presentation/d/{presentation_id}/edit"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to add slide to Google Slides presentation: {str(e)}"
+        )

@@ -2,7 +2,11 @@ import asyncio
 import logging
 
 from app.auth.dependencies import get_current_user_from_token
+from app.config import settings
 from app.database.connection import AsyncSessionLocal
+from app.google.service import GoogleDriveService
+from app.llm.google_drive_context import GoogleDriveContextManager
+from app.llm.google_drive_tools import GoogleDriveTools
 from app.llm.orchestrator import LLMOrchestrator
 from app.models.chat import ChatSession, Message
 from app.models.file import File
@@ -11,8 +15,16 @@ from sqlalchemy import select
 logger = logging.getLogger(__name__)
 
 def register_sio_events(sio):
-    # Initialize LLM orchestrator
+    # Initialize LLM orchestrator with Google Drive tools
     llm_orchestrator = LLMOrchestrator()
+    
+    # Initialize Google Drive integration
+    google_service = GoogleDriveService(settings)
+    google_drive_context_manager = GoogleDriveContextManager(google_service)
+    google_drive_tools = GoogleDriveTools(google_service)
+    
+    # Set Google Drive tools in the orchestrator for function calling
+    llm_orchestrator.set_google_drive_tools(google_drive_tools)
     
     async def build_conversation_context(db, session_id, max_messages: int = 25) -> str:
         """Build conversation context from recent messages in the session"""
@@ -195,10 +207,11 @@ def register_sio_events(sio):
                             for file in files:
                                 print(f"DEBUG Socket.IO: Processing attached file: {file.original_filename}")
                                 attached_files_context += f"\n--- {file.original_filename} ---\n"
-                                if file.extracted_text:
+                                extracted_text = getattr(file, 'extracted_text', None)
+                                if extracted_text:
                                     # Limit file content to prevent context overflow
-                                    content = file.extracted_text[:5000]
-                                    if len(file.extracted_text) > 5000:
+                                    content = extracted_text[:5000]
+                                    if len(extracted_text) > 5000:
                                         content += "\n... (content truncated)"
                                     attached_files_context += content
                                 else:
@@ -223,14 +236,15 @@ def register_sio_events(sio):
                         max_kb_length = 15000  # Limit knowledge base context to prevent overflow
                         
                         for file in all_files:
-                            if file.extracted_text:
+                            extracted_text = getattr(file, 'extracted_text', None)
+                            if extracted_text:
                                 # Skip files that were already included as attachments
                                 if attached_file_ids and str(file.id) in attached_file_ids:
                                     continue
                                     
                                 # Limit individual file content and check total length
-                                content = file.extracted_text[:3000]
-                                if len(file.extracted_text) > 3000:
+                                content = extracted_text[:3000]
+                                if len(extracted_text) > 3000:
                                     content += "\n... (content truncated)"
                                 
                                 file_entry = f"\n--- {file.original_filename} ---\n{content}\n"
@@ -245,6 +259,18 @@ def register_sio_events(sio):
                     # Combine all file contexts
                     file_context = attached_files_context + knowledge_base_context
                     
+                    # Add Google Drive context if user has Google Drive connected
+                    google_drive_context = ""
+                    try:
+                        google_drive_context = await google_drive_context_manager.get_google_drive_context(user, limit=10)
+                        if google_drive_context:
+                            logger.info(f"Added Google Drive context: {len(google_drive_context)} characters")
+                    except Exception as e:
+                        logger.warning(f"Could not get Google Drive context: {e}")
+                    
+                    # Combine all contexts
+                    full_context = file_context + google_drive_context
+                    
                     # Generate AI response
                     try:
                         # Build conversation context from previous messages  
@@ -252,8 +278,11 @@ def register_sio_events(sio):
                         actual_session_id = session_id if hasattr(session_id, '__int__') or isinstance(session_id, int) else int(str(session_id))
                         conversation_context = await build_conversation_context(db, actual_session_id)
                         
-                        # Combine user message with file context
-                        full_prompt = message + file_context
+                        # Combine all context with the full context
+                        combined_context = conversation_context + full_context
+                        
+                        # Combine user message with full context
+                        full_prompt = message + full_context
                         
                         if use_consensus:
                             # Send initial processing status
@@ -273,10 +302,10 @@ def register_sio_events(sio):
                                 "session_id": session_id
                             }, room=str(session_id))
                             
-                            # Get consensus response from multiple models with conversation context
+                            # Get consensus response from multiple models with full context
                             consensus_result = await llm_orchestrator.generate_consensus(
                                 prompt=full_prompt,
-                                context=conversation_context
+                                context=combined_context
                             )
                             
                             # Debug: Log the consensus result content
@@ -368,18 +397,20 @@ This response synthesizes insights from multiple AI perspectives to provide a co
                             # Small delay to show status
                             await asyncio.sleep(0.3)
                             
-                            # Get single model response with conversation context
+                            # Get single model response with Google Drive tools and context
                             if model.startswith("gpt"):
-                                response = await llm_orchestrator.get_openai_response(
+                                response = await llm_orchestrator.get_openai_response_with_tools(
                                     prompt=full_prompt,
+                                    user=user,
                                     model=model,
-                                    context=conversation_context
+                                    context=combined_context,
+                                    enable_google_drive=True
                                 )
                             else:
                                 response = await llm_orchestrator.get_grok_response(
                                     prompt=full_prompt,
                                     model=model,
-                                    context=conversation_context
+                                    context=combined_context
                                 )
                             
                             # Save AI response for single model

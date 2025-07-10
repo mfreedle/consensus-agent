@@ -1,7 +1,11 @@
 from typing import List, Optional
 
 from app.auth.dependencies import get_current_active_user
+from app.config import settings
 from app.database.connection import get_db
+from app.google.service import GoogleDriveService
+from app.llm.google_drive_context import GoogleDriveContextManager
+from app.llm.google_drive_tools import GoogleDriveTools
 from app.llm.orchestrator import llm_orchestrator
 from app.models.chat import ChatSession, Message
 from app.models.file import File
@@ -14,6 +18,14 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
+
+# Initialize Google Drive integration
+google_service = GoogleDriveService(settings)
+google_drive_context_manager = GoogleDriveContextManager(google_service)
+google_drive_tools = GoogleDriveTools(google_service)
+
+# Set Google Drive tools in the orchestrator
+llm_orchestrator.set_google_drive_tools(google_drive_tools)
 
 @router.post("/sessions", response_model=ChatSessionResponse)
 async def create_chat_session(
