@@ -250,35 +250,60 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     setFileUploadModal({ isOpen: true, mode: "knowledge" });
   };
 
-  const handleFileAttached = async (file: File) => {
+  const handleFileAttached = async (file: File, uploadedFileId?: string) => {
+    console.log(
+      "ModernChatInterface: handleFileAttached called with file:",
+      file.name,
+      "uploadedFileId:",
+      uploadedFileId
+    );
     try {
-      // Upload the file first to get an ID
-      const formData = new FormData();
-      formData.append("file", file);
+      let fileId: string;
 
-      const response = await fetch("http://localhost:8000/files/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: formData,
-      });
+      if (uploadedFileId) {
+        // File was already uploaded by ModernFileUpload
+        fileId = uploadedFileId;
+        console.log(
+          "Using pre-uploaded file:",
+          file.name,
+          "with ID:",
+          uploadedFileId
+        );
+      } else {
+        // Upload the file first to get an ID (fallback for direct calls)
+        const formData = new FormData();
+        formData.append("file", file);
 
-      if (!response.ok) {
-        throw new Error("Failed to upload file");
+        const response = await fetch("http://localhost:8000/files/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload file");
+        }
+
+        const result = await response.json();
+        fileId = result.id;
+        console.log("Uploaded file:", file.name, "with ID:", result.id);
       }
-
-      const result = await response.json();
 
       // Add to attached files with ID
       const attachedFile: AttachedFile = {
-        id: result.id,
+        id: fileId,
         file: file,
         uploaded: true,
       };
 
-      setAttachedFiles((prev) => [...prev, attachedFile]);
-      console.log("File attached:", file.name, "with ID:", result.id);
+      setAttachedFiles((prev) => {
+        const newAttachedFiles = [...prev, attachedFile];
+        console.log("Updated attachedFiles state:", newAttachedFiles);
+        return newAttachedFiles;
+      });
+      console.log("File attached successfully:", file.name, "with ID:", fileId);
     } catch (error) {
       console.error("Error uploading file:", error);
       addError(error, "upload", "Failed to attach file. Please try again.");

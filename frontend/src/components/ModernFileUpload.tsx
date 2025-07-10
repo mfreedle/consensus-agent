@@ -29,7 +29,7 @@ interface UploadFile {
 interface ModernFileUploadProps {
   mode: "attach" | "knowledge"; // attach = temporary, knowledge = permanent
   onFilesUploaded?: (files: any[]) => void;
-  onFileAttached?: (file: File) => void;
+  onFileAttached?: (file: File, uploadedFileId?: string) => void;
   maxFiles?: number;
   className?: string;
   children?: React.ReactNode;
@@ -96,15 +96,37 @@ const ModernFileUpload: React.FC<ModernFileUploadProps> = ({
     async (file: File, uploadFileObj: UploadFile) => {
       try {
         if (mode === "attach") {
-          // For attach mode, just notify parent component
-          onFileAttached?.(file);
+          // For attach mode, upload the file and then notify parent component
+          const response = await enhancedApiService.uploadFile(
+            file,
+            (progress) => {
+              setUploadingFiles((prev) =>
+                prev.map((f) =>
+                  f.id === uploadFileObj.id ? { ...f, progress } : f
+                )
+              );
+            }
+          );
+
           setUploadingFiles((prev) =>
             prev.map((f) =>
               f.id === uploadFileObj.id
-                ? { ...f, status: "success", progress: 100 }
+                ? {
+                    ...f,
+                    status: "success",
+                    progress: 100,
+                    uploadedFileId: response.id,
+                  }
                 : f
             )
           );
+
+          // Call the callback with both file and uploaded file ID
+          console.log(
+            "ModernFileUpload: File uploaded successfully, calling onFileAttached with ID:",
+            response.id
+          );
+          onFileAttached?.(file, response.id);
         } else {
           // For knowledge mode, upload to server
           const response = await enhancedApiService.uploadFile(
@@ -125,7 +147,7 @@ const ModernFileUpload: React.FC<ModernFileUploadProps> = ({
                     ...f,
                     status: "success",
                     progress: 100,
-                    uploadedFileId: response.file_id,
+                    uploadedFileId: response.id,
                   }
                 : f
             )

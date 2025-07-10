@@ -7,7 +7,7 @@ interface FileUploadModalProps {
   onClose: () => void;
   mode: "attach" | "knowledge";
   onFilesUploaded?: (files: any[]) => void;
-  onFileAttached?: (file: File) => void;
+  onFileAttached?: (file: File, uploadedFileId?: string) => void;
 }
 
 const FileUploadModal: React.FC<FileUploadModalProps> = ({
@@ -24,10 +24,17 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
     onFilesUploaded?.(files);
   };
 
-  const handleFileAttached = (file: File) => {
-    onFileAttached?.(file);
+  const handleFileAttached = (file: File, uploadedFileId?: string) => {
+    console.log(
+      "FileUploadModal: handleFileAttached called with file:",
+      file.name,
+      "ID:",
+      uploadedFileId
+    );
+    onFileAttached?.(file, uploadedFileId);
     // For attach mode, close modal immediately after attaching
     if (mode === "attach") {
+      console.log("FileUploadModal: Closing modal after file attachment");
       onClose();
     }
   };
