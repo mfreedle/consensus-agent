@@ -569,22 +569,22 @@ Note: This response is from {working_model} only due to the other model being un
         context: Optional[str] = None,
         enable_google_drive: bool = True
     ) -> ModelResponse:
-        """Get response from OpenAI with Google Drive function calling support"""
+        """Get response from OpenAI with Google Drive function calling support using multi-step function calling loop"""
         
-        # Build input messages for Responses API
-        input_messages = []
+        # Build initial messages
+        messages = []
         if context:
-            input_messages.append({
+            messages.append({
                 "role": "system",
-                "content": f"Context: {context}\n\nYou are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform file operations (like copying, moving, searching for files), you MUST use the available functions to actually perform these tasks. Do not just say you will do something - execute the functions immediately to complete the requested actions.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nAlways use functions to complete user requests - don't just describe what you would do."
+                "content": f"Context: {context}\n\nYou are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform multi-step file operations (like copying files, moving files, or complex searches), you should use multiple function calls as needed to complete the entire task. You can call functions in sequence or parallel to accomplish complex workflows.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nUse the available functions to complete the user's requests fully. You can make multiple function calls to accomplish complex tasks."
             })
         else:
-            input_messages.append({
+            messages.append({
                 "role": "system", 
-                "content": "You are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform file operations (like copying, moving, searching for files), you MUST use the available functions to actually perform these tasks. Do not just say you will do something - execute the functions immediately to complete the requested actions.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nAlways use functions to complete user requests - don't just describe what you would do."
+                "content": "You are a helpful AI assistant with access to Google Drive. You can read, edit, create, copy, move, and manage Google Drive files when requested by the user.\n\nIMPORTANT: When the user asks you to perform multi-step file operations (like copying files, moving files, or complex searches), you should use multiple function calls as needed to complete the entire task. You can call functions in sequence or parallel to accomplish complex workflows.\n\nAvailable capabilities:\n- Search for files by name or content in all folders\n- Find folders by name\n- List folder contents\n- Copy files to different locations\n- Move files between folders\n- Read, edit, and create documents\n- Get file paths and organization\n\nUse the available functions to complete the user's requests fully. You can make multiple function calls to accomplish complex tasks."
             })
         
-        input_messages.append({
+        messages.append({
             "role": "user",
             "content": prompt
         })
@@ -592,97 +592,21 @@ Note: This response is from {working_model} only due to the other model being un
         # Get Google Drive tools if enabled and available
         tools = []
         if enable_google_drive and self.google_drive_tools:
-            # Use correct tool format based on API support
-            if self._supports_responses_api(model):
-                tools = self._get_google_drive_tools_for_responses_api()
-            else:
-                tools = self._get_google_drive_tools_for_openai()
+            tools = self._get_google_drive_tools_for_openai()
         
         try:
-            # Use Responses API for models that support it with function calling
-            if self._supports_responses_api(model) and tools:
-                logger.info(f"Using Responses API for {model} with {len(tools)} tools")
+            # Use Chat Completions API with function calling loop
+            logger.info(f"Using Chat Completions API for {model} with {len(tools)} tools")
+            
+            # Function calling loop - continue until no more function calls are needed
+            max_iterations = 10  # Prevent infinite loops
+            iteration = 0
+            
+            while iteration < max_iterations:
+                iteration += 1
+                logger.info(f"Function calling iteration {iteration}")
                 
-                kwargs = {
-                    "model": model,
-                    "input": input_messages,
-                    "tools": tools,
-                    "tool_choice": "required"  # Force function usage when tools are available
-                }
-                
-                # Add timeout to prevent hanging
-                import asyncio
-                response = await asyncio.wait_for(
-                    self.openai_client.responses.create(**kwargs),
-                    timeout=45.0  # Increased timeout for function calling
-                )
-                
-                # Process function calls from Responses API
-                if response.output:
-                    function_calls = []
-                    text_content = ""
-                    
-                    for output_item in response.output:
-                        if output_item.type == "function_call":
-                            function_calls.append(output_item)
-                        elif output_item.type == "text":
-                            text_content += output_item.content
-                    
-                    # Execute function calls
-                    if function_calls:
-                        logger.info(f"Executing {len(function_calls)} function calls")
-                        execution_results = []
-                        
-                        for func_call in function_calls:
-                            function_name = func_call.name
-                            function_args = json.loads(func_call.arguments)
-                            
-                            logger.info(f"Executing function: {function_name} with args: {function_args}")
-                            
-                            # Execute Google Drive function
-                            if self.google_drive_tools:
-                                tool_result = await self.google_drive_tools.execute_function(
-                                    function_name, function_args, user
-                                )
-                                
-                                execution_results.append({
-                                    "function": function_name,
-                                    "success": tool_result.success,
-                                    "message": tool_result.message,
-                                    "data": tool_result.data,
-                                    "error": tool_result.error
-                                })
-                                
-                                logger.info(f"Function {function_name} result: {tool_result.success}")
-                            else:
-                                execution_results.append({
-                                    "function": function_name,
-                                    "success": False,
-                                    "message": "Google Drive tools not available",
-                                    "error": "NO_TOOLS"
-                                })
-                        
-                        # Format execution results for response
-                        results_summary = []
-                        for result in execution_results:
-                            if result["success"]:
-                                results_summary.append(f"✅ {result['function']}: {result['message']}")
-                            else:
-                                results_summary.append(f"❌ {result['function']}: {result['error']}")
-                        
-                        content = f"{text_content}\n\n**Function Execution Results:**\n" + "\n".join(results_summary)
-                    else:
-                        content = text_content or "Function call completed"
-                else:
-                    content = "No response from Responses API"
-                    
-            else:
-                # Fallback to Chat Completions API for older models or when no tools
-                logger.info(f"Using Chat Completions API for {model}")
-                
-                # Convert input to messages format
-                messages = input_messages
-                
+                # Prepare API call
                 kwargs = {
                     "model": model,
                     "messages": messages,
@@ -692,24 +616,29 @@ Note: This response is from {working_model} only due to the other model being un
                 
                 if tools:
                     kwargs["tools"] = tools
-                    kwargs["tool_choice"] = "required"
+                    kwargs["tool_choice"] = "auto"  # Let model decide when to use tools
+                    kwargs["parallel_tool_calls"] = True  # Enable parallel function calling
                 
-                # Add timeout to prevent hanging
+                # Make API call with timeout
                 import asyncio
                 response = await asyncio.wait_for(
                     self.openai_client.chat.completions.create(**kwargs),
                     timeout=30.0
                 )
                 
-                # Handle tool calls if present
+                # Check if the model wants to call functions
                 if response.choices[0].message.tool_calls:
-                    # Add assistant message with tool calls
+                    logger.info(f"Model requested {len(response.choices[0].message.tool_calls)} function calls")
+                    
+                    # Add assistant message with tool calls to conversation
                     messages.append(response.choices[0].message)
                     
-                    # Execute tool calls
+                    # Execute all tool calls (can be parallel)
                     for tool_call in response.choices[0].message.tool_calls:
                         function_name = tool_call.function.name
                         function_args = json.loads(tool_call.function.arguments)
+                        
+                        logger.info(f"Executing function: {function_name} with args: {function_args}")
                         
                         # Execute Google Drive function
                         if self.google_drive_tools:
@@ -717,7 +646,7 @@ Note: This response is from {working_model} only due to the other model being un
                                 function_name, function_args, user
                             )
                             
-                            # Add tool result to messages
+                            # Add tool result to conversation
                             messages.append({
                                 "role": "tool",
                                 "tool_call_id": tool_call.id,
@@ -728,6 +657,8 @@ Note: This response is from {working_model} only due to the other model being un
                                     "error": tool_result.error
                                 })
                             })
+                            
+                            logger.info(f"Function {function_name} result: {tool_result.success}")
                         else:
                             # Add error message if tools not available
                             messages.append({
@@ -740,26 +671,23 @@ Note: This response is from {working_model} only due to the other model being un
                                 })
                             })
                     
-                    # Get final response after tool execution
-                    final_response = await asyncio.wait_for(
-                        self.openai_client.chat.completions.create(
-                            model=model,
-                            messages=messages,
-                            temperature=0.7,
-                            max_tokens=4000
-                        ),
-                        timeout=30.0
-                    )
-                    
-                    content = final_response.choices[0].message.content or "No response content"
+                    # Continue the loop to let the model process the results and potentially make more calls
+                    continue
                 else:
+                    # No more function calls - we have the final response
+                    logger.info(f"Function calling completed after {iteration} iterations")
                     content = response.choices[0].message.content or "No response content"
+                    break
+            else:
+                # Hit max iterations
+                logger.warning(f"Function calling loop hit max iterations ({max_iterations})")
+                content = "Function calling completed but may be incomplete due to complexity. Please try breaking down your request into smaller steps."
             
             return ModelResponse(
                 content=content,
                 model=model,
                 confidence=0.85,
-                reasoning="OpenAI response with Google Drive tools support"
+                reasoning=f"OpenAI response with Google Drive tools support (completed in {iteration} iterations)"
             )
             
         except Exception as e:
