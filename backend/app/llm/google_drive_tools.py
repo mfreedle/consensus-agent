@@ -50,18 +50,19 @@ class GoogleDriveTools:
                     "type": "object",
                     "properties": {
                         "file_type": {
-                            "type": "string",
-                            "enum": ["document", "spreadsheet", "presentation", "all"],
-                            "description": "Filter files by type (document, spreadsheet, presentation, or all)"
+                            "type": ["string", "null"],
+                            "enum": ["document", "spreadsheet", "presentation", "all", None],
+                            "description": "Filter files by type (document, spreadsheet, presentation, or all). Pass null for all files."
                         },
                         "limit": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 1,
                             "maximum": 50,
-                            "default": 20,
-                            "description": "Maximum number of files to return"
+                            "description": "Maximum number of files to return. Pass null for default (20)."
                         }
-                    }
+                    },
+                    "required": ["file_type", "limit"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -75,19 +76,19 @@ class GoogleDriveTools:
                             "description": "The search term to look for in file names or content"
                         },
                         "file_type": {
-                            "type": "string",
-                            "enum": ["document", "spreadsheet", "presentation", "folder", "all"],
-                            "description": "Filter search results by file type"
+                            "type": ["string", "null"],
+                            "enum": ["document", "spreadsheet", "presentation", "folder", "all", None],
+                            "description": "Filter search results by file type. Pass null for all files."
                         },
                         "limit": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 25,
-                            "description": "Maximum number of search results to return"
+                            "description": "Maximum number of search results to return. Pass null for default (25)."
                         }
                     },
-                    "required": ["search_query"]
+                    "required": ["search_query", "file_type", "limit"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -101,19 +102,19 @@ class GoogleDriveTools:
                             "description": "The Google Drive folder ID to list contents of"
                         },
                         "file_type": {
-                            "type": "string",
-                            "enum": ["document", "spreadsheet", "presentation", "folder", "all"],
-                            "description": "Filter contents by file type"
+                            "type": ["string", "null"],
+                            "enum": ["document", "spreadsheet", "presentation", "folder", "all", None],
+                            "description": "Filter contents by file type. Pass null for all files."
                         },
                         "limit": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 50,
-                            "description": "Maximum number of items to return"
+                            "description": "Maximum number of items to return. Pass null for default (50)."
                         }
                     },
-                    "required": ["folder_id"]
+                    "required": ["folder_id", "file_type", "limit"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -127,7 +128,8 @@ class GoogleDriveTools:
                             "description": "The name of the folder to find"
                         }
                     },
-                    "required": ["folder_name"]
+                    "required": ["folder_name"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -141,7 +143,8 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID to get the path for"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -151,18 +154,19 @@ class GoogleDriveTools:
                     "type": "object",
                     "properties": {
                         "file_type": {
-                            "type": "string",
-                            "enum": ["document", "spreadsheet", "presentation", "all"],
-                            "description": "Filter files by type"
+                            "type": ["string", "null"],
+                            "enum": ["document", "spreadsheet", "presentation", "all", None],
+                            "description": "Filter files by type. Pass null for all files."
                         },
                         "limit": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "minimum": 1,
                             "maximum": 200,
-                            "default": 100,
-                            "description": "Maximum number of files to return"
+                            "description": "Maximum number of files to return. Pass null for default (100)."
                         }
-                    }
+                    },
+                    "required": ["file_type", "limit"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -176,7 +180,8 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID of the document to read"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -190,7 +195,8 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID of the spreadsheet to read"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -204,7 +210,8 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID of the presentation to read"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -222,7 +229,8 @@ class GoogleDriveTools:
                             "description": "The new content for the document. This will replace all existing content."
                         }
                     },
-                    "required": ["file_id", "content"]
+                    "required": ["file_id", "content"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -252,7 +260,8 @@ class GoogleDriveTools:
                             "description": "2D array of values to insert. Each sub-array represents a row."
                         }
                     },
-                    "required": ["file_id", "sheet_name", "range_name", "values"]
+                    "required": ["file_id", "sheet_name", "range_name", "values"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -270,7 +279,8 @@ class GoogleDriveTools:
                             "description": "Initial content for the document"
                         }
                     },
-                    "required": ["title", "content"]
+                    "required": ["title", "content"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -284,7 +294,8 @@ class GoogleDriveTools:
                             "description": "Title for the new spreadsheet"
                         }
                     },
-                    "required": ["title"]
+                    "required": ["title"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -298,7 +309,8 @@ class GoogleDriveTools:
                             "description": "Title for the new presentation"
                         }
                     },
-                    "required": ["title"]
+                    "required": ["title"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -320,7 +332,8 @@ class GoogleDriveTools:
                             "description": "Content text for the new slide"
                         }
                     },
-                    "required": ["file_id", "title", "content"]
+                    "required": ["file_id", "title", "content"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -334,15 +347,16 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID to copy"
                         },
                         "new_name": {
-                            "type": "string",
-                            "description": "Optional new name for the copied file. If not provided, will use 'Copy of [original name]'"
+                            "type": ["string", "null"],
+                            "description": "Optional new name for the copied file. Pass null to use 'Copy of [original name]'"
                         },
                         "target_folder_id": {
-                            "type": "string",
-                            "description": "Optional folder ID to copy the file to. Use 'root' for main Drive folder or get folder ID from find_folder_by_name"
+                            "type": ["string", "null"],
+                            "description": "Optional folder ID to copy the file to. Pass null for current folder or use 'root' for main Drive folder"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id", "new_name", "target_folder_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -360,7 +374,8 @@ class GoogleDriveTools:
                             "description": "The folder ID to move the file to. Use 'root' for main Drive folder or get folder ID from find_folder_by_name"
                         }
                     },
-                    "required": ["file_id", "target_folder_id"]
+                    "required": ["file_id", "target_folder_id"],
+                    "additionalProperties": False
                 }
             ),
             GoogleDriveFunction(
@@ -374,7 +389,8 @@ class GoogleDriveTools:
                             "description": "The Google Drive file ID to delete"
                         }
                     },
-                    "required": ["file_id"]
+                    "required": ["file_id"],
+                    "additionalProperties": False
                 }
             )
         ]
@@ -446,8 +462,14 @@ class GoogleDriveTools:
     
     async def _list_files(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
         """List Google Drive files"""
-        file_type = parameters.get("file_type", "all")
-        limit = parameters.get("limit", 20)
+        file_type = parameters.get("file_type")
+        limit = parameters.get("limit")
+        
+        # Handle null values from strict mode
+        if file_type is None:
+            file_type = "all"
+        if limit is None:
+            limit = 20
         
         files = await self.google_service.list_drive_files(
             access_token=access_token,
@@ -638,8 +660,14 @@ class GoogleDriveTools:
     async def _search_files(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
         """Search for files in Google Drive"""
         search_query = parameters.get("search_query", "")
-        file_type = parameters.get("file_type", "all")
-        limit = parameters.get("limit", 25)
+        file_type = parameters.get("file_type")
+        limit = parameters.get("limit")
+        
+        # Handle null values from strict mode
+        if file_type is None:
+            file_type = "all"
+        if limit is None:
+            limit = 25
         
         if not search_query:
             return GoogleDriveToolResult(
@@ -665,8 +693,14 @@ class GoogleDriveTools:
     async def _list_folder_contents(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
         """List contents of a specific folder"""
         folder_id = parameters.get("folder_id", "")
-        file_type = parameters.get("file_type", "all")
-        limit = parameters.get("limit", 50)
+        file_type = parameters.get("file_type")
+        limit = parameters.get("limit")
+        
+        # Handle null values from strict mode
+        if file_type is None:
+            file_type = "all"
+        if limit is None:
+            limit = 50
         
         if not folder_id:
             return GoogleDriveToolResult(
@@ -744,8 +778,14 @@ class GoogleDriveTools:
 
     async def _list_all_files_with_paths(self, parameters: Dict[str, Any], access_token: str, refresh_token: Optional[str]) -> GoogleDriveToolResult:
         """List all files with their full paths"""
-        file_type = parameters.get("file_type", "all")
-        limit = parameters.get("limit", 100)
+        file_type = parameters.get("file_type")
+        limit = parameters.get("limit")
+        
+        # Handle null values from strict mode
+        if file_type is None:
+            file_type = "all"
+        if limit is None:
+            limit = 100
         
         files = await self.google_service.list_all_files_with_paths(
             access_token=access_token,
