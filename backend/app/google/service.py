@@ -170,7 +170,7 @@ class GoogleDriveService:
                 q=query,
                 pageSize=limit,
                 fields="files(id,name,mimeType,modifiedTime,webViewLink,owners,parents)",
-                orderBy="relevance"
+                orderBy="modifiedTime desc"  # Changed from "relevance" to valid option
             ).execute()
             
             files = results.get('files', [])
