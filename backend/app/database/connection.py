@@ -2,7 +2,7 @@ import logging
 import os
 
 from app.config import settings
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.ext.declarative import declarative_base
@@ -63,6 +63,9 @@ async def init_db():
             # Create all tables
             await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables created successfully")
+        
+        # Run migrations
+        await migrate_database()
         
         # Seed initial data
         await seed_initial_data()
@@ -185,3 +188,64 @@ async def create_default_user():
     except Exception as e:
         logger.error(f"Failed to create default admin user: {e}")
         raise
+
+async def migrate_database():
+    """Handle database migrations"""
+    try:
+        logger.info("Checking for database migrations...")
+        
+        # Check if email column exists in users table
+        async with engine.begin() as conn:
+            if settings.database_url.startswith("postgresql"):
+                # PostgreSQL migration
+                check_table_exists = """
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = 'users'
+                """
+                result = await conn.execute(text(check_table_exists))
+                table_exists = result.fetchone() is not None
+                
+                if not table_exists:
+                    logger.info("Users table doesn't exist yet, will be created by create_all")
+                    return
+                    
+                check_email_column = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'email'
+                """
+                result = await conn.execute(text(check_email_column))
+                email_column_exists = result.fetchone() is not None
+                
+                if not email_column_exists:
+                    logger.info("Adding email column to users table...")
+                    add_email_column = """
+                    ALTER TABLE users 
+                    ADD COLUMN email VARCHAR(255) NULL
+                    """
+                    await conn.execute(text(add_email_column))
+                    
+                    # Add unique constraint for email column
+                    add_email_unique = """
+                    ALTER TABLE users 
+                    ADD CONSTRAINT users_email_unique UNIQUE (email)
+                    """
+                    try:
+                        await conn.execute(text(add_email_unique))
+                    except Exception as e:
+                        logger.warning(f"Could not add unique constraint (might already exist): {e}")
+                    
+                    # Add index for email column
+                    add_email_index = "CREATE INDEX IF NOT EXISTS ix_users_email ON users (email)"
+                    await conn.execute(text(add_email_index))
+                    
+                    logger.info("Email column added successfully")
+                else:
+                    logger.info("Email column already exists")
+            else:
+                # SQLite migration (already handled by create_all)
+                logger.info("SQLite database - using create_all for schema")
+                
+    except Exception as e:
+        logger.warning(f"Migration check failed (table might not exist yet): {e}")
