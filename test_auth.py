@@ -11,8 +11,8 @@ def test_registration():
     print("Testing user registration...")
     
     data = {
-        "username": "finaltest2025",
-        "email": "finaltest2025@example.com", 
+        "username": "emailtest2025",
+        "email": "emailtest2025@example.com", 
         "password": "testpass123"
     }
     
@@ -30,7 +30,7 @@ def test_login():
     print("\nTesting user login...")
     
     data = {
-        "username": "finaltest2025",
+        "username": "emailtest2025",
         "password": "testpass123"
     }
     

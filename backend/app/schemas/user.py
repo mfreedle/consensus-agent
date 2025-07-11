@@ -1,13 +1,24 @@
+import re
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, validator
+
+# Email validation regex pattern
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
 
 # User schemas
 class UserBase(BaseModel):
     username: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if v is not None and v.strip():
+            if not EMAIL_REGEX.match(v.strip()):
+                raise ValueError('Invalid email format')
+        return v.strip() if v else None
 
 class UserCreate(UserBase):
     password: str
@@ -23,7 +34,14 @@ class UserLogin(BaseModel):
     password: str
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if v is not None and v.strip():
+            if not EMAIL_REGEX.match(v.strip()):
+                raise ValueError('Invalid email format')
+        return v.strip() if v else None
 
 class PasswordChange(BaseModel):
     current_password: str
