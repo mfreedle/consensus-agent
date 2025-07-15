@@ -7,8 +7,6 @@ import {
   Edit3,
   ExternalLink,
   Search,
-  Folder,
-  MapPin,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { googleDriveService } from "../services/googleDrive";
@@ -45,14 +43,8 @@ export const GoogleDriveFileManager: React.FC<GoogleDriveFileManagerProps> = ({
   const [createTitle, setCreateTitle] = useState("");
   const [createContent, setCreateContent] = useState("");
 
-  // New search and navigation state
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchMode, setSearchMode] = useState(false);
-  const [viewMode, setViewMode] = useState<"recent" | "search" | "paths">(
-    "recent"
-  );
-  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
-  const [folderPath, setFolderPath] = useState<string[]>([]);
 
   const loadFiles = useCallback(async () => {
     if (!token) return;
@@ -63,28 +55,12 @@ export const GoogleDriveFileManager: React.FC<GoogleDriveFileManagerProps> = ({
     try {
       let response;
 
-      if (viewMode === "search" && searchQuery.trim()) {
-        // Search for files
+      if (searchQuery.trim()) {
+        // Search for files when there's a search query
         response = await googleDriveService.searchFiles(token, searchQuery, {
           file_type: fileType === "all" ? undefined : fileType,
           limit: 50,
         });
-      } else if (viewMode === "paths") {
-        // List all files with their full paths
-        response = await googleDriveService.listFilesWithPaths(token, {
-          file_type: fileType === "all" ? undefined : fileType,
-          limit: 100,
-        });
-      } else if (currentFolder) {
-        // List folder contents
-        response = await googleDriveService.listFolderContents(
-          token,
-          currentFolder,
-          {
-            file_type: fileType === "all" ? undefined : fileType,
-            limit: 50,
-          }
-        );
       } else {
         // Default: recent files
         response = await googleDriveService.listFiles(token, {
@@ -99,13 +75,13 @@ export const GoogleDriveFileManager: React.FC<GoogleDriveFileManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [token, fileType, viewMode, searchQuery, currentFolder]);
+  }, [token, fileType, searchQuery]);
 
   useEffect(() => {
     if (token) {
       loadFiles();
     }
-  }, [token, fileType, loadFiles, viewMode, searchQuery]);
+  }, [token, fileType, loadFiles, searchQuery]);
 
   const handleCreateFile = async () => {
     if (!token || !createTitle.trim()) return;
@@ -220,100 +196,26 @@ export const GoogleDriveFileManager: React.FC<GoogleDriveFileManagerProps> = ({
         </div>
       )}
 
-      {/* View Mode Selector - New feature */}
+      {/* Search Bar */}
       {!compact && (
-        <div className="mb-4">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => {
-                setViewMode("recent");
-                setSearchQuery("");
-              }}
-              className={`px-3 py-1 rounded-md text-xs font-medium ${
-                viewMode === "recent"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-              }`}
-            >
-              Recent
-            </button>
-            <button
-              onClick={() => setViewMode("search")}
-              className={`px-3 py-1 rounded-md text-xs font-medium ${
-                viewMode === "search"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-              }`}
-            >
-              <Search className="h-3 w-3 inline mr-1" />
-              Search
-            </button>
-            <button
-              onClick={() => {
-                setViewMode("paths");
-                setSearchQuery("");
-              }}
-              className={`px-3 py-1 rounded-md text-xs font-medium ${
-                viewMode === "paths"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-              }`}
-            >
-              <Folder className="h-3 w-3 inline mr-1" />
-              Paths
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Search Bar - Show when in search mode */}
-      {viewMode === "search" && !compact && (
         <div className="mb-4">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search files by name or content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  loadFiles();
-                }
-              }}
+              placeholder="Search files by name or content..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            <button
-              onClick={loadFiles}
-              className="absolute right-2 top-1 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-            >
-              Search
-            </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Search includes file names, content, and files in all subfolders
+            {searchQuery.trim()
+              ? "Searching files..."
+              : "Type to search or view recent files"}
           </p>
         </div>
       )}
-
-      {/* Search Bar - New feature */}
-      <div className="mb-4">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search files..."
-            className="w-full p-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          />
-          <button
-            onClick={() => setViewMode("search")}
-            className="absolute inset-y-0 right-0 flex items-center pr-3"
-          >
-            <Search className="h-5 w-5 text-gray-400" />
-          </button>
-        </div>
-      </div>
 
       {/* Create Form */}
       {showCreateForm && (
@@ -439,12 +341,6 @@ export const GoogleDriveFileManager: React.FC<GoogleDriveFileManagerProps> = ({
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Modified: {formatDate(file.modified_time)}
                       </p>
-                      {file.path && viewMode === "paths" && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {file.path}
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>

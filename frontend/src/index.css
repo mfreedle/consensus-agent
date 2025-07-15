@@ -2915,7 +2915,9 @@ code {
 /* Primary action buttons should be teal */
 .google-drive-modal-wide .modal-content button[style*="background: white"],
 .google-drive-modal-wide .modal-content button[style*="background-color: #fff"],
-.google-drive-modal-wide .modal-content button[style*="background-color: white"],
+.google-drive-modal-wide
+  .modal-content
+  button[style*="background-color: white"],
 .google-drive-modal-wide .modal-content button.primary,
 .google-drive-modal-wide .modal-content .btn-primary {
   background: var(--primary-teal) !important;
@@ -2929,7 +2931,7 @@ code {
     max-width: 95vw !important;
     width: 95vw !important;
   }
-  
+
   .google-drive-modal-wide .modal-content {
     padding: 1rem;
   }
