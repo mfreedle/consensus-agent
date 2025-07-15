@@ -846,6 +846,7 @@ code {
   top: 0;
   z-index: 50;
   transition: transform var(--transition-normal);
+  transform: translateX(-100%); /* Hidden by default */
 }
 
 .modern-sidebar.mobile-open {
@@ -855,7 +856,15 @@ code {
 @media (min-width: 768px) {
   .modern-sidebar {
     position: relative;
+    /* On desktop, show/hide based on isOpen state via mobile-open class */
+  }
+  
+  .modern-sidebar.mobile-open {
     transform: translateX(0);
+  }
+  
+  .modern-sidebar:not(.mobile-open) {
+    transform: translateX(-100%);
   }
 }
 
@@ -864,6 +873,25 @@ code {
     transform: translateX(-100%);
     width: 240px;
   }
+}
+
+/* Mobile overlay for sidebar */
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.mobile-overlay.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Sidebar Header */

@@ -125,10 +125,6 @@ const ChatApp: React.FC = () => {
   const isSocketConnected = getIsConnected();
 
   const toggleSidebar = () => {
-    console.log(
-      "Hamburger menu clicked, current isSidebarOpen:",
-      isSidebarOpen
-    );
     setIsSidebarOpen(!isSidebarOpen);
   };
 
