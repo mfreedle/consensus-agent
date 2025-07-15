@@ -7,6 +7,7 @@ import {
   Paperclip,
   Sparkles,
   FileText,
+  Settings,
   Brain,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,7 @@ interface ModernChatInterfaceProps {
   isSocketConnected?: boolean;
   modelSelection?: ModelSelectionState;
   processingStatus?: ProcessingStatus | null;
+  onSettings?: () => void;
 }
 
 interface AttachedFile {
@@ -62,6 +64,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   isSocketConnected = false,
   modelSelection,
   processingStatus,
+  onSettings,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -759,6 +762,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
               onClick={handleUploadToKnowledge}
             >
               <FileText className="w-5 h-5" />
+            </button>
+            <button
+              className="toolbar-button"
+              title="Settings & Admin"
+              onClick={onSettings}
+            >
+              <Settings className="w-5 h-5" />
             </button>
             <div className="flex-1"></div>
             {!isSocketConnected && (

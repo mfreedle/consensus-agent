@@ -159,7 +159,6 @@ const ChatApp: React.FC = () => {
           onSessionSelect={handleSessionSelect}
           onNewChat={handleNewChat}
           onLogout={logout}
-          onSettings={handleSettings}
           currentUser={user}
           modelSelection={modelSelection}
         />
@@ -174,7 +173,6 @@ const ChatApp: React.FC = () => {
           isSocketConnected={isSocketConnected}
           modelSelection={modelSelection}
           onModelSelectionChange={setModelSelection}
-          onProfile={handleSettings}
           onLogout={logout}
         />
 
@@ -189,6 +187,7 @@ const ChatApp: React.FC = () => {
               isSocketConnected={isSocketConnected}
               modelSelection={modelSelection}
               processingStatus={processingStatus}
+              onSettings={handleSettings}
             />
           ) : (
             <AdminPanel onBack={handleBackToChat} />

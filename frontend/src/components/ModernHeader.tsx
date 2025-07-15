@@ -9,7 +9,6 @@ interface ModernHeaderProps {
   isSocketConnected?: boolean;
   modelSelection: ModelSelectionState;
   onModelSelectionChange: (selection: ModelSelectionState) => void;
-  onProfile?: () => void;
   onLogout?: () => void;
 }
 
@@ -19,7 +18,6 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
   isSocketConnected = false,
   modelSelection,
   onModelSelectionChange,
-  onProfile = () => {},
   onLogout = () => {},
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -28,11 +26,10 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
   // Debug: Log when component mounts and props change
   useEffect(() => {
     console.log("ModernHeader mounted/updated", {
-      onProfile: typeof onProfile,
       onLogout: typeof onLogout,
       currentUser: currentUser?.username,
     });
-  }, [onProfile, onLogout, currentUser]);
+  }, [onLogout, currentUser]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -127,26 +124,6 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                   color: "#f3f4f6",
                 }}
               >
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setMenuOpen(false);
-                    onProfile();
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: 8,
-                    textAlign: "left",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#f3f4f6",
-                  }}
-                >
-                  Profile
-                </button>
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
