@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, User, MoreHorizontal } from "lucide-react";
 import ModernModelSelector from "./ModernModelSelector";
@@ -127,7 +126,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "#f3f4f6"
+                    color: "#f3f4f6",
                   }}
                 >
                   Profile
@@ -146,7 +145,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "#f3f4f6"
+                    color: "#f3f4f6",
                   }}
                 >
                   Logout
