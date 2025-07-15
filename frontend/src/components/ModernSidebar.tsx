@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Plus,
   MessageSquare,
-  MoreHorizontal,
-  User,
-  LogOut,
   Zap,
   Brain,
   Shuffle,
@@ -24,9 +21,6 @@ interface ModernSidebarProps {
   currentSessionId: string | null;
   onSessionSelect: (sessionId: string) => void;
   onNewChat: () => void;
-  onLogout?: () => void;
-  onSettings?: () => void;
-  currentUser?: any;
   modelSelection?: ModelSelectionState;
 }
 
@@ -59,9 +53,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
   currentSessionId,
   onSessionSelect,
   onNewChat,
-  onLogout,
-  onSettings,
-  currentUser,
   modelSelection = {
     selectedModels: [],
     debateMode: "consensus",
@@ -70,7 +61,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showGoogleDrive, setShowGoogleDrive] = useState(false);
   const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
 
@@ -281,79 +271,6 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-        {/* User Menu */}
-        <div className="sidebar-footer">
-          {currentUser && (
-            <div className="user-menu-container">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="user-menu-trigger"
-                aria-expanded={showUserMenu}
-                aria-label="User menu"
-              >
-                <div className="user-info">
-                  <User className="w-4 h-4" />
-                  <span className="username">{currentUser.username}</span>
-                </div>
-                <MoreHorizontal className="w-4 h-4 text-text-muted" />
-              </button>
-
-              {showUserMenu && (
-                <div
-                  className="user-menu-dropdown"
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    bottom: "100%",
-                    background: "#18181b",
-                    border: "1px solid #333",
-                    borderRadius: 6,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                    zIndex: 1000,
-                    minWidth: 140,
-                    marginBottom: 4,
-                    color: "#f3f4f6",
-                  }}
-                >
-                  {onSettings && (
-                    <button
-                      onClick={onSettings}
-                      className="menu-item"
-                      style={{
-                        width: "100%",
-                        padding: 8,
-                        textAlign: "left",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <User className="w-4 h-4" />
-                      <span style={{ marginLeft: 8 }}>Profile</span>
-                    </button>
-                  )}
-                  {onLogout && (
-                    <button
-                      onClick={onLogout}
-                      className="menu-item menu-item-danger"
-                      style={{
-                        width: "100%",
-                        padding: 8,
-                        textAlign: "left",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span style={{ marginLeft: 8 }}>Logout</span>
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>

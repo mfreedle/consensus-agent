@@ -8,6 +8,7 @@ import {
   Sparkles,
   FileText,
   Settings,
+  LogOut,
   Brain,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -35,6 +36,7 @@ interface ModernChatInterfaceProps {
   modelSelection?: ModelSelectionState;
   processingStatus?: ProcessingStatus | null;
   onSettings?: () => void;
+  onLogout?: () => void;
 }
 
 interface AttachedFile {
@@ -65,6 +67,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   modelSelection,
   processingStatus,
   onSettings,
+  onLogout,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -770,6 +773,15 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             >
               <Settings className="w-5 h-5" />
             </button>
+            {onLogout && (
+              <button
+                className="toolbar-button"
+                title="Logout"
+                onClick={onLogout}
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
             <div className="flex-1"></div>
             {!isSocketConnected && (
               <div className="flex items-center space-x-2 text-xs text-amber-400">

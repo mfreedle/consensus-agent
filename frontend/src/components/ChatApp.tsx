@@ -17,7 +17,7 @@ import AdminPanel from "./AdminPanel";
 type ViewMode = "chat" | "admin";
 
 const ChatApp: React.FC = () => {
-  const { isAuthenticated, user, token, login, logout, loading } = useAuth();
+  const { isAuthenticated, token, login, logout, loading } = useAuth();
   const { isMobile } = useResponsive();
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -158,8 +158,6 @@ const ChatApp: React.FC = () => {
           currentSessionId={currentSessionId}
           onSessionSelect={handleSessionSelect}
           onNewChat={handleNewChat}
-          onLogout={logout}
-          currentUser={user}
           modelSelection={modelSelection}
         />
       )}
@@ -169,11 +167,9 @@ const ChatApp: React.FC = () => {
         {/* Header */}
         <ModernHeader
           onToggleSidebar={toggleSidebar}
-          currentUser={user}
           isSocketConnected={isSocketConnected}
           modelSelection={modelSelection}
           onModelSelectionChange={setModelSelection}
-          onLogout={logout}
         />
 
         {/* Content based on current view */}
@@ -188,6 +184,7 @@ const ChatApp: React.FC = () => {
               modelSelection={modelSelection}
               processingStatus={processingStatus}
               onSettings={handleSettings}
+              onLogout={logout}
             />
           ) : (
             <AdminPanel onBack={handleBackToChat} />
