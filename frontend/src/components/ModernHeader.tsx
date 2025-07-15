@@ -132,7 +132,6 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Profile clicked");
                     setMenuOpen(false);
                     onProfile();
                   }}
@@ -153,7 +152,6 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Logout clicked");
                     setMenuOpen(false);
                     onLogout();
                   }}
