@@ -18,41 +18,41 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
 }) => {
   return (
     <header className="modern-header">
-      <div className="header-content">
-        {/* Left Section - Hamburger Menu */}
-        <div className="header-left">
-          <button
-            className="sidebar-toggle"
-            onClick={onToggleSidebar}
-            aria-label="Toggle sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <h1 className="app-title">Consensus Agent</h1>
+      {/* Left Section - Hamburger Menu */}
+      <div className="header-left">
+        <button
+          className="sidebar-toggle"
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="app-title">
+          <div className="title-main">Consensus Agent</div>
         </div>
+      </div>
 
-        {/* Center Section - Model Selection */}
-        <div className="header-center">
-          {modelSelection && onModelSelectionChange && (
-            <ModernModelSelector
-              modelSelection={modelSelection}
-              onModelSelectionChange={onModelSelectionChange}
-            />
-          )}
-        </div>
+      {/* Center Section - Model Selection */}
+      <div className="header-center">
+        {modelSelection && onModelSelectionChange && (
+          <ModernModelSelector
+            modelSelection={modelSelection}
+            onModelSelectionChange={onModelSelectionChange}
+          />
+        )}
+      </div>
 
-        {/* Right Section - Connection Status */}
-        <div className="header-right">
-          <div
-            className={`connection-status ${
-              isSocketConnected ? "connected" : "offline"
-            }`}
-          >
-            <div className="status-dot" />
-            <span className="status-text">
-              {isSocketConnected ? "Connected" : "Offline"}
-            </span>
-          </div>
+      {/* Right Section - Connection Status */}
+      <div className="header-right">
+        <div
+          className={`connection-status ${
+            isSocketConnected ? "connected" : "offline"
+          }`}
+        >
+          <div className="status-dot" />
+          <span className="status-text">
+            {isSocketConnected ? "Connected" : "Offline"}
+          </span>
         </div>
       </div>
     </header>
