@@ -2858,103 +2858,79 @@ code {
   }
 }
 
-/* Enhanced code styling classes */
-.message-text .code-block {
-  background: var(--bg-dark);
-  border: 1px solid var(--bg-hover);
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-  overflow-x: auto;
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
+/* Google Drive Modal Customizations */
+.google-drive-modal-wide {
+  max-width: 900px !important;
+  width: 90vw !important;
 }
 
-.message-text .inline-code {
-  background: var(--bg-hover);
+/* Fix Google Drive button styling - ensure create buttons have proper teal background */
+.google-drive-modal-wide
+  .modal-content
+  button[type="button"]:not(.modal-close-btn),
+.google-drive-modal-wide .modal-content .btn-primary,
+.google-drive-modal-wide .modal-content .create-button,
+.google-drive-modal-wide .modal-content button[class*="create"],
+.google-drive-modal-wide .modal-content button[class*="primary"] {
+  background: var(--primary-teal) !important;
+  color: white !important;
+  border-color: var(--primary-teal) !important;
+}
+
+.google-drive-modal-wide
+  .modal-content
+  button[type="button"]:not(.modal-close-btn):hover,
+.google-drive-modal-wide .modal-content .btn-primary:hover,
+.google-drive-modal-wide .modal-content .create-button:hover {
+  background: color-mix(in srgb, var(--primary-teal) 80%, black) !important;
+}
+
+/* Ensure Google Drive file manager has proper spacing */
+.google-drive-modal-wide .modal-content {
+  padding: 1.5rem 2rem;
+}
+
+/* Fix any white text on white background issues in Google Drive components */
+.google-drive-modal-wide .modal-content button {
   color: var(--text-primary);
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
-  font-size: 0.875rem;
-  border: 1px solid var(--bg-hover);
 }
 
-/* User message code styling */
-.message-content.user .message-text .code-block {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.google-drive-modal-wide .modal-content button[style*="background: white"],
+.google-drive-modal-wide
+  .modal-content
+  button[style*="background-color: white"] {
+  background: var(--primary-teal) !important;
+  color: white !important;
 }
 
-.message-content.user .message-text .inline-code {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Additional Google Drive button fixes - catch any remaining edge cases */
+.google-drive-modal-wide .modal-content button[style],
+.google-drive-modal-wide .modal-content .google-drive-file-manager button,
+.google-drive-modal-wide .modal-content .file-manager button {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--bg-border) !important;
 }
 
-/* Table container for better responsive handling */
-.message-text .table-container {
-  overflow-x: auto;
-  margin: 1rem 0;
-  border-radius: 6px;
-  border: 1px solid var(--bg-hover);
+/* Primary action buttons should be teal */
+.google-drive-modal-wide .modal-content button[style*="background: white"],
+.google-drive-modal-wide .modal-content button[style*="background-color: #fff"],
+.google-drive-modal-wide .modal-content button[style*="background-color: white"],
+.google-drive-modal-wide .modal-content button.primary,
+.google-drive-modal-wide .modal-content .btn-primary {
+  background: var(--primary-teal) !important;
+  color: white !important;
+  border-color: var(--primary-teal) !important;
 }
 
-/* Enhanced spacing for markdown content */
-.message-text > div:first-child,
-.message-text > p:first-child,
-.message-text > h1:first-child,
-.message-text > h2:first-child,
-.message-text > h3:first-child,
-.message-text > h4:first-child,
-.message-text > h5:first-child,
-.message-text > h6:first-child {
-  margin-top: 0;
-}
-
-.message-text > div:last-child,
-.message-text > p:last-child,
-.message-text > ul:last-child,
-.message-text > ol:last-child,
-.message-text > blockquote:last-child,
-.message-text > pre:last-child,
-.message-text > table:last-child {
-  margin-bottom: 0;
-}
-
-/* Better spacing between different content types */
-.message-text h1 + p,
-.message-text h2 + p,
-.message-text h3 + p,
-.message-text h4 + p,
-.message-text h5 + p,
-.message-text h6 + p {
-  margin-top: 0.5rem;
-}
-
-.message-text p + h1,
-.message-text p + h2,
-.message-text p + h3,
-.message-text p + h4,
-.message-text p + h5,
-.message-text p + h6 {
-  margin-top: 1.5rem;
-}
-
-.message-text ul + p,
-.message-text ol + p,
-.message-text blockquote + p,
-.message-text pre + p {
-  margin-top: 1rem;
-}
-
-/* Better list item spacing for complex content */
-.message-text li > p + p {
-  margin-top: 0.5rem;
-}
-
-.message-text li > ul,
-.message-text li > ol {
-  margin-top: 0.5rem;
+/* Responsive modal width */
+@media (max-width: 768px) {
+  .google-drive-modal-wide {
+    max-width: 95vw !important;
+    width: 95vw !important;
+  }
+  
+  .google-drive-modal-wide .modal-content {
+    padding: 1rem;
+  }
 }

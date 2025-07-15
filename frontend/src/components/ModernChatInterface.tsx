@@ -10,7 +10,7 @@ import {
   Settings,
   LogOut,
   Brain,
-  FolderOpen,
+  Cloud,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
@@ -780,7 +780,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
               title="Google Drive"
               onClick={handleOpenGoogleDrive}
             >
-              <FolderOpen className="w-5 h-5" />
+              <Cloud className="w-5 h-5" />
             </button>
             <button
               className="toolbar-button"
@@ -906,13 +906,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           onClick={() => setGoogleDriveModal(false)}
         >
           <div
-            className="file-upload-modal"
+            className="file-upload-modal google-drive-modal-wide"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div className="modal-title-section">
                 <div className="modal-icon">
-                  <FolderOpen className="w-6 h-6 text-primary-cyan" />
+                  <Cloud className="w-6 h-6 text-primary-cyan" />
                 </div>
                 <div>
                   <h3 className="modal-title">Google Drive</h3>
