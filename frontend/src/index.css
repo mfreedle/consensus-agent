@@ -858,11 +858,11 @@ code {
     position: relative;
     /* On desktop, show/hide based on isOpen state via mobile-open class */
   }
-  
+
   .modern-sidebar.mobile-open {
     transform: translateX(0);
   }
-  
+
   .modern-sidebar:not(.mobile-open) {
     transform: translateX(-100%);
   }
@@ -886,7 +886,8 @@ code {
   z-index: 40;
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+  transition: opacity var(--transition-normal),
+    visibility var(--transition-normal);
 }
 
 .mobile-overlay.active {
