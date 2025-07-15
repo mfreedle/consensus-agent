@@ -34,7 +34,8 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     });
   }, [onProfile, onLogout, currentUser]);
 
-  // Close menu on outside click
+  // Close menu on outside click - TEMPORARILY DISABLED FOR DEBUGGING
+  /*
   useEffect(() => {
     if (!menuOpen) return;
     function handleClick(e: MouseEvent) {
@@ -48,6 +49,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+  */
 
   return (
     <header className="modern-header">
@@ -113,6 +115,8 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
             {menuOpen && (
               <div
                 className="user-dropdown"
+                onMouseEnter={() => console.log("Mouse entered dropdown")}
+                onMouseLeave={() => console.log("Mouse left dropdown")}
                 style={{
                   position: "absolute",
                   right: 0,
@@ -125,6 +129,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                   minWidth: 140,
                   marginTop: 4,
                   color: "#f3f4f6",
+                  pointerEvents: "auto",
                 }}
               >
                 <button
