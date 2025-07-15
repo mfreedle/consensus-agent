@@ -25,6 +25,15 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const userButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Debug: Log when component mounts and props change
+  useEffect(() => {
+    console.log("ModernHeader mounted/updated", {
+      onProfile: typeof onProfile,
+      onLogout: typeof onLogout,
+      currentUser: currentUser?.username,
+    });
+  }, [onProfile, onLogout, currentUser]);
+
   // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
@@ -88,7 +97,13 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
             <button
               className="user-button"
               aria-label="User menu"
-              onClick={() => setMenuOpen((open) => !open)}
+              onClick={() => {
+                console.log(
+                  "User menu button clicked, current menuOpen:",
+                  menuOpen
+                );
+                setMenuOpen((open) => !open);
+              }}
               ref={userButtonRef}
             >
               <User className="w-4 h-4" />
@@ -114,7 +129,9 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
               >
                 <button
                   className="dropdown-item"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("Profile clicked");
                     setMenuOpen(false);
                     onProfile();
@@ -133,7 +150,9 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("Logout clicked");
                     setMenuOpen(false);
                     onLogout();
