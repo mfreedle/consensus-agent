@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Settings,
+  User as UserIcon,
   Database,
   Users,
   Shield,
@@ -18,6 +19,7 @@ interface AdminPanelProps {
 }
 
 type AdminTab =
+  | "profile"
   | "providers"
   | "models"
   | "users"
@@ -35,6 +37,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
   };
 
   const tabs = [
+    {
+      id: "profile" as AdminTab,
+      label: "Profile",
+      icon: UserIcon,
+      description: "Manage your account and change password",
+    },
     {
       id: "providers" as AdminTab,
       label: "Providers",
@@ -75,6 +83,66 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case "profile":
+        return (
+          <div className="space-y-4 max-w-md mx-auto mt-8">
+            <h2 className="text-xl font-bold mb-1">Profile</h2>
+            <p className="text-gray-400 text-sm mb-4">
+              Update your account information and change your password.
+            </p>
+            <form className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 flex flex-col gap-4">
+              <div>
+                <label
+                  className="block text-gray-300 text-sm mb-1"
+                  htmlFor="current-password"
+                >
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  id="current-password"
+                  className="w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100"
+                  placeholder="Current password"
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-gray-300 text-sm mb-1"
+                  htmlFor="new-password"
+                >
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  id="new-password"
+                  className="w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100"
+                  placeholder="New password"
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-gray-300 text-sm mb-1"
+                  htmlFor="confirm-password"
+                >
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  className="w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+              >
+                Change Password
+              </button>
+            </form>
+          </div>
+        );
+
       case "providers":
         return <ProviderManagement />;
 

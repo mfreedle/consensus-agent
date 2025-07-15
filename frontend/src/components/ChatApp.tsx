@@ -13,7 +13,6 @@ import ModernChatInterface from "./ModernChatInterface";
 import ModernSidebar from "./ModernSidebar";
 import AuthModal from "./AuthModal";
 import AdminPanel from "./AdminPanel";
-import UserSettings from "./UserSettings";
 
 type ViewMode = "chat" | "admin";
 
@@ -26,7 +25,7 @@ const ChatApp: React.FC = () => {
   const [processingStatus, setProcessingStatus] =
     useState<ProcessingStatus | null>(null);
   const [currentView, setCurrentView] = useState<ViewMode>("chat");
-  const [showUserSettings, setShowUserSettings] = useState(false);
+
   const [modelSelection, setModelSelection] = useState<ModelSelectionState>({
     selectedModels: ["gpt-4.1"], // Use one of our curated models
     debateMode: "consensus",
@@ -101,9 +100,9 @@ const ChatApp: React.FC = () => {
     setSocketMessages([]); // Clear socket messages for new chat
   }, []);
 
-  // Handle settings navigation
+  // Handle settings/profile navigation
   const handleSettings = useCallback(() => {
-    setShowUserSettings(true);
+    setCurrentView("admin");
   }, []);
 
   // Handle back to chat navigation
@@ -197,10 +196,7 @@ const ChatApp: React.FC = () => {
         </div>
       </div>
 
-      {/* User Settings Modal */}
-      {showUserSettings && (
-        <UserSettings onClose={() => setShowUserSettings(false)} />
-      )}
+      {/* User Settings Modal (no longer used, AdminPanel is now the settings/profile view) */}
     </div>
   );
 };

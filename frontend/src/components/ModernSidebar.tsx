@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Plus,
   MessageSquare,
-  Settings,
   MoreHorizontal,
   User,
   LogOut,
@@ -298,20 +297,53 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
               </button>
 
               {showUserMenu && (
-                <div className="user-menu-dropdown">
+                <div
+                  className="user-menu-dropdown"
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    bottom: "100%",
+                    background: "#fff",
+                    border: "1px solid #ddd",
+                    borderRadius: 6,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    zIndex: 1000,
+                    minWidth: 140,
+                    marginBottom: 4,
+                  }}
+                >
                   {onSettings && (
-                    <button onClick={onSettings} className="menu-item">
-                      <Settings className="w-4 h-4" />
-                      Settings
+                    <button
+                      onClick={onSettings}
+                      className="menu-item"
+                      style={{
+                        width: "100%",
+                        padding: 8,
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <User className="w-4 h-4" />
+                      <span style={{ marginLeft: 8 }}>Profile</span>
                     </button>
                   )}
                   {onLogout && (
                     <button
                       onClick={onLogout}
                       className="menu-item menu-item-danger"
+                      style={{
+                        width: "100%",
+                        padding: 8,
+                        textAlign: "left",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
                     >
                       <LogOut className="w-4 h-4" />
-                      Sign out
+                      <span style={{ marginLeft: 8 }}>Logout</span>
                     </button>
                   )}
                 </div>
