@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   Brain,
+  FolderOpen,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import ReactMarkdown from "react-markdown";
@@ -21,6 +22,8 @@ import { SocketMessage, ModelSelectionState, ProcessingStatus } from "../types";
 import ConsensusDebateVisualizer from "./ConsensusDebateVisualizer";
 import ConsensusProcessingIndicator from "./ConsensusProcessingIndicator";
 import FileUploadModal from "./FileUploadModal";
+import { GoogleDriveFileManager } from "./GoogleDriveFileManager";
+import { GoogleDriveConnectionWidget } from "./GoogleDriveConnection";
 
 interface ModernChatInterfaceProps {
   sessionId: string | null;
@@ -94,6 +97,8 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     isOpen: boolean;
     mode: "attach" | "knowledge";
   }>({ isOpen: false, mode: "attach" });
+  const [googleDriveModal, setGoogleDriveModal] = useState(false);
+  const [isGoogleDriveConnected, setIsGoogleDriveConnected] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -252,6 +257,10 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
   const handleUploadToKnowledge = () => {
     setFileUploadModal({ isOpen: true, mode: "knowledge" });
+  };
+
+  const handleOpenGoogleDrive = () => {
+    setGoogleDriveModal(true);
   };
 
   const handleFileAttached = async (file: File, uploadedFileId?: string) => {
@@ -768,6 +777,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             </button>
             <button
               className="toolbar-button"
+              title="Google Drive"
+              onClick={handleOpenGoogleDrive}
+            >
+              <FolderOpen className="w-5 h-5" />
+            </button>
+            <button
+              className="toolbar-button"
               title="Settings & Admin"
               onClick={onSettings}
             >
@@ -882,6 +898,49 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
         onFileAttached={handleFileAttached}
         onFilesUploaded={handleFilesUploaded}
       />
+
+      {/* Google Drive Modal */}
+      {googleDriveModal && (
+        <div
+          className="file-upload-modal-overlay"
+          onClick={() => setGoogleDriveModal(false)}
+        >
+          <div
+            className="file-upload-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div className="modal-title-section">
+                <div className="modal-icon">
+                  <FolderOpen className="w-6 h-6 text-primary-cyan" />
+                </div>
+                <div>
+                  <h3 className="modal-title">Google Drive</h3>
+                  <p className="modal-subtitle">
+                    Connect and manage your Google Drive files
+                  </p>
+                </div>
+              </div>
+              <button
+                className="modal-close-btn"
+                onClick={() => setGoogleDriveModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-content">
+              <GoogleDriveConnectionWidget
+                onConnectionChange={setIsGoogleDriveConnected}
+              />
+              {isGoogleDriveConnected && (
+                <div className="mt-4">
+                  <GoogleDriveFileManager />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
