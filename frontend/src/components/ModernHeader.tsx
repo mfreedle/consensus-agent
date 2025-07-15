@@ -114,7 +114,10 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
               >
                 <button
                   className="dropdown-item"
-                  onClick={onProfile}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onProfile();
+                  }}
                   style={{
                     width: "100%",
                     padding: 8,
@@ -129,7 +132,10 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={onLogout}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onLogout();
+                  }}
                   style={{
                     width: "100%",
                     padding: 8,
