@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Menu, User, MoreHorizontal } from "lucide-react";
 import ModernModelSelector from "./ModernModelSelector";
 import { ModelSelectionState } from "../types";
@@ -9,6 +9,8 @@ interface ModernHeaderProps {
   isSocketConnected?: boolean;
   modelSelection: ModelSelectionState;
   onModelSelectionChange: (selection: ModelSelectionState) => void;
+  onProfile?: () => void;
+  onLogout?: () => void;
 }
 
 const ModernHeader: React.FC<ModernHeaderProps> = ({
@@ -17,7 +19,26 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
   isSocketConnected = false,
   modelSelection,
   onModelSelectionChange,
+  onProfile = () => {},
+  onLogout = () => {},
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        userButtonRef.current &&
+        !userButtonRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
   return (
     <header className="modern-header">
       {/* Left Section */}
@@ -63,12 +84,63 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
 
         {/* User Menu */}
         {currentUser && (
-          <div className="user-section">
-            <button className="user-button" aria-label="User menu">
+          <div className="user-section" style={{ position: "relative" }}>
+            <button
+              className="user-button"
+              aria-label="User menu"
+              onClick={() => setMenuOpen((open) => !open)}
+              ref={userButtonRef}
+            >
               <User className="w-4 h-4" />
               <span className="user-name">{currentUser.username}</span>
               <MoreHorizontal className="w-4 h-4 text-text-muted" />
             </button>
+            {menuOpen && (
+              <div
+                className="user-dropdown"
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  background: "#fff",
+                  border: "1px solid #ddd",
+                  borderRadius: 6,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  zIndex: 1000,
+                  minWidth: 140,
+                  marginTop: 4,
+                }}
+              >
+                <button
+                  className="dropdown-item"
+                  onClick={onProfile}
+                  style={{
+                    width: "100%",
+                    padding: 8,
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Profile
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={onLogout}
+                  style={{
+                    width: "100%",
+                    padding: 8,
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

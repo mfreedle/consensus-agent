@@ -56,7 +56,7 @@ class LLMOrchestrator:
         responses_api_models = [
             "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
             "o3", "o3-mini", "o4-mini", "o1",
-            "gpt-4o", "gpt-4o-mini"  # These also support Responses API
+            "gpt-4.1", "gpt-4.1-mini"  # These also support Responses API
         ]
         return model in responses_api_models
     
@@ -217,7 +217,7 @@ class LLMOrchestrator:
                 })
             
             # Use JSON mode for structured output if available
-            if model in ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]:
+            if model in ["gpt-4.1", "gpt-4.1-mini", "gpt-4-turbo", "gpt-3.5-turbo"]:
                 messages.append({
                     "role": "user", 
                     "content": f"""{structured_prompt}

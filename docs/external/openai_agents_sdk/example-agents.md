@@ -13,7 +13,7 @@ A customer support agent that can answer questions about products, handle return
 
 **Basic Details:**
 - Name: Customer Support Assistant
-- Model: gpt-4o
+- Model: gpt-4.1
 - Description: Handles customer inquiries and support requests
 
 **Instructions:**
@@ -50,7 +50,7 @@ A research assistant that can search the web, summarize information, and generat
 
 **Basic Details:**
 - Name: Research Assistant
-- Model: gpt-4o
+- Model: gpt-4.1
 - Description: Helps with research tasks and information gathering
 
 **Instructions:**
@@ -86,7 +86,7 @@ A financial advisor that can provide budgeting advice, investment information, a
 
 **Basic Details:**
 - Name: Finance Advisor
-- Model: gpt-4o
+- Model: gpt-4.1
 - Description: Provides personal finance guidance and advice
 
 **Instructions:**

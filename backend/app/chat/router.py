@@ -267,7 +267,7 @@ async def send_message(
             )
         else:
             # Get single model response (default to OpenAI)
-            model = chat_request.selected_models[0] if chat_request.selected_models else "gpt-4o"
+            model = chat_request.selected_models[0] if chat_request.selected_models else "gpt-4.1"
             if model.startswith("gpt"):
                 response = await llm_orchestrator.get_openai_response(
                     prompt=full_prompt,

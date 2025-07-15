@@ -175,6 +175,8 @@ const ChatApp: React.FC = () => {
           isSocketConnected={isSocketConnected}
           modelSelection={modelSelection}
           onModelSelectionChange={setModelSelection}
+          onProfile={handleSettings}
+          onLogout={logout}
         />
 
         {/* Content based on current view */}

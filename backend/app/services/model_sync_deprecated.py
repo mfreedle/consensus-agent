@@ -90,7 +90,7 @@ class ModelSyncService:
                     
                     # Filter for chat models only
                     chat_models = [
-                        "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"
+                        "gpt-4.1", "gpt-4.1-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"
                     ]
                     
                     for model in data.get("data", []):
@@ -296,8 +296,8 @@ class ModelSyncService:
     def _format_openai_display_name(self, model_id: str) -> str:
         """Format OpenAI model ID to display name"""
         name_map = {
-            "gpt-4o": "GPT-4o",
-            "gpt-4o-mini": "GPT-4o Mini",
+            "gpt-4.1": "gpt-4.1",
+            "gpt-4.1-mini": "gpt-4.1 Mini",
             "gpt-4-turbo": "GPT-4 Turbo",
             "gpt-4": "GPT-4",
             "gpt-3.5-turbo": "GPT-3.5 Turbo"
@@ -315,8 +315,8 @@ class ModelSyncService:
     def _get_openai_context_window(self, model_id: str) -> int:
         """Get context window for OpenAI models"""
         context_windows = {
-            "gpt-4o": 128000,
-            "gpt-4o-mini": 128000,
+            "gpt-4.1": 128000,
+            "gpt-4.1-mini": 128000,
             "gpt-4-turbo": 128000,
             "gpt-4": 8192,
             "gpt-3.5-turbo": 16385
