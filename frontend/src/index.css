@@ -890,9 +890,19 @@ code {
     visibility var(--transition-normal);
 }
 
-.mobile-overlay.active {
-  opacity: 1;
-  visibility: visible;
+/* Only show overlay on mobile screens */
+@media (max-width: 767px) {
+  .mobile-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Hide overlay on desktop */
+@media (min-width: 768px) {
+  .mobile-overlay {
+    display: none;
+  }
 }
 
 /* Sidebar Header */

@@ -139,10 +139,15 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Overlay - Only show on mobile screens when sidebar is open */}
       <div
         className={`mobile-overlay ${isOpen ? "active" : ""}`}
-        onClick={onClose}
+        onClick={(e) => {
+          // Only close on mobile screens
+          if (window.innerWidth <= 767) {
+            onClose();
+          }
+        }}
         aria-hidden="true"
       />
 
