@@ -5,10 +5,8 @@ import {
   Bot,
   User,
   Paperclip,
-  Mic,
   Sparkles,
   FileText,
-  Settings,
   Brain,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -755,18 +753,12 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             >
               <Paperclip className="w-5 h-5" />
             </button>
-            <button className="toolbar-button" title="Voice input">
-              <Mic className="w-5 h-5" />
-            </button>
             <button
               className="toolbar-button"
               title="Document upload"
               onClick={handleUploadToKnowledge}
             >
               <FileText className="w-5 h-5" />
-            </button>
-            <button className="toolbar-button" title="Settings">
-              <Settings className="w-5 h-5" />
             </button>
             <div className="flex-1"></div>
             {!isSocketConnected && (

@@ -30,10 +30,35 @@ type AdminTab =
 const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>("knowledge");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [showFileViewer, setShowFileViewer] = useState(false);
 
   // Handle file deletion - trigger refresh
   const handleFileDeleted = () => {
     setRefreshTrigger((prev) => prev + 1);
+  };
+
+  // Handle file selection for viewing
+  const handleFileSelect = (file: any) => {
+    setSelectedFile(file);
+    setShowFileViewer(true);
+  };
+
+  // Handle file download
+  const handleDownload = (file: any) => {
+    try {
+      const downloadUrl = `/api/files/${file.id}/download`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = file.filename;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
   };
 
   const tabs = [
@@ -178,6 +203,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                   <FileList
                     refreshTrigger={refreshTrigger}
                     onFileDelete={handleFileDeleted}
+                    onFileSelect={handleFileSelect}
                     showPagination={false}
                   />
                 </div>
@@ -386,6 +412,66 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
           <div className="p-4 h-full overflow-y-auto">{renderTabContent()}</div>
         </div>
       </div>
+
+      {/* File Viewer Modal */}
+      {showFileViewer && selectedFile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-600 max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-600">
+              <h3 className="text-lg font-semibold text-white">
+                {selectedFile.filename}
+              </h3>
+              <button
+                onClick={() => setShowFileViewer(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Size:</span>
+                    <span className="ml-2 text-white">{selectedFile.size ? `${Math.round(selectedFile.size / 1024)} KB` : 'Unknown'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Type:</span>
+                    <span className="ml-2 text-white">{selectedFile.filename.split('.').pop()?.toUpperCase() || 'Unknown'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Uploaded:</span>
+                    <span className="ml-2 text-white">{new Date(selectedFile.created_at).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Status:</span>
+                    <span className="ml-2 text-green-400">Available</span>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-gray-600">
+                  <p className="text-gray-400 text-sm">
+                    This file is available in your knowledge base and can be referenced by AI agents during conversations.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 p-4 border-t border-gray-600">
+              <button
+                onClick={() => handleDownload(selectedFile)}
+                className="px-4 py-2 bg-primary-teal text-white rounded-lg hover:bg-primary-teal/80 transition-colors"
+              >
+                Download
+              </button>
+              <button
+                onClick={() => setShowFileViewer(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
