@@ -39,6 +39,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
   return (
     <header className="modern-header">
       {/* Left Section */}
@@ -50,7 +51,6 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
         >
           <Menu className="w-5 h-5" />
         </button>
-
         <div className="logo-section">
           <div className="logo">CA</div>
           <h1 className="app-title">
@@ -102,13 +102,14 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                   position: "absolute",
                   right: 0,
                   top: "100%",
-                  background: "#fff",
-                  border: "1px solid #ddd",
+                  background: "#18181b",
+                  border: "1px solid #333",
                   borderRadius: 6,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
                   zIndex: 1000,
                   minWidth: 140,
                   marginTop: 4,
+                  color: "#f3f4f6",
                 }}
               >
                 <button
@@ -121,6 +122,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                     background: "none",
                     border: "none",
                     cursor: "pointer",
+                    color: "#f3f4f6",
                   }}
                 >
                   Profile
@@ -135,6 +137,7 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                     background: "none",
                     border: "none",
                     cursor: "pointer",
+                    color: "#f3f4f6",
                   }}
                 >
                   Logout

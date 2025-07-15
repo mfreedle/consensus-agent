@@ -303,13 +303,14 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                     position: "absolute",
                     right: 0,
                     bottom: "100%",
-                    background: "#fff",
-                    border: "1px solid #ddd",
+                    background: "#18181b",
+                    border: "1px solid #333",
                     borderRadius: 6,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
                     zIndex: 1000,
                     minWidth: 140,
                     marginBottom: 4,
+                    color: "#f3f4f6",
                   }}
                 >
                   {onSettings && (
