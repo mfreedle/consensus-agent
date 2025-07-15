@@ -48,16 +48,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
   const handleDownload = (file: any) => {
     try {
       const downloadUrl = `/api/files/${file.id}/download`;
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = file.filename;
-      link.style.display = 'none';
-      
+      link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
     }
   };
 
@@ -433,15 +433,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-400">Size:</span>
-                    <span className="ml-2 text-white">{selectedFile.size ? `${Math.round(selectedFile.size / 1024)} KB` : 'Unknown'}</span>
+                    <span className="ml-2 text-white">
+                      {selectedFile.size
+                        ? `${Math.round(selectedFile.size / 1024)} KB`
+                        : "Unknown"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-400">Type:</span>
-                    <span className="ml-2 text-white">{selectedFile.filename.split('.').pop()?.toUpperCase() || 'Unknown'}</span>
+                    <span className="ml-2 text-white">
+                      {selectedFile.filename.split(".").pop()?.toUpperCase() ||
+                        "Unknown"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-400">Uploaded:</span>
-                    <span className="ml-2 text-white">{new Date(selectedFile.created_at).toLocaleString()}</span>
+                    <span className="ml-2 text-white">
+                      {new Date(selectedFile.created_at).toLocaleString()}
+                    </span>
                   </div>
                   <div>
                     <span className="text-gray-400">Status:</span>
@@ -450,7 +459,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                 </div>
                 <div className="pt-4 border-t border-gray-600">
                   <p className="text-gray-400 text-sm">
-                    This file is available in your knowledge base and can be referenced by AI agents during conversations.
+                    This file is available in your knowledge base and can be
+                    referenced by AI agents during conversations.
                   </p>
                 </div>
               </div>

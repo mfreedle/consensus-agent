@@ -146,19 +146,19 @@ const FileList: React.FC<FileListProps> = ({
     try {
       // Create download URL - assuming backend serves files at /api/files/{id}/download
       const downloadUrl = `/api/files/${file.id}/download`;
-      
+
       // Create a temporary anchor element and trigger download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = file.filename;
-      link.style.display = 'none';
-      
+      link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Download failed:', error);
-      addError('Failed to download file', 'api');
+      console.error("Download failed:", error);
+      addError("Failed to download file", "api");
     }
   };
 
@@ -327,7 +327,7 @@ const FileList: React.FC<FileListProps> = ({
                 </Tooltip>
 
                 <Tooltip content="Download file to your device">
-                  <button 
+                  <button
                     onClick={() => handleDownload(file)}
                     className="p-2 rounded-lg hover:bg-primary-teal/20 text-primary-cyan transition-colors"
                   >
