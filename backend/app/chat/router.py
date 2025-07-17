@@ -245,9 +245,10 @@ async def send_message(
         full_prompt = chat_request.message + file_context
         
         if chat_request.use_consensus:
-            # Get consensus response from multiple models
-            consensus_result = await llm_orchestrator.generate_consensus(
-                prompt=full_prompt,
+            # Get consensus response from dynamically selected models with their tool capabilities
+            consensus_result = await llm_orchestrator.generate_consensus_dynamic(
+                prompt=str(full_prompt),
+                selected_models=chat_request.selected_models or ["gpt-4.1", "grok-3-latest"],
                 context=None
             )
             

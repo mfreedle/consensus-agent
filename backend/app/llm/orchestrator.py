@@ -525,13 +525,23 @@ Remember: You have access to real-time information and can search the web, so us
             if self.google_drive_tools:
                 tools.extend(self.google_drive_tools)
             
-            # Prepare request payload
+            # Prepare request payload with Live Search enabled
             request_data = {
                 "model": model,
                 "messages": messages,
                 "stream": False,
                 "temperature": 0.7,
-                "max_tokens": 64000
+                "max_tokens": 64000,
+                # Enable Grok's Live Search for real-time web search
+                "search_parameters": {
+                    "mode": "auto",  # Let Grok decide when to search
+                    "return_citations": True,
+                    "max_search_results": 10,
+                    "sources": [
+                        {"type": "web"},
+                        {"type": "x"}  # Include X/Twitter search
+                    ]
+                }
             }
             
             # Add tools if available (Grok supports function calling)
@@ -586,7 +596,8 @@ Remember: You have access to real-time information and can search the web, so us
                 "Authorization": f"Bearer {settings.anthropic_api_key}",
                 "Content-Type": "application/json",
                 "x-api-key": settings.anthropic_api_key,
-                "anthropic-version": "2023-06-01"
+                "anthropic-version": "2023-06-01",
+                "anthropic-beta": "web-search-20250305"
             }
 
             # Create enhanced prompt that informs Claude about its tool capabilities
@@ -619,11 +630,36 @@ Remember: You are not limited to your training data - you can access current inf
                 
             messages.append({"role": "user", "content": enhanced_prompt})
             
+            # Add web search and other built-in tools
+            tools = [
+                {
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": 5
+                },
+                {
+                    "type": "computer_20241022",
+                    "name": "computer",
+                    "display_width_px": 1024,
+                    "display_height_px": 768,
+                    "display_number": 1
+                },
+                {
+                    "type": "text_editor_20241022", 
+                    "name": "str_replace_editor"
+                },
+                {
+                    "type": "bash_20241022",
+                    "name": "bash"
+                }
+            ]
+            
             request_data = {
                 "model": model,
                 "max_tokens": 2000,
                 "messages": messages,
-                "system": system_message
+                "system": system_message,
+                "tools": tools
             }
             
             async with httpx.AsyncClient() as client:
@@ -754,6 +790,302 @@ Remember: You have function calling capabilities - use them when they would enha
                 reasoning="API error occurred"
             )
     
+    async def generate_consensus_dynamic(
+        self, 
+        prompt: str,
+        selected_models: List[str],
+        context: Optional[str] = None
+    ) -> ConsensusResult:
+        """Generate consensus response from dynamically selected models with their tool capabilities"""
+        
+        logger.info(f"Starting dynamic consensus generation for prompt: {prompt[:100]}...")
+        logger.info(f"Selected models: {selected_models}")
+        
+        if len(selected_models) < 2:
+            raise ValueError("Consensus requires at least 2 models")
+        
+        # Get responses from all selected models in parallel with their tool capabilities
+        tasks = []
+        model_types = []
+        
+        for model in selected_models:
+            if model.startswith("gpt") or model.startswith("o1") or model.startswith("o3"):
+                tasks.append(self.get_openai_response_with_builtin_tools(prompt, model, context))
+                model_types.append("openai")
+            elif model.startswith("grok"):
+                tasks.append(self.get_grok_response_with_tools(prompt, model, context))
+                model_types.append("grok")
+            elif model.startswith("claude"):
+                tasks.append(self.get_claude_response_with_tools(prompt, model, context))
+                model_types.append("claude")
+            elif model.startswith("deepseek"):
+                tasks.append(self.get_deepseek_response_with_tools(prompt, model, context))
+                model_types.append("deepseek")
+            else:
+                # Fallback to OpenAI for unknown models
+                tasks.append(self.get_openai_response_with_builtin_tools(prompt, model, context))
+                model_types.append("openai")
+        
+        logger.info(f"Fetching responses from {len(tasks)} models with their respective tool capabilities...")
+        responses = await asyncio.gather(*tasks)
+        
+        # Log confidence scores
+        for i, response in enumerate(responses):
+            logger.info(f"{selected_models[i]} response confidence: {response.confidence}")
+        
+        # Check how many responses are valid
+        valid_responses = [r for r in responses if r.confidence > 0]
+        
+        # Enhanced consensus generation with debate simulation
+        current_date = datetime.now().strftime("%B %d, %Y")
+        
+        if len(valid_responses) >= 2:
+            # Build consensus prompt with all model responses
+            model_responses_text = ""
+            for i, response in enumerate(responses):
+                if response.confidence > 0:
+                    model_responses_text += f"""
+{selected_models[i]} Response (Confidence: {response.confidence}):
+{response.content}
+Reasoning: {response.reasoning}
+Tool Capabilities: {model_types[i]} - {'✅ Real-time tools' if model_types[i] in ['openai', 'grok', 'claude'] else '❌ No real-time tools'}
+
+"""
+            
+            consensus_prompt = f"""
+            You are an expert analyst creating consensus from multiple AI responses. Today is {current_date}.
+            
+            Analyze these responses and create a comprehensive consensus that leverages the tool capabilities of each model.
+            
+            User Question: {prompt}
+            
+            {model_responses_text}
+            
+            Please perform the following analysis:
+            1. Identify key agreements between the responses
+            2. Identify any contradictions or disagreements  
+            3. Evaluate the strengths of each response and their tool usage
+            4. Note which models had access to real-time information vs training data only
+            5. Create a synthesized consensus that combines the best insights from all models
+            6. Assign a confidence score based on agreement and quality
+            7. List specific debate points if disagreements exist
+            
+            Provide your response in the following JSON format:
+            {{
+                "final_consensus": "your comprehensive consensus response here",
+                "confidence_score": 0.85,
+                "reasoning": "detailed explanation of your analysis and synthesis process",
+                "debate_points": ["specific point of disagreement 1", "specific point of disagreement 2"]
+            }}
+            """
+        else:
+            # Fallback when most models failed
+            working_responses = [r for r in responses if r.confidence > 0]
+            if working_responses:
+                working_response = working_responses[0]
+                working_model_idx = responses.index(working_response)
+                working_model = selected_models[working_model_idx]
+                
+                consensus_prompt = f"""
+                You are an expert analyst. Today is {current_date}. Limited AI responses available for the user's question.
+                
+                User Question: {prompt}
+                
+                Available Response from {working_model}:
+                {working_response.content}
+                Confidence: {working_response.confidence}
+                Reasoning: {working_response.reasoning}
+                Tool Capabilities: {model_types[working_model_idx]} - {'✅ Real-time tools' if model_types[working_model_idx] in ['openai', 'grok', 'claude'] else '❌ No real-time tools'}
+                
+                Please enhance and validate this response:
+                1. Review the response for accuracy and completeness
+                2. Note the tool capabilities that were available to this model
+                3. Add any missing important information
+                4. Provide a confidence assessment
+                5. Note limitations due to limited model availability
+                
+                Provide your response in the following JSON format:
+                {{
+                    "final_consensus": "your enhanced and validated response here",
+                    "confidence_score": 0.70,
+                    "reasoning": "explanation of validation and any enhancements made",
+                    "debate_points": ["limitation: few working models", "note: consensus limited by model failures"]
+                }}
+                """
+            else:
+                # All models failed
+                consensus_prompt = f"""
+                All selected models failed to respond. Please provide a helpful message to the user.
+                
+                User Question: {prompt}
+                Selected Models: {', '.join(selected_models)}
+                
+                Provide your response in the following JSON format:
+                {{
+                    "final_consensus": "I apologize, but all selected AI models are currently unavailable. Please try again later or select different models.",
+                    "confidence_score": 0.0,
+                    "reasoning": "All models failed to respond",
+                    "debate_points": ["All models unavailable", "System error - no responses received"]
+                }}
+                """
+        
+        try:
+            # Use o3 as judge model for superior reasoning and consensus analysis
+            logger.info("Generating consensus using o3 judge model...")
+            consensus_response = await self.openai_client.chat.completions.create(
+                model="o3",  # Use o3 for best reasoning and synthesis capabilities
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert analyst that creates consensus from multiple AI responses with different tool capabilities. Always respond with valid JSON in the requested format. Be thorough in your analysis and synthesis, paying special attention to which models had access to real-time tools vs training data only."
+                    },
+                    {
+                        "role": "user", 
+                        "content": consensus_prompt
+                    }
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                response_format={"type": "json_object"}
+            )
+            
+            import json
+            consensus_content = consensus_response.choices[0].message.content
+            if not consensus_content:
+                raise Exception("Empty consensus response")
+            
+            # Enhanced JSON parsing with error handling
+            try:
+                consensus_data = json.loads(consensus_content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw consensus content: {consensus_content}")
+                # If JSON parsing fails, create a structured fallback
+                consensus_data = {
+                    "final_consensus": consensus_content,  # Use raw content as fallback
+                    "confidence_score": 0.6,
+                    "reasoning": "JSON parsing failed, using raw model response",
+                    "debate_points": ["Unable to parse structured consensus response"]
+                }
+            
+            # Validate that consensus_data is a dictionary
+            if not isinstance(consensus_data, dict):
+                logger.error(f"Consensus data is not a dictionary: {type(consensus_data)}")
+                consensus_data = {
+                    "final_consensus": str(consensus_data),
+                    "confidence_score": 0.5,
+                    "reasoning": "Invalid response format, converted to string",
+                    "debate_points": ["Response format validation failed"]
+                }
+            
+            # Ensure final_consensus is a string (handle cases where judge returns complex structure)
+            final_consensus = consensus_data.get("final_consensus", "")
+            if isinstance(final_consensus, dict):
+                # Convert dict response to formatted string
+                if "pros" in final_consensus and "cons" in final_consensus:
+                    pros = "\n".join([f"• {item}" for item in final_consensus.get("pros", [])])
+                    cons = "\n".join([f"• {item}" for item in final_consensus.get("cons", [])])
+                    final_consensus = f"**Pros:**\n{pros}\n\n**Cons:**\n{cons}"
+                else:
+                    final_consensus = str(final_consensus)
+            
+            # Additional safety: ensure we never return raw JSON
+            if not final_consensus or final_consensus.strip().startswith('{'):
+                logger.warning("Final consensus appears to be JSON or empty, creating fallback response")
+                # Create a fallback response that summarizes the consensus data
+                final_consensus = f"""Based on analysis from {len(selected_models)} AI models:
+
+**Summary:** {consensus_data.get('reasoning', 'AI consensus analysis completed')}
+
+**Confidence Level:** {consensus_data.get('confidence_score', 0.5) * 100:.0f}%
+
+This response represents a synthesis of insights from multiple AI perspectives with their respective tool capabilities."""
+            
+            logger.info(f"Dynamic consensus generated with confidence: {consensus_data.get('confidence_score', 0.5)}")
+            logger.info(f"Final consensus preview: {final_consensus[:100]}...")
+            
+            # Create response structure compatible with existing ConsensusResult
+            # For backward compatibility, we'll use the first two responses as openai/grok responses
+            openai_response = responses[0] if len(responses) > 0 else ModelResponse(
+                content="Model unavailable", model=selected_models[0] if selected_models else "unknown", 
+                confidence=0.0, reasoning="Model failed"
+            )
+            grok_response = responses[1] if len(responses) > 1 else ModelResponse(
+                content="Model unavailable", model=selected_models[1] if len(selected_models) > 1 else "unknown",
+                confidence=0.0, reasoning="Model failed"
+            )
+            
+            return ConsensusResult(
+                openai_response=openai_response,
+                grok_response=grok_response,
+                final_consensus=final_consensus,
+                confidence_score=consensus_data.get("confidence_score", 0.5),
+                reasoning=consensus_data.get("reasoning", "") + f" | Models: {', '.join(selected_models)}",
+                debate_points=consensus_data.get("debate_points", [])
+            )
+            
+        except Exception as e:
+            logger.error(f"Dynamic consensus generation error: {e}")
+            # Enhanced fallback: create a more intelligent combination
+            
+            valid_responses = [r for r in responses if r.confidence > 0]
+            if len(valid_responses) >= 2:
+                # Multiple responses are valid - create a simple synthesis
+                consensus_text = f"""Based on {len(valid_responses)} AI model analysis:
+
+**Key Insights:**
+"""
+                for i, response in enumerate(responses):
+                    if response.confidence > 0:
+                        model_name = selected_models[i]
+                        tools_info = "🔍 Real-time tools" if model_types[i] in ['openai', 'grok', 'claude'] else "📚 Training data only"
+                        consensus_text += f"\n**{model_name}** ({tools_info}):\n{response.content[:300]}...\n"
+                
+                consensus_text += f"\n**Summary:** This response combines insights from {len(valid_responses)} AI models with varying tool capabilities."
+                confidence = sum(r.confidence for r in valid_responses) / len(valid_responses)
+                reasoning = f"Fallback synthesis of {len(valid_responses)} models: {', '.join(selected_models)}"
+                debate_points = ["Unable to perform detailed consensus analysis due to processing error"]
+            elif len(valid_responses) == 1:
+                # Only one response is valid
+                working_response = valid_responses[0]
+                working_model_idx = next(i for i, r in enumerate(responses) if r.confidence > 0)
+                working_model = selected_models[working_model_idx]
+                tools_info = "🔍 Real-time tools" if model_types[working_model_idx] in ['openai', 'grok', 'claude'] else "📚 Training data only"
+                
+                consensus_text = f"""Single model response ({tools_info}):
+
+{working_response.content}
+
+Note: This response is from {working_model} only due to other models being unavailable."""
+                confidence = working_response.confidence * 0.8  # Reduce confidence for single model
+                reasoning = f"Single model fallback using {working_model} due to other model failures"
+                debate_points = ["Single model response due to consensus failure", "Reduced reliability without model comparison"]
+            else:
+                # All models failed
+                consensus_text = f"""All selected models ({', '.join(selected_models)}) are currently unavailable. Please try again later or select different models."""
+                confidence = 0.0
+                reasoning = "All models failed to respond"
+                debate_points = ["All models unavailable", "System error - no responses received"]
+            
+            # Create compatible response structure
+            openai_response = responses[0] if len(responses) > 0 else ModelResponse(
+                content="Model unavailable", model=selected_models[0] if selected_models else "unknown", 
+                confidence=0.0, reasoning="Model failed"
+            )
+            grok_response = responses[1] if len(responses) > 1 else ModelResponse(
+                content="Model unavailable", model=selected_models[1] if len(selected_models) > 1 else "unknown",
+                confidence=0.0, reasoning="Model failed"
+            )
+            
+            return ConsensusResult(
+                openai_response=openai_response,
+                grok_response=grok_response,
+                final_consensus=consensus_text,
+                confidence_score=confidence,
+                reasoning=reasoning,
+                debate_points=debate_points
+            )
+
     async def generate_consensus(
         self, 
         prompt: str,

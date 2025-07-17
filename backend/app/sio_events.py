@@ -302,9 +302,10 @@ def register_sio_events(sio):
                                 "session_id": session_id
                             }, room=str(session_id))
                             
-                            # Get consensus response from multiple models with full context
-                            consensus_result = await llm_orchestrator.generate_consensus(
+                            # Get consensus response from dynamically selected models with their tool capabilities
+                            consensus_result = await llm_orchestrator.generate_consensus_dynamic(
                                 prompt=full_prompt,
+                                selected_models=selected_models,
                                 context=combined_context
                             )
                             
