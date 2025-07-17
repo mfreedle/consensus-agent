@@ -376,7 +376,9 @@ const UnifiedProviderModelManagement: React.FC<
   }
 
   return (
-    <div className={`h-full flex flex-col space-y-6 ${className}`}>
+    <div
+      className={`h-full max-h-screen flex flex-col space-y-6 ${className} relative`}
+    >
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -399,7 +401,7 @@ const UnifiedProviderModelManagement: React.FC<
           </button>
           <button
             onClick={loadModels}
-            className="flex items-center space-x-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors text-sm"
+            className="flex items-center space-x-2 px-3 py-2 bg-primary-teal/80 hover:bg-primary-teal text-white rounded-md transition-colors text-sm"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -413,7 +415,10 @@ const UnifiedProviderModelManagement: React.FC<
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+      <div
+        className="flex-1 overflow-y-auto space-y-6 pr-2 min-h-0 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800"
+        style={{ maxHeight: "calc(100vh - 200px)" }}
+      >
         {/* Add New Provider Form */}
         {addingNewProvider && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
@@ -1073,6 +1078,9 @@ const UnifiedProviderModelManagement: React.FC<
           </div>
         )}
       </div>
+
+      {/* Scroll fade indicator */}
+      <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent pointer-events-none opacity-50"></div>
     </div>
   );
 };

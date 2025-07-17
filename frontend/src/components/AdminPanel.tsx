@@ -161,7 +161,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
         );
 
       case "providers-models":
-        return <UnifiedProviderModelManagement />;
+        return (
+          <div className="h-full">
+            <UnifiedProviderModelManagement />
+          </div>
+        );
 
       case "knowledge":
         return (

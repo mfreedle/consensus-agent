@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Providers UI Test</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			background-color: #1f2937;
+			color: white;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		}
+
+		.test-container {
+			height: 600px;
+			background-color: #374151;
+			border-radius: 8px;
+			padding: 16px;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.header {
+			flex-shrink: 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 16px;
+		}
+
+		.title {
+			font-size: 1.25rem;
+			font-weight: 600;
+		}
+
+		.buttons {
+			display: flex;
+			gap: 12px;
+		}
+
+		.btn-teal {
+			background-color: #1dd1a1;
+			color: white;
+			border: none;
+			padding: 8px 16px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 0.875rem;
+			transition: background-color 0.2s;
+		}
+
+		.btn-teal:hover {
+			background-color: rgba(29, 209, 161, 0.9);
+		}
+
+		.btn-gray {
+			background-color: rgba(29, 209, 161, 0.8);
+			color: white;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 0.875rem;
+			transition: background-color 0.2s;
+		}
+
+		.btn-gray:hover {
+			background-color: #1dd1a1;
+		}
+
+		.description {
+			flex-shrink: 0;
+			color: #9ca3af;
+			font-size: 0.875rem;
+			margin-bottom: 16px;
+		}
+
+		.scrollable-content {
+			flex: 1;
+			overflow-y: auto;
+			padding-right: 8px;
+			scrollbar-width: thin;
+			scrollbar-color: #6b7280 #374151;
+		}
+
+		.scrollable-content::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		.scrollable-content::-webkit-scrollbar-track {
+			background: #374151;
+		}
+
+		.scrollable-content::-webkit-scrollbar-thumb {
+			background: #6b7280;
+			border-radius: 3px;
+		}
+
+		.provider-card {
+			background-color: #1f2937;
+			border: 1px solid #4b5563;
+			border-radius: 8px;
+			padding: 24px;
+			margin-bottom: 24px;
+		}
+
+		.provider-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 16px;
+		}
+
+		.provider-name {
+			font-size: 1.125rem;
+			font-weight: 600;
+		}
+
+		.status-badge {
+			background-color: #059669;
+			color: white;
+			padding: 4px 8px;
+			border-radius: 999px;
+			font-size: 0.75rem;
+		}
+
+		.quick-stats {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+			gap: 16px;
+			color: #d1d5db;
+			font-size: 0.875rem;
+		}
+
+		.stat-label {
+			color: #9ca3af;
+		}
+
+		.fade-indicator {
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 16px;
+			background: linear-gradient(to top, #374151, transparent);
+			pointer-events: none;
+			opacity: 0.5;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>Provider & Model Management UI Test</h1>
+	<p>This tests the visibility of buttons and scrolling behavior:</p>
+
+	<div class="test-container" style="position: relative;">
+		<div class="header">
+			<h2 class="title">Provider & Model Management</h2>
+			<div class="buttons">
+				<button class="btn-teal">+ Add Provider</button>
+				<button class="btn-gray">↻ Refresh</button>
+			</div>
+		</div>
+
+		<div class="description">
+			Configure AI providers and manage their available models. Each provider can have multiple models that can be
+			enabled or disabled individually.
+		</div>
+
+		<div class="scrollable-content">
+			<!-- OpenAI Provider -->
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">🤖 OpenAI</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">openai • 4 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 4 / 4</div>
+					<div><span class="stat-label">Rate Limit:</span> 60/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 64,000</div>
+				</div>
+			</div>
+
+			<!-- Grok Provider -->
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">⚡ Grok (xAI)</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">grok • 4 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 4 / 4</div>
+					<div><span class="stat-label">Rate Limit:</span> 60/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 64,000</div>
+				</div>
+			</div>
+
+			<!-- DeepSeek Provider -->
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">🔍 DeepSeek</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">deepseek • 2 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 2 / 2</div>
+					<div><span class="stat-label">Rate Limit:</span> 60/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 64,000</div>
+				</div>
+			</div>
+
+			<!-- Anthropic Provider -->
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">🎭 Anthropic</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">anthropic • 3 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 3 / 3</div>
+					<div><span class="stat-label">Rate Limit:</span> 60/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 64,000</div>
+				</div>
+			</div>
+
+			<!-- Additional providers to test scrolling -->
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">🚀 Mistral AI</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">mistral • 2 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 2 / 2</div>
+					<div><span class="stat-label">Rate Limit:</span> 60/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 32,000</div>
+				</div>
+			</div>
+
+			<div class="provider-card">
+				<div class="provider-header">
+					<div>
+						<div class="provider-name">🌊 Groq</div>
+						<div style="color: #6b7280; font-size: 0.875rem;">groq • 3 models</div>
+					</div>
+					<span class="status-badge">Active</span>
+				</div>
+				<div class="quick-stats">
+					<div><span class="stat-label">Status:</span> Active</div>
+					<div><span class="stat-label">Models:</span> 3 / 3</div>
+					<div><span class="stat-label">Rate Limit:</span> 100/min</div>
+					<div><span class="stat-label">Max Tokens:</span> 32,000</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="fade-indicator"></div>
+	</div>
+
+	<div style="margin-top: 20px; padding: 16px; background-color: #065f46; border-radius: 8px;">
+		<h3 style="margin-top: 0; color: #34d399;">✅ Fixed Issues:</h3>
+		<ul style="color: #a7f3d0;">
+			<li><strong>Button Visibility:</strong> Refresh button now uses teal color (#1dd1a1) for better contrast
+			</li>
+			<li><strong>Scrolling:</strong> Content area is now properly scrollable with visual scroll indicators</li>
+			<li><strong>Height Management:</strong> Container uses proper flex layout with height constraints</li>
+			<li><strong>Visual Feedback:</strong> Added gradient fade at bottom to indicate scrollable content</li>
+		</ul>
+	</div>
+</body>
+
+</html>
