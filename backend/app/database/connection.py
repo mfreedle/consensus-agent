@@ -81,11 +81,11 @@ async def seed_initial_data():
     try:
         logger.info("Starting to seed initial data...")
         
-        # Check if we're on Railway (production) and force refresh models
+        # Check if we're on Railway (production) - don't force refresh to preserve existing models
         is_railway = bool(os.environ.get('RAILWAY_ENVIRONMENT_NAME'))
         if is_railway:
-            logger.info("Railway deployment detected - forcing model refresh to ensure all models are available")
-            await seed_models(force_refresh=True)
+            logger.info("Railway deployment detected - seeding models without force refresh to preserve existing data")
+            await seed_models(force_refresh=False)
         else:
             await seed_models()
             
