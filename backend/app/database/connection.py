@@ -130,6 +130,7 @@ async def seed_models(force_refresh=False):
                 supports_streaming=True,
                 supports_function_calling=False,
                 supports_vision=False,
+                is_active=True,
                 capabilities={
                     "reasoning": "exceptional",
                     "mathematics": "high",
@@ -148,6 +149,7 @@ async def seed_models(force_refresh=False):
                 supports_streaming=True,
                 supports_function_calling=False,
                 supports_vision=False,
+                is_active=True,
                 capabilities={
                     "reasoning": "very_high",
                     "creativity": "high",

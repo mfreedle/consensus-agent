@@ -94,16 +94,31 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
 
       setAvailableModels(models);
 
+      // Debug logging
+      console.log("🔍 ModernModelSelector: Loaded models", {
+        count: models.length,
+        firstFew: models
+          .slice(0, 3)
+          .map((m) => ({
+            id: m.id,
+            display_name: m.display_name,
+            is_active: m.is_active,
+          })),
+      });
+
       // Auto-expand all providers to show models by default
       const providers = Array.from(new Set(models.map((m) => m.provider)));
       setExpandedProviders(new Set(providers));
+      console.log("🔍 ModernModelSelector: Expanded providers", providers);
 
       // Auto-select first available models if none selected
       if (modelSelection.selectedModels.length === 0 && models.length > 0) {
-        const defaultModels = models
-          .filter((m) => m.is_active !== false)
-          .slice(0, 2)
-          .map((m) => m.id);
+        const defaultModels = models.slice(0, 2).map((m) => m.id);
+
+        console.log(
+          "🔍 ModernModelSelector: Auto-selecting models",
+          defaultModels
+        );
 
         if (defaultModels.length > 0) {
           onModelSelectionChange({
