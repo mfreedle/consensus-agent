@@ -274,6 +274,12 @@ async def send_message(
                     prompt=str(full_prompt),
                     model=model
                 )
+            elif model.startswith("dall-e"):
+                # Handle OpenAI DALL-E image generation models
+                response = await llm_orchestrator.generate_openai_image(
+                    prompt=str(full_prompt),
+                    model=model
+                )
             elif model == "grok-2-image":
                 # Handle dedicated image generation model
                 response = await llm_orchestrator.generate_grok_image(

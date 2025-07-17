@@ -1564,5 +1564,87 @@ Note: This response is from {working_model} only due to the other model being un
                 reasoning="API error occurred"
             )
 
+    async def generate_openai_image(
+        self, 
+        prompt: str,
+        model: str = "dall-e-3",
+        n: int = 1,
+        size: str = "1024x1024",
+        quality: str = "standard"
+    ) -> ModelResponse:
+        """Generate images using OpenAI's DALL-E model"""
+        try:
+            logger.info(f"Generating image with OpenAI DALL-E: {prompt[:100]}...")
+            
+            # Validate size parameter (use only valid literal values)
+            if size == "1024x1536":
+                actual_size = "1024x1536"
+            elif size == "1536x1024":
+                actual_size = "1536x1024"
+            elif size == "1792x1024":
+                actual_size = "1792x1024"
+            elif size == "1024x1792":
+                actual_size = "1024x1792"
+            elif size == "256x256":
+                actual_size = "256x256"
+            elif size == "512x512":
+                actual_size = "512x512"
+            else:
+                actual_size = "1024x1024"
+            
+            # Validate quality parameter (use only valid literal values)
+            if quality == "hd":
+                actual_quality = "hd"
+            else:
+                actual_quality = "standard"
+            
+            # Make request to OpenAI image generation API
+            response = await self.openai_client.images.generate(
+                model=model,
+                prompt=prompt,
+                n=n,
+                size=actual_size,
+                quality=actual_quality,
+                response_format="b64_json"
+            )
+            
+            if response.data:
+                # Process the generated images
+                image_content = "🖼️ **Generated Image(s)**\n\n"
+                
+                for i, image_data in enumerate(response.data):
+                    if hasattr(image_data, 'b64_json'):
+                        b64_image = image_data.b64_json
+                        image_content += f"![Generated Image {i+1}](data:image/png;base64,{b64_image})\n\n"
+                    elif hasattr(image_data, 'url'):
+                        image_content += f"![Generated Image {i+1}]({image_data.url})\n\n"
+                
+                image_content += f"**Prompt:** {prompt}\n"
+                image_content += f"**Model:** {model}\n"
+                image_content += f"**Generated:** {n} image(s)\n"
+                
+                return ModelResponse(
+                    content=image_content,
+                    model=model,
+                    confidence=0.95,
+                    reasoning=f"Generated {len(response.data)} image(s) using OpenAI DALL-E {model}"
+                )
+            else:
+                return ModelResponse(
+                    content="❌ No images were generated. Please try again with a different prompt.",
+                    model=model,
+                    confidence=0.0,
+                    reasoning="No images returned from OpenAI"
+                )
+                
+        except Exception as e:
+            logger.error(f"OpenAI image generation error: {e}")
+            return ModelResponse(
+                content=f"❌ Image generation failed: OpenAI image API error: {str(e)}\n\nPlease try again with a different prompt.",
+                model=model,
+                confidence=0.0,
+                reasoning=f"OpenAI image generation error: {str(e)}"
+            )
+
 # Global orchestrator instance
 llm_orchestrator = LLMOrchestrator()
