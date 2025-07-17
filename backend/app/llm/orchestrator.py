@@ -490,11 +490,28 @@ Please respond in JSON format:
     ) -> ModelResponse:
         """Get response from Grok using xAI API with built-in tools and function calling"""
         try:
-            # Check if this is an image generation request
-            image_keywords = ["generate image", "create image", "draw", "make image", "picture", "artwork", "illustration", "visual"]
-            if any(keyword in prompt.lower() for keyword in image_keywords):
-                logger.info("Detected image generation request, routing to Grok image generation")
+            # Check if this is an explicit image generation request
+            # Only trigger on very specific, unambiguous image generation requests
+            explicit_image_keywords = [
+                "generate an image", "create an image", "draw an image", "make an image",
+                "generate a picture", "create a picture", "draw a picture", "make a picture",
+                "generate artwork", "create artwork", "draw artwork", "make artwork",
+                "generate an illustration", "create an illustration", "draw an illustration",
+                "show me an image", "show me a picture", "can you draw", "can you create an image",
+                "please generate an image", "please create an image", "please draw"
+            ]
+            
+            # Only route to image generation if it's an explicit request AND the model supports it
+            is_explicit_image_request = any(keyword in prompt.lower() for keyword in explicit_image_keywords)
+            is_image_model = "image" in model.lower()
+            
+            if is_explicit_image_request and is_image_model:
+                logger.info("Detected explicit image generation request, routing to Grok image generation")
                 return await self.generate_grok_image(prompt, "grok-2-image")
+            elif is_explicit_image_request and not is_image_model:
+                logger.info(f"Image generation requested but model {model} doesn't support it, providing text response instead")
+            
+            # For all other requests (including text models), provide regular text response
             
             # Prepare messages with context if provided
             messages = []
