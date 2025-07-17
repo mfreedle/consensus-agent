@@ -7,11 +7,12 @@ import {
   Save,
   Key,
   RefreshCw,
-  X,
   Power,
   Trash2,
   ChevronDown,
   ChevronRight,
+  Plus,
+  Globe,
 } from "lucide-react";
 import { enhancedApiService } from "../services/enhancedApi";
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -106,15 +107,18 @@ const UnifiedProviderModelManagement: React.FC<
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(
     new Set()
   );
-  const [modelFilter, setModelFilter] = useState<"all" | "active" | "inactive">(
-    "all"
-  );
+  const [newModelForm, setNewModelForm] = useState<{
+    [provider: string]: { modelId: string; displayName: string; show: boolean };
+  }>({});
+  const [addingNewProvider, setAddingNewProvider] = useState(false);
+  const [newProviderForm, setNewProviderForm] = useState({
+    provider: "",
+    display_name: "",
+    api_base_url: "",
+  });
 
   // General state
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"providers" | "models">(
-    "providers"
-  );
   const { addError } = useErrorHandler();
 
   // Load providers
@@ -295,21 +299,6 @@ const UnifiedProviderModelManagement: React.FC<
     }
   };
 
-  const getProviderModels = (provider: string) => {
-    return models.filter((model) => model.provider === provider);
-  };
-
-  const getFilteredModels = () => {
-    switch (modelFilter) {
-      case "active":
-        return models.filter((model) => model.is_active !== false);
-      case "inactive":
-        return models.filter((model) => model.is_active === false);
-      default:
-        return models;
-    }
-  };
-
   const allProviders = [
     ...providers,
     ...defaultProviders.filter(
@@ -317,6 +306,62 @@ const UnifiedProviderModelManagement: React.FC<
         !providers.some((p) => p.provider === defaultProvider.provider)
     ),
   ];
+
+  // Helper functions
+  const getModelIdPlaceholder = (provider: string) => {
+    switch (provider) {
+      case "openai":
+        return "e.g., gpt-4, gpt-4-turbo, gpt-3.5-turbo";
+      case "anthropic":
+        return "e.g., claude-3-opus-20240229, claude-3-sonnet-20240229";
+      case "grok":
+        return "e.g., grok-beta, grok-vision-beta";
+      case "deepseek":
+        return "e.g., deepseek-chat, deepseek-coder";
+      default:
+        return "Model identifier as used in API";
+    }
+  };
+
+  const addNewModel = async (providerKey: string) => {
+    const modelForm = newModelForm[providerKey];
+    if (!modelForm?.modelId || !modelForm?.displayName) return;
+
+    try {
+      const response = await enhancedApiService.request(
+        "/models/admin/models",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            model_id: modelForm.modelId,
+            provider: providerKey,
+            display_name: modelForm.displayName,
+            description: `${modelForm.displayName} model from ${providerKey}`,
+            is_active: true,
+            supports_streaming: true,
+            supports_function_calling: false,
+            supports_vision: false,
+            context_window: 128000,
+          }),
+        }
+      );
+
+      if (response) {
+        // Refresh models and reset form
+        await loadModels();
+        setNewModelForm((prev) => ({
+          ...prev,
+          [providerKey]: {
+            modelId: "",
+            displayName: "",
+            show: false,
+          },
+        }));
+      }
+    } catch (error) {
+      addError(error, "api", `Failed to add model ${modelForm.displayName}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -332,7 +377,7 @@ const UnifiedProviderModelManagement: React.FC<
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Header with tabs */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
@@ -344,125 +389,286 @@ const UnifiedProviderModelManagement: React.FC<
           </h2>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <button
-            onClick={() => setActiveTab("providers")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === "providers"
-                ? "bg-primary-teal text-white"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+            onClick={() => setAddingNewProvider(!addingNewProvider)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm"
           >
-            Providers
+            <Plus className="w-4 h-4" />
+            <span>Add Provider</span>
           </button>
           <button
-            onClick={() => setActiveTab("models")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === "models"
-                ? "bg-primary-teal text-white"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+            onClick={loadModels}
+            className="flex items-center space-x-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors text-sm"
           >
-            Models
+            <RefreshCw className="w-4 h-4" />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "providers" && (
-        <div className="space-y-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Configure AI provider settings including API keys, endpoints, and
-            rate limits.
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        Configure AI providers and manage their available models. Each provider
+        can have multiple models that can be enabled or disabled individually.
+      </div>
+
+      {/* Add New Provider Form */}
+      {addingNewProvider && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Add New Provider
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Provider ID
+              </label>
+              <input
+                type="text"
+                value={newProviderForm.provider}
+                onChange={(e) =>
+                  setNewProviderForm((prev) => ({
+                    ...prev,
+                    provider: e.target.value,
+                  }))
+                }
+                placeholder="e.g., groq, mistral"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={newProviderForm.display_name}
+                onChange={(e) =>
+                  setNewProviderForm((prev) => ({
+                    ...prev,
+                    display_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g., Groq, Mistral AI"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                API Base URL
+              </label>
+              <input
+                type="url"
+                value={newProviderForm.api_base_url}
+                onChange={(e) =>
+                  setNewProviderForm((prev) => ({
+                    ...prev,
+                    api_base_url: e.target.value,
+                  }))
+                }
+                placeholder="https://api.example.com/v1"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
           </div>
+          <div className="flex items-center space-x-3 mt-4">
+            <button
+              onClick={() => {
+                // Add the new provider to formData and allProviders
+                const newProvider = {
+                  ...newProviderForm,
+                  is_active: true,
+                  max_requests_per_minute: 60,
+                  max_tokens_per_request: 64000,
+                  has_api_key: false,
+                };
+                setFormData((prev) => ({
+                  ...prev,
+                  [newProviderForm.provider]: newProvider,
+                }));
+                setNewProviderForm({
+                  provider: "",
+                  display_name: "",
+                  api_base_url: "",
+                });
+                setAddingNewProvider(false);
+              }}
+              disabled={
+                !newProviderForm.provider ||
+                !newProviderForm.display_name ||
+                !newProviderForm.api_base_url
+              }
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors"
+            >
+              Add Provider
+            </button>
+            <button
+              onClick={() => {
+                setNewProviderForm({
+                  provider: "",
+                  display_name: "",
+                  api_base_url: "",
+                });
+                setAddingNewProvider(false);
+              }}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
-          {/* Provider Cards */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {allProviders.map((provider) => {
-              const isEditing = editingProvider === provider.provider;
-              const config = formData[provider.provider] || provider;
+      {/* Provider Cards with Integrated Models */}
+      <div className="space-y-6">
+        {allProviders.map((provider) => {
+          const isEditing = editingProvider === provider.provider;
+          const config = formData[provider.provider] || provider;
+          const providerModels = models.filter(
+            (model) => model.provider === provider.provider
+          );
+          const isExpanded = expandedProviders.has(provider.provider);
+          const showNewModelForm =
+            newModelForm[provider.provider]?.show || false;
 
-              return (
-                <div
-                  key={provider.provider}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6"
-                >
-                  {/* Provider Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">
-                        {getProviderIcon(provider.provider)}
-                      </span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {config.display_name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {provider.provider}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {provider.has_api_key && (
-                        <div className="flex items-center text-green-600 dark:text-green-400">
-                          <Key className="w-4 h-4" />
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleEditProvider(provider.provider)}
-                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
+          return (
+            <div
+              key={provider.provider}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+            >
+              {/* Provider Header */}
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">
+                      {getProviderIcon(provider.provider)}
+                    </span>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {config.display_name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {provider.provider} • {providerModels.length} models
+                      </p>
                     </div>
                   </div>
-
-                  {isEditing ? (
-                    <div className="space-y-4">
-                      {/* API Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          API Key
-                        </label>
-                        <div className="flex">
-                          <input
-                            type={
-                              showApiKey[provider.provider]
-                                ? "text"
-                                : "password"
-                            }
-                            value={config.api_key || ""}
-                            onChange={(e) =>
-                              handleFormChange(
-                                provider.provider,
-                                "api_key",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Enter API key..."
-                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleApiKeyVisibility(provider.provider)
-                            }
-                            className="px-3 py-2 border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-r-md hover:bg-gray-100 dark:hover:bg-gray-500"
-                          >
-                            {showApiKey[provider.provider] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
+                  <div className="flex items-center space-x-2">
+                    {provider.has_api_key && (
+                      <div className="flex items-center text-green-600 dark:text-green-400">
+                        <Key className="w-4 h-4" />
                       </div>
+                    )}
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        config.is_active
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                      }`}
+                    >
+                      {config.is_active ? "Active" : "Inactive"}
+                    </span>
+                    <button
+                      onClick={() => handleEditProvider(provider.provider)}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-                      {/* API Base URL */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          API Base URL
-                        </label>
+                {/* Quick Stats */}
+                {!isEditing && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Status:
+                      </span>
+                      <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                        {config.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Models:
+                      </span>
+                      <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                        {
+                          providerModels.filter((m) => m.is_active !== false)
+                            .length
+                        }{" "}
+                        / {providerModels.length}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Rate Limit:
+                      </span>
+                      <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                        {config.max_requests_per_minute}/min
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Max Tokens:
+                      </span>
+                      <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                        {config.max_tokens_per_request?.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Provider Configuration */}
+              {isEditing && (
+                <div className="p-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    Provider Configuration
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* API Key */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        API Key
+                      </label>
+                      <div className="flex rounded-md shadow-sm">
+                        <input
+                          type={
+                            showApiKey[provider.provider] ? "text" : "password"
+                          }
+                          value={config.api_key || ""}
+                          onChange={(e) =>
+                            handleFormChange(
+                              provider.provider,
+                              "api_key",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter API key..."
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleApiKeyVisibility(provider.provider)
+                          }
+                          className="px-3 py-2 border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-r-md hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors"
+                        >
+                          {showApiKey[provider.provider] ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* API Base URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        API Base URL
+                      </label>
+                      <div className="flex items-center">
+                        <Globe className="w-4 h-4 text-gray-400 mr-2" />
                         <input
                           type="url"
                           value={config.api_base_url || ""}
@@ -474,338 +680,392 @@ const UnifiedProviderModelManagement: React.FC<
                             )
                           }
                           placeholder="https://api.example.com/v1"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Organization ID (for OpenAI) */}
+                    {provider.provider === "openai" && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Organization ID (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={config.organization_id || ""}
+                          onChange={(e) =>
+                            handleFormChange(
+                              provider.provider,
+                              "organization_id",
+                              e.target.value
+                            )
+                          }
+                          placeholder="org-..."
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
+                    )}
 
-                      {/* Organization ID (for OpenAI) */}
-                      {provider.provider === "openai" && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Organization ID (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={config.organization_id || ""}
-                            onChange={(e) =>
-                              handleFormChange(
-                                provider.provider,
-                                "organization_id",
-                                e.target.value
-                              )
-                            }
-                            placeholder="org-..."
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        </div>
-                      )}
-
-                      {/* Settings */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Max Requests/Min
-                          </label>
-                          <input
-                            type="number"
-                            value={config.max_requests_per_minute || 60}
-                            onChange={(e) =>
-                              handleFormChange(
-                                provider.provider,
-                                "max_requests_per_minute",
-                                parseInt(e.target.value)
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Max Tokens
-                          </label>
-                          <input
-                            type="number"
-                            value={config.max_tokens_per_request || 64000}
-                            onChange={(e) =>
-                              handleFormChange(
-                                provider.provider,
-                                "max_tokens_per_request",
-                                parseInt(e.target.value)
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Active Checkbox */}
-                      <div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={config.is_active || false}
-                            onChange={(e) =>
-                              handleFormChange(
-                                provider.provider,
-                                "is_active",
-                                e.target.checked
-                              )
-                            }
-                            className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            Provider Active
-                          </span>
-                        </label>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex space-x-3 pt-4">
-                        <button
-                          onClick={() => handleSaveProvider(provider.provider)}
-                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
-                        >
-                          <Save className="w-4 h-4" />
-                          <span>Save</span>
-                        </button>
-                        <button
-                          onClick={() => setEditingProvider(null)}
-                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                          <span>Cancel</span>
-                        </button>
-                      </div>
+                    {/* Rate Limits */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Max Requests/Min
+                      </label>
+                      <input
+                        type="number"
+                        value={config.max_requests_per_minute || 60}
+                        onChange={(e) =>
+                          handleFormChange(
+                            provider.provider,
+                            "max_requests_per_minute",
+                            parseInt(e.target.value)
+                          )
+                        }
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Status
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${
-                            config.is_active
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-red-600 dark:text-red-400"
-                          }`}
-                        >
-                          {config.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Models
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {getProviderModels(provider.provider).length}
-                        </span>
-                      </div>
-                      {provider.sync_error && (
-                        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-md">
-                          {provider.sync_error}
-                        </div>
-                      )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Max Tokens
+                      </label>
+                      <input
+                        type="number"
+                        value={config.max_tokens_per_request || 64000}
+                        onChange={(e) =>
+                          handleFormChange(
+                            provider.provider,
+                            "max_tokens_per_request",
+                            parseInt(e.target.value)
+                          )
+                        }
+                        min="1"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
                     </div>
-                  )}
+
+                    {/* Active Checkbox */}
+                    <div className="md:col-span-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={config.is_active || false}
+                          onChange={(e) =>
+                            handleFormChange(
+                              provider.provider,
+                              "is_active",
+                              e.target.checked
+                            )
+                          }
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          Provider Active
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <button
+                      onClick={() => setEditingProvider(null)}
+                      className="px-6 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:ring-2 focus:ring-blue-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleSaveProvider(provider.provider)}
+                      className="flex items-center space-x-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors focus:ring-2 focus:ring-blue-500"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Save Configuration</span>
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              )}
 
-      {activeTab === "models" && (
-        <div className="space-y-6">
-          {/* Filter bar */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Manage individual AI models and their availability.
-            </div>
-            <div className="flex items-center space-x-4">
-              <select
-                value={modelFilter}
-                onChange={(e) => setModelFilter(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="all">All Models</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-              </select>
-              <button
-                onClick={loadModels}
-                className="flex items-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Models grouped by provider */}
-          <div className="space-y-4">
-            {allProviders.map((provider) => {
-              const providerModels = getFilteredModels().filter(
-                (model) => model.provider === provider.provider
-              );
-              const isExpanded = expandedProviders.has(provider.provider);
-
-              if (providerModels.length === 0) return null;
-
-              return (
-                <div
-                  key={provider.provider}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+              {/* Models Section */}
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    const newExpanded = new Set(expandedProviders);
+                    if (isExpanded) {
+                      newExpanded.delete(provider.provider);
+                    } else {
+                      newExpanded.add(provider.provider);
+                    }
+                    setExpandedProviders(newExpanded);
+                  }}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
-                  {/* Provider header */}
-                  <button
-                    onClick={() => {
-                      const newExpanded = new Set(expandedProviders);
-                      if (isExpanded) {
-                        newExpanded.delete(provider.provider);
-                      } else {
-                        newExpanded.add(provider.provider);
-                      }
-                      setExpandedProviders(newExpanded);
-                    }}
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-xl">
-                        {getProviderIcon(provider.provider)}
-                      </span>
-                      <div className="text-left">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {provider.display_name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {providerModels.length} models
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {
-                          providerModels.filter((m) => m.is_active !== false)
-                            .length
-                        }{" "}
-                        active
-                      </span>
-                      {isExpanded ? (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Models ({providerModels.length})
+                    </h4>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {
+                        providerModels.filter((m) => m.is_active !== false)
+                          .length
+                      }{" "}
+                      active
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNewModelForm((prev) => ({
+                          ...prev,
+                          [provider.provider]: {
+                            modelId: "",
+                            displayName: "",
+                            show: !showNewModelForm,
+                          },
+                        }));
+                      }}
+                      className="flex items-center space-x-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-sm"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Model</span>
+                    </button>
+                    {isExpanded ? (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    )}
+                  </div>
+                </button>
 
-                  {/* Models list */}
-                  {isExpanded && (
-                    <div className="border-t border-gray-200 dark:border-gray-700">
-                      {providerModels.map((model) => (
-                        <div
-                          key={model.id}
-                          className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h4 className="font-medium text-gray-900 dark:text-white">
-                                {model.display_name}
-                              </h4>
-                              <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  model.is_active !== false
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                }`}
-                              >
-                                {model.is_active !== false
-                                  ? "Active"
-                                  : "Inactive"}
-                              </span>
-                            </div>
-                            {model.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {model.description}
-                              </p>
-                            )}
-                            <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                              {model.supports_streaming && (
-                                <span className="flex items-center space-x-1">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  <span>Streaming</span>
-                                </span>
+                {/* Models List */}
+                {isExpanded && (
+                  <div className="border-t border-gray-200 dark:border-gray-700">
+                    {/* Add New Model Form */}
+                    {showNewModelForm && (
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border-b border-gray-200 dark:border-gray-700">
+                        <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                          Add New Model to {config.display_name}
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Model ID (API Format)
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                newModelForm[provider.provider]?.modelId || ""
+                              }
+                              onChange={(e) =>
+                                setNewModelForm((prev) => ({
+                                  ...prev,
+                                  [provider.provider]: {
+                                    ...prev[provider.provider],
+                                    modelId: e.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder={getModelIdPlaceholder(
+                                provider.provider
                               )}
-                              {model.supports_function_calling && (
-                                <span className="flex items-center space-x-1">
-                                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                  <span>Functions</span>
-                                </span>
-                              )}
-                              {model.supports_vision && (
-                                <span className="flex items-center space-x-1">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span>Vision</span>
-                                </span>
-                              )}
-                              {model.context_window && (
-                                <span>
-                                  {model.context_window.toLocaleString()} tokens
-                                </span>
-                              )}
-                            </div>
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
+                            />
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() =>
-                                toggleModel(
-                                  model.id,
-                                  !(model.is_active !== false)
-                                )
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Display Name
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                newModelForm[provider.provider]?.displayName ||
+                                ""
                               }
-                              className={`p-2 rounded-md transition-colors ${
-                                model.is_active !== false
-                                  ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  : "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                              }`}
-                              title={
-                                model.is_active !== false
-                                  ? "Deactivate"
-                                  : "Activate"
+                              onChange={(e) =>
+                                setNewModelForm((prev) => ({
+                                  ...prev,
+                                  [provider.provider]: {
+                                    ...prev[provider.provider],
+                                    displayName: e.target.value,
+                                  },
+                                }))
                               }
-                            >
-                              <Power className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => deleteModel(model.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                              title="Delete model"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                              placeholder="e.g., GPT-4 Turbo"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                        <div className="flex items-center space-x-3 mt-3">
+                          <button
+                            onClick={() => addNewModel(provider.provider)}
+                            disabled={
+                              !newModelForm[provider.provider]?.modelId ||
+                              !newModelForm[provider.provider]?.displayName
+                            }
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors text-sm"
+                          >
+                            Add Model
+                          </button>
+                          <button
+                            onClick={() =>
+                              setNewModelForm((prev) => ({
+                                ...prev,
+                                [provider.provider]: {
+                                  modelId: "",
+                                  displayName: "",
+                                  show: false,
+                                },
+                              }))
+                            }
+                            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                          Enter the exact model ID as used by{" "}
+                          {config.display_name}'s API
+                        </div>
+                      </div>
+                    )}
 
-          {getFilteredModels().length === 0 && (
-            <div className="text-center py-8">
-              <Database className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No models found
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {modelFilter === "all"
-                  ? "No models have been configured yet."
-                  : `No ${modelFilter} models found.`}
-              </p>
+                    {/* Existing Models */}
+                    {providerModels.map((model) => (
+                      <div
+                        key={model.id}
+                        className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3">
+                            <h5 className="font-medium text-gray-900 dark:text-white truncate">
+                              {model.display_name}
+                            </h5>
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                model.is_active !== false
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              }`}
+                            >
+                              {model.is_active !== false
+                                ? "Active"
+                                : "Inactive"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {model.id}
+                          </p>
+                          {model.description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              {model.description}
+                            </p>
+                          )}
+                          <div className="flex items-center space-x-4 mt-2">
+                            {model.supports_streaming && (
+                              <span className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span>Streaming</span>
+                              </span>
+                            )}
+                            {model.supports_function_calling && (
+                              <span className="flex items-center space-x-1 text-xs text-purple-600 dark:text-purple-400">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span>Functions</span>
+                              </span>
+                            )}
+                            {model.supports_vision && (
+                              <span className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span>Vision</span>
+                              </span>
+                            )}
+                            {model.context_window && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {model.context_window.toLocaleString()} tokens
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <button
+                            onClick={() =>
+                              toggleModel(
+                                model.id,
+                                !(model.is_active !== false)
+                              )
+                            }
+                            className={`p-2 rounded-md transition-colors ${
+                              model.is_active !== false
+                                ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                : "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                            }`}
+                            title={
+                              model.is_active !== false
+                                ? "Deactivate"
+                                : "Activate"
+                            }
+                          >
+                            <Power className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteModel(model.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                            title="Delete model"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {providerModels.length === 0 && (
+                      <div className="p-8 text-center">
+                        <Database className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          No models configured for this provider
+                        </p>
+                        <button
+                          onClick={() =>
+                            setNewModelForm((prev) => ({
+                              ...prev,
+                              [provider.provider]: {
+                                modelId: "",
+                                displayName: "",
+                                show: true,
+                              },
+                            }))
+                          }
+                          className="mt-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm"
+                        >
+                          Add your first model
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          );
+        })}
+      </div>
+
+      {allProviders.length === 0 && (
+        <div className="text-center py-12">
+          <Database className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            No providers configured
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Add your first AI provider to get started
+          </p>
+          <button
+            onClick={() => setAddingNewProvider(true)}
+            className="flex items-center space-x-2 mx-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Provider</span>
+          </button>
         </div>
       )}
     </div>
