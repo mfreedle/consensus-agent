@@ -73,22 +73,42 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
       setError(null);
       const modelsResponse = await enhancedApiService.getAvailableModels();
 
+      // Enhanced debug logging
+      console.log("🔍 ModernModelSelector: Raw API response", {
+        type: typeof modelsResponse,
+        isArray: Array.isArray(modelsResponse),
+        keys:
+          modelsResponse && typeof modelsResponse === "object"
+            ? Object.keys(modelsResponse)
+            : "N/A",
+        response: modelsResponse,
+      });
+
       // Ensure we always have an array - handle various response formats
       let models: LLMModel[] = [];
       if (Array.isArray(modelsResponse)) {
         models = modelsResponse;
+        console.log("✅ ModernModelSelector: Using direct array response");
       } else if (modelsResponse && typeof modelsResponse === "object") {
         const responseObj = modelsResponse as any;
         if (Array.isArray(responseObj.data)) {
           models = responseObj.data;
+          console.log("✅ ModernModelSelector: Using response.data");
         } else if (Array.isArray(responseObj.models)) {
           models = responseObj.models;
+          console.log("✅ ModernModelSelector: Using response.models");
         } else {
-          console.warn("Unexpected API response format:", modelsResponse);
+          console.warn(
+            "❌ ModernModelSelector: Unexpected API response format:",
+            modelsResponse
+          );
           models = [];
         }
       } else {
-        console.warn("Unexpected API response format:", modelsResponse);
+        console.warn(
+          "❌ ModernModelSelector: Unexpected API response format:",
+          modelsResponse
+        );
         models = [];
       }
 
@@ -97,13 +117,11 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
       // Debug logging
       console.log("🔍 ModernModelSelector: Loaded models", {
         count: models.length,
-        firstFew: models
-          .slice(0, 3)
-          .map((m) => ({
-            id: m.id,
-            display_name: m.display_name,
-            is_active: m.is_active,
-          })),
+        firstFew: models.slice(0, 3).map((m) => ({
+          id: m.id,
+          display_name: m.display_name,
+          is_active: m.is_active,
+        })),
       });
 
       // Auto-expand all providers to show models by default
