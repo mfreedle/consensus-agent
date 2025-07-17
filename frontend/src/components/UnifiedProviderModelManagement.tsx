@@ -401,7 +401,7 @@ const UnifiedProviderModelManagement: React.FC<
           </button>
           <button
             onClick={loadModels}
-            className="flex items-center space-x-2 px-3 py-2 bg-primary-teal/80 hover:bg-primary-teal text-white rounded-md transition-colors text-sm"
+            className="flex items-center space-x-2 px-3 py-2 bg-primary-teal hover:bg-primary-teal/90 text-white rounded-md transition-colors text-sm"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -830,7 +830,7 @@ const UnifiedProviderModelManagement: React.FC<
                             [provider.provider]: {
                               modelId: "",
                               displayName: "",
-                              show: !showNewModelForm,
+                              show: true,
                             },
                           }));
                         }}
@@ -927,7 +927,7 @@ const UnifiedProviderModelManagement: React.FC<
                                   },
                                 }))
                               }
-                              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors text-sm"
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-sm"
                             >
                               Cancel
                             </button>
