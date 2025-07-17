@@ -125,7 +125,7 @@ const UnifiedProviderModelManagement: React.FC<
   const loadProviders = useCallback(async () => {
     try {
       const response = await enhancedApiService.request<ProviderConfig[]>(
-        "/models/providers",
+        "/api/models/providers",
         { method: "GET" }
       );
 
@@ -161,9 +161,12 @@ const UnifiedProviderModelManagement: React.FC<
   // Load models
   const loadModels = useCallback(async () => {
     try {
-      const response = await enhancedApiService.request<LLMModel[]>("/models", {
-        method: "GET",
-      });
+      const response = await enhancedApiService.request<LLMModel[]>(
+        "/api/models",
+        {
+          method: "GET",
+        }
+      );
 
       if (response) {
         setModels(response);
@@ -188,10 +191,13 @@ const UnifiedProviderModelManagement: React.FC<
     if (!config) return;
 
     try {
-      const response = await enhancedApiService.request("/models/providers", {
-        method: "POST",
-        body: JSON.stringify(config),
-      });
+      const response = await enhancedApiService.request(
+        "/api/models/providers",
+        {
+          method: "POST",
+          body: JSON.stringify(config),
+        }
+      );
 
       if (response) {
         setEditingProvider(null);
@@ -252,7 +258,7 @@ const UnifiedProviderModelManagement: React.FC<
   const toggleModel = async (modelId: string, isActive: boolean) => {
     try {
       await enhancedApiService.request(
-        `/models/admin/models/${modelId}/toggle`,
+        `/api/models/admin/models/${modelId}/toggle`,
         {
           method: "PATCH",
           body: JSON.stringify({ model_id: modelId, is_active: isActive }),
@@ -272,7 +278,7 @@ const UnifiedProviderModelManagement: React.FC<
 
   const deleteModel = async (modelId: string) => {
     try {
-      await enhancedApiService.request(`/models/admin/models/${modelId}`, {
+      await enhancedApiService.request(`/api/models/admin/models/${modelId}`, {
         method: "DELETE",
       });
 
@@ -342,7 +348,7 @@ const UnifiedProviderModelManagement: React.FC<
       });
 
       const response = await enhancedApiService.request(
-        "/models/admin/models",
+        "/api/models/admin/models",
         {
           method: "POST",
           body: JSON.stringify({

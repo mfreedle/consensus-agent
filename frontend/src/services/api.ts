@@ -232,7 +232,7 @@ class ApiService {
 
   // Models endpoints
   async getAvailableModels(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/models');
+    return this.request<any[]>('/api/models');
   }
 
   // Files endpoints  // File management endpoints

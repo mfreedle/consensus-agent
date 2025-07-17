@@ -78,7 +78,7 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
     setIsLoading(true);
     try {
       const response = await enhancedApiService.request<ProviderConfig[]>(
-        "/models/providers",
+        "/api/models/providers",
         { method: "GET" }
       );
 
@@ -124,10 +124,13 @@ const ProviderManagement: React.FC<ProviderManagementProps> = ({
     if (!config) return;
 
     try {
-      const response = await enhancedApiService.request("/models/providers", {
-        method: "POST",
-        body: JSON.stringify(config),
-      });
+      const response = await enhancedApiService.request(
+        "/api/models/providers",
+        {
+          method: "POST",
+          body: JSON.stringify(config),
+        }
+      );
 
       if (response) {
         setEditingProvider(null);

@@ -306,7 +306,7 @@ export class EnhancedApiService {
 
   // Model management methods  
   async getAvailableModels(): Promise<any[]> {
-    return this.request<any[]>('/models', {
+    return this.request<any[]>('/api/models', {
       method: 'GET',
     });
   }
