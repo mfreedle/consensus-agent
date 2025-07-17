@@ -39,6 +39,12 @@ const PROVIDER_CONFIGS = {
     bgColor: "bg-purple-400/10",
     borderColor: "border-purple-400/20",
   },
+  claude: {
+    name: "Anthropic Claude",
+    color: "text-orange-400",
+    bgColor: "bg-orange-400/10",
+    borderColor: "border-orange-400/20",
+  },
   anthropic: {
     name: "Anthropic",
     color: "text-orange-400",
@@ -86,7 +92,13 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
         models = [];
       }
 
-      setAvailableModels(models); // Auto-select first available models if none selected
+      setAvailableModels(models);
+
+      // Auto-expand all providers to show models by default
+      const providers = Array.from(new Set(models.map((m) => m.provider)));
+      setExpandedProviders(new Set(providers));
+
+      // Auto-select first available models if none selected
       if (modelSelection.selectedModels.length === 0 && models.length > 0) {
         const defaultModels = models
           .filter((m) => m.is_active !== false)
@@ -218,6 +230,9 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
           context_window: 64000,
         },
       ] as LLMModel[]);
+
+      // Auto-expand providers for fallback models too
+      setExpandedProviders(new Set(["grok", "openai", "deepseek", "claude"]));
     } finally {
       setIsLoading(false);
     }
