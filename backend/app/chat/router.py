@@ -266,16 +266,32 @@ async def send_message(
                 }
             )
         else:
-            # Get single model response (default to OpenAI)
+            # Get single model response (with provider-specific enhanced tools)
             model = chat_request.selected_models[0] if chat_request.selected_models else "gpt-4.1"
             if model.startswith("gpt"):
-                response = await llm_orchestrator.get_openai_response(
-                    prompt=full_prompt,
+                response = await llm_orchestrator.get_openai_response_with_builtin_tools(
+                    prompt=str(full_prompt),
+                    model=model
+                )
+            elif model.startswith("grok"):
+                response = await llm_orchestrator.get_grok_response_with_tools(
+                    prompt=str(full_prompt),
+                    model=model
+                )
+            elif model.startswith("claude"):
+                response = await llm_orchestrator.get_claude_response_with_tools(
+                    prompt=str(full_prompt),
+                    model=model
+                )
+            elif model.startswith("deepseek"):
+                response = await llm_orchestrator.get_deepseek_response_with_tools(
+                    prompt=str(full_prompt),
                     model=model
                 )
             else:
+                # Fallback for unknown providers
                 response = await llm_orchestrator.get_grok_response(
-                    prompt=full_prompt,
+                    prompt=str(full_prompt),
                     model=model
                 )
             

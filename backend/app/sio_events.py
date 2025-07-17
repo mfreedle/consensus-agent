@@ -397,16 +397,33 @@ This response synthesizes insights from multiple AI perspectives to provide a co
                             # Small delay to show status
                             await asyncio.sleep(0.3)
                             
-                            # Get single model response with Google Drive tools and context
+                            # Get single model response with provider-specific built-in tools
                             if model.startswith("gpt"):
-                                response = await llm_orchestrator.get_openai_response_with_tools(
+                                response = await llm_orchestrator.get_openai_response_with_builtin_tools(
                                     prompt=full_prompt,
-                                    user=user,
                                     model=model,
-                                    context=combined_context,
-                                    enable_google_drive=True
+                                    context=combined_context
+                                )
+                            elif model.startswith("grok"):
+                                response = await llm_orchestrator.get_grok_response_with_tools(
+                                    prompt=full_prompt,
+                                    model=model,
+                                    context=combined_context
+                                )
+                            elif model.startswith("claude"):
+                                response = await llm_orchestrator.get_claude_response_with_tools(
+                                    prompt=full_prompt,
+                                    model=model,
+                                    context=combined_context
+                                )
+                            elif model.startswith("deepseek"):
+                                response = await llm_orchestrator.get_deepseek_response_with_tools(
+                                    prompt=full_prompt,
+                                    model=model,
+                                    context=combined_context
                                 )
                             else:
+                                # Fallback for unknown providers
                                 response = await llm_orchestrator.get_grok_response(
                                     prompt=full_prompt,
                                     model=model,

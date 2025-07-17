@@ -2,9 +2,6 @@ import React, { useState } from "react";
 import {
   User as UserIcon,
   Database,
-  Users,
-  Shield,
-  BarChart3,
   RefreshCw,
   FileText,
   ArrowLeft,
@@ -17,13 +14,7 @@ interface AdminPanelProps {
   onBack?: () => void;
 }
 
-type AdminTab =
-  | "profile"
-  | "providers-models"
-  | "knowledge"
-  | "users"
-  | "analytics"
-  | "system";
+type AdminTab = "profile" | "providers-models" | "knowledge";
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>("providers-models");
@@ -77,24 +68,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
       label: "Knowledge Base",
       icon: FileText,
       description: "Manage uploaded documents and knowledge base files",
-    },
-    {
-      id: "users" as AdminTab,
-      label: "Users",
-      icon: Users,
-      description: "User management and permissions",
-    },
-    {
-      id: "analytics" as AdminTab,
-      label: "Analytics",
-      icon: BarChart3,
-      description: "Usage statistics and performance metrics",
-    },
-    {
-      id: "system" as AdminTab,
-      label: "System",
-      icon: Shield,
-      description: "System settings and maintenance",
     },
   ];
 
@@ -224,77 +197,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
           </div>
         );
 
-      case "users":
-        return (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold mb-1">User Management</h2>
-              <p className="text-gray-400 text-sm">
-                Manage users and permissions
-              </p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 text-center">
-              <Users className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">User Management</h3>
-              <p className="text-gray-400 mb-3 text-sm">
-                User management features coming soon.
-              </p>
-              <p className="text-xs text-gray-500">
-                Currently supporting single-user mode.
-              </p>
-            </div>
-          </div>
-        );
-
-      case "analytics":
-        return (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold mb-1">Analytics & Usage</h2>
-              <p className="text-gray-400 text-sm">
-                View usage statistics and performance metrics
-              </p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 text-center">
-              <BarChart3 className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">
-                Analytics Dashboard
-              </h3>
-              <p className="text-gray-400 mb-3 text-sm">
-                Usage analytics and performance metrics coming soon.
-              </p>
-              <p className="text-xs text-gray-500">
-                Track API usage, model performance, and system metrics.
-              </p>
-            </div>
-          </div>
-        );
-
-      case "system":
-        return (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold mb-1">System Settings</h2>
-              <p className="text-gray-400 text-sm">
-                System configuration and maintenance
-              </p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 text-center">
-              <Shield className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">
-                System Configuration
-              </h3>
-              <p className="text-gray-400 mb-3 text-sm">
-                System settings and maintenance tools coming soon.
-              </p>
-              <p className="text-xs text-gray-500">
-                Database management, backup/restore, and system health
-                monitoring.
-              </p>
-            </div>
-          </div>
-        );
-
       default:
         return null;
     }
@@ -314,7 +216,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
               <ArrowLeft className="w-5 h-5 text-gray-400" />
             </button>
           )}
-          <Shield className="w-6 h-6 text-blue-400" />
+          <Database className="w-6 h-6 text-blue-400" />
           <div>
             <h1 className="text-xl font-bold">Admin Panel</h1>
             <p className="text-sm text-gray-400">
