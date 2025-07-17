@@ -68,6 +68,7 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
 
   // Load available models from backend
   const loadModels = useCallback(async () => {
+    console.log("🔄 Loading models from backend API...");
     try {
       setIsLoading(true);
       setError(null);
