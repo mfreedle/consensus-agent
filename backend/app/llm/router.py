@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from app.auth.dependencies import get_current_active_user
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class ModelRequest(BaseModel):
@@ -58,6 +60,10 @@ async def add_curated_model(
     
     try:
         model_data = model_request.dict()
+        # Map model_id to id for the service
+        model_data["id"] = model_data["model_id"]
+        
+        logger.info(f"Adding new model: {model_data}")
         success = curated_models_service.add_model(model_data)
         
         if success:
@@ -95,6 +101,8 @@ async def update_curated_model(
     
     try:
         model_data = model_request.dict()
+        # Map model_id to id for the service
+        model_data["id"] = model_data["model_id"]
         success = curated_models_service.update_model(model_id, model_data)
         
         if success:

@@ -325,9 +325,22 @@ const UnifiedProviderModelManagement: React.FC<
 
   const addNewModel = async (providerKey: string) => {
     const modelForm = newModelForm[providerKey];
-    if (!modelForm?.modelId || !modelForm?.displayName) return;
+    if (!modelForm?.modelId || !modelForm?.displayName) {
+      addError(
+        new Error("Model ID and Display Name are required"),
+        "validation",
+        "Please fill in all required fields"
+      );
+      return;
+    }
 
     try {
+      console.log(`Adding new model for ${providerKey}:`, {
+        model_id: modelForm.modelId,
+        provider: providerKey,
+        display_name: modelForm.displayName,
+      });
+
       const response = await enhancedApiService.request(
         "/models/admin/models",
         {
@@ -346,7 +359,12 @@ const UnifiedProviderModelManagement: React.FC<
         }
       );
 
+      console.log("Add model response:", response);
+
       if (response) {
+        // Show success message
+        console.log(`✅ Model ${modelForm.displayName} added successfully`);
+
         // Refresh models and reset form
         await loadModels();
         setNewModelForm((prev) => ({
@@ -359,7 +377,14 @@ const UnifiedProviderModelManagement: React.FC<
         }));
       }
     } catch (error) {
-      addError(error, "api", `Failed to add model ${modelForm.displayName}`);
+      console.error("Error adding model:", error);
+      addError(
+        error,
+        "api",
+        `Failed to add model ${modelForm.displayName}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   };
 

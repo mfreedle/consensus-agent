@@ -523,7 +523,22 @@ Remember: You have access to real-time information and can search the web, so us
             # Add Google Drive tools if available for function calling
             tools = []
             if self.google_drive_tools:
-                tools.extend(self.google_drive_tools)
+                # Check if it's a list or a single object with methods
+                if isinstance(self.google_drive_tools, list):
+                    tools.extend(self.google_drive_tools)
+                elif hasattr(self.google_drive_tools, 'get_tool_definitions'):
+                    # If it's a GoogleDriveTools object, get its tool definitions
+                    try:
+                        drive_tools = self.google_drive_tools.get_tool_definitions()
+                        if isinstance(drive_tools, list):
+                            tools.extend(drive_tools)
+                    except (AttributeError, TypeError) as e:
+                        logger.warning(f"Could not get GoogleDriveTools definitions: {e}")
+                else:
+                    logger.warning(f"GoogleDriveTools is not iterable or callable: {type(self.google_drive_tools)}")
+            
+            # Note: Grok has built-in web search, so we primarily rely on that
+            # Custom tools are for specific functions like Google Drive integration
             
             # Prepare request payload with Live Search enabled
             request_data = {
@@ -930,11 +945,18 @@ Tool Capabilities: {model_types[i]} - {'✅ Real-time tools' if model_types[i] i
                 """
         
         try:
-            # Use o3 as judge model for superior reasoning and consensus analysis
-            logger.info("Generating consensus using o3 judge model...")
-            consensus_response = await self.openai_client.chat.completions.create(
-                model="o3",  # Use o3 for best reasoning and synthesis capabilities
-                messages=[
+            # Use grok-3-latest as judge model for consensus analysis
+            logger.info("Generating consensus using Grok 3 judge model...")
+            
+            # Prepare Grok request for consensus analysis
+            grok_headers = {
+                "Authorization": f"Bearer {settings.grok_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            grok_request = {
+                "model": "grok-3-latest",
+                "messages": [
                     {
                         "role": "system",
                         "content": "You are an expert analyst that creates consensus from multiple AI responses with different tool capabilities. Always respond with valid JSON in the requested format. Be thorough in your analysis and synthesis, paying special attention to which models had access to real-time tools vs training data only."
@@ -944,13 +966,26 @@ Tool Capabilities: {model_types[i]} - {'✅ Real-time tools' if model_types[i] i
                         "content": consensus_prompt
                     }
                 ],
-                temperature=0.3,
-                max_tokens=2000,
-                response_format={"type": "json_object"}
-            )
+                "temperature": 0.3,
+                "max_tokens": 2000,
+                "response_format": {"type": "json_object"}
+            }
             
-            import json
-            consensus_content = consensus_response.choices[0].message.content
+            async with httpx.AsyncClient() as client:
+                consensus_response = await client.post(
+                    f"{self.grok_base_url}/chat/completions",
+                    headers=grok_headers,
+                    json=grok_request,
+                    timeout=30.0
+                )
+                
+                if consensus_response.status_code != 200:
+                    raise Exception(f"Grok consensus API error: {consensus_response.status_code} - {consensus_response.text}")
+                
+                grok_data = consensus_response.json()
+                consensus_content = grok_data["choices"][0]["message"]["content"]
+                
+                import json
             if not consensus_content:
                 raise Exception("Empty consensus response")
             
@@ -1025,7 +1060,7 @@ This response represents a synthesis of insights from multiple AI perspectives w
             )
             
         except Exception as e:
-            logger.error(f"Dynamic consensus generation error: {e}")
+            logger.error(f"Grok consensus generation error: {e}")
             # Enhanced fallback: create a more intelligent combination
             
             valid_responses = [r for r in responses if r.confidence > 0]
