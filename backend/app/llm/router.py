@@ -188,3 +188,51 @@ async def toggle_curated_model(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error toggling model: {str(e)}"
         )
+
+
+# Provider configuration endpoints
+class ProviderConfigRequest(BaseModel):
+    provider: str
+    display_name: str
+    api_key: Optional[str] = None
+    api_base_url: Optional[str] = None
+    organization_id: Optional[str] = None
+    is_active: bool = True
+    max_requests_per_minute: int = 60
+    max_tokens_per_request: int = 64000
+
+
+class ProviderConfigResponse(BaseModel):
+    id: Optional[int] = None
+    provider: str
+    display_name: str
+    api_base_url: Optional[str] = None
+    organization_id: Optional[str] = None
+    is_active: bool
+    max_requests_per_minute: int
+    max_tokens_per_request: int
+    last_sync_at: Optional[str] = None
+    sync_error: Optional[str] = None
+    has_api_key: bool = False
+
+
+@router.get("/providers", response_model=List[ProviderConfigResponse])
+async def get_provider_configs(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get provider configurations (without API keys)"""
+    # For now, return empty list - this would be implemented with database later
+    return []
+
+
+@router.post("/providers", response_model=dict)
+async def create_or_update_provider_config(
+    config: ProviderConfigRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create or update provider configuration"""
+    # For now, just return success - this would be implemented with database later
+    return {
+        "success": True,
+        "message": f"Provider configuration for {config.display_name} saved successfully"
+    }

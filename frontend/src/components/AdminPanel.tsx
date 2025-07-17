@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Settings,
   User as UserIcon,
   Database,
   Users,
@@ -10,7 +9,7 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
-import ProviderManagement from "./ProviderManagement";
+import UnifiedProviderModelManagement from "./UnifiedProviderModelManagement";
 import FileList from "./FileList";
 
 interface AdminPanelProps {
@@ -20,15 +19,14 @@ interface AdminPanelProps {
 
 type AdminTab =
   | "profile"
-  | "providers"
-  | "models"
+  | "providers-models"
+  | "knowledge"
   | "users"
   | "analytics"
-  | "system"
-  | "knowledge";
+  | "system";
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>("knowledge");
+  const [activeTab, setActiveTab] = useState<AdminTab>("providers-models");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
@@ -69,16 +67,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
       description: "Manage your account and change password",
     },
     {
-      id: "providers" as AdminTab,
-      label: "Providers",
-      icon: Settings,
-      description: "Manage AI provider configurations and API keys",
-    },
-    {
-      id: "models" as AdminTab,
-      label: "Models",
+      id: "providers-models" as AdminTab,
+      label: "Providers & Models",
       icon: Database,
-      description: "View and manage available AI models",
+      description: "Manage AI providers, API keys, and available models",
     },
     {
       id: "knowledge" as AdminTab,
@@ -168,8 +160,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
           </div>
         );
 
-      case "providers":
-        return <ProviderManagement />;
+      case "providers-models":
+        return <UnifiedProviderModelManagement />;
 
       case "knowledge":
         return (
@@ -224,29 +216,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                   referenced in any conversation
                 </li>
               </ul>
-            </div>
-          </div>
-        );
-
-      case "models":
-        return (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold mb-1">Model Management</h2>
-              <p className="text-gray-400 text-sm">
-                View and manage available AI models
-              </p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 text-center">
-              <Database className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">Model Management</h3>
-              <p className="text-gray-400 mb-3 text-sm">
-                Advanced model management features coming soon.
-              </p>
-              <p className="text-xs text-gray-500">
-                The app now uses a curated list of hardcoded models. New models
-                can be added manually through the admin interface.
-              </p>
             </div>
           </div>
         );

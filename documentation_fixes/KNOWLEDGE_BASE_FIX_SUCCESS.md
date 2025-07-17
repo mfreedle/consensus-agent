@@ -55,7 +55,7 @@ All file attachment and knowledge base integration issues have been **SUCCESSFUL
 
 ## 🚀 Next Recommended Priorities
 
-Based on [`things_to_fix.md`](things_to_fix.md ), focus on **P1 - High Priority** UI/UX fixes:
+Based on [`things_to_fix.md`](../things_to_fix.md ), focus on **P1 - High Priority** UI/UX fixes:
 
 1. **Item 7**: User menu in header not working (logout/profile access)
 2. **Item 15**: Hamburger menu button not working (sidebar toggle)

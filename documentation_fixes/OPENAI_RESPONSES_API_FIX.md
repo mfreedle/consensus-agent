@@ -6,7 +6,7 @@ The LLM was saying it would perform actions (like copying files) but not actuall
 
 ## 🔧 Root Cause
 
-According to the [OpenAI Function Calling Guide](docs/external/OpenAI_Function_Calling_Guide.md), GPT-4.1, o3, and o3-mini models should use the **Responses API** (`client.responses.create()`) instead of the older Chat Completions API (`client.chat.completions.create()`) for optimal function calling.
+According to the [OpenAI Function Calling Guide](../docs/external/OpenAI_Function_Calling_Guide.md), GPT-4.1, o3, and o3-mini models should use the **Responses API** (`client.responses.create()`) instead of the older Chat Completions API (`client.chat.completions.create()`) for optimal function calling.
 
 Our implementation was:
 - ❌ Using `chat.completions.create()` for all models
