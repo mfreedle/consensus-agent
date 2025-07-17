@@ -274,6 +274,12 @@ async def send_message(
                     prompt=str(full_prompt),
                     model=model
                 )
+            elif model == "grok-2-image":
+                # Handle dedicated image generation model
+                response = await llm_orchestrator.generate_grok_image(
+                    prompt=str(full_prompt),
+                    model=model
+                )
             elif model.startswith("grok"):
                 response = await llm_orchestrator.get_grok_response_with_tools(
                     prompt=str(full_prompt),

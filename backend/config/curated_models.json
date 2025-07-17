@@ -162,5 +162,21 @@
       "math": "high",
       "logic": "very_high"
     }
+  },
+  {
+    "id": "grok-2-image",
+    "provider": "grok",
+    "display_name": "Grok 2 Image Generator",
+    "description": "xAI's dedicated image generation model",
+    "is_active": true,
+    "supports_streaming": false,
+    "supports_function_calling": false,
+    "supports_vision": false,
+    "context_window": 4000,
+    "capabilities": {
+      "image_generation": "high",
+      "creativity": "high",
+      "art": "high"
+    }
   }
 ]

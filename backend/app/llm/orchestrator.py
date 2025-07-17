@@ -490,6 +490,12 @@ Please respond in JSON format:
     ) -> ModelResponse:
         """Get response from Grok using xAI API with built-in tools and function calling"""
         try:
+            # Check if this is an image generation request
+            image_keywords = ["generate image", "create image", "draw", "make image", "picture", "artwork", "illustration", "visual"]
+            if any(keyword in prompt.lower() for keyword in image_keywords):
+                logger.info("Detected image generation request, routing to Grok image generation")
+                return await self.generate_grok_image(prompt, "grok-2-image")
+            
             # Prepare messages with context if provided
             messages = []
             if context:
@@ -503,7 +509,7 @@ Please respond in JSON format:
 
 🌐 **Real-time Web Search**: You can search the internet for current information, breaking news, and recent events. Always use this for questions about current events, recent news, or anything requiring up-to-date information.
 
-🖼️ **Image Generation**: You can create and generate images based on text descriptions. Offer to create visualizations when appropriate.
+🖼️ **Image Generation**: You can create and generate images based on text descriptions. If the user asks for images, offer to create them using your image generation capabilities.
 
 📱 **X/Twitter Integration**: You have access to real-time posts and trending topics from X (Twitter) for the most current social media insights.
 
@@ -512,11 +518,12 @@ User's request: {prompt}
 Guidelines:
 - Proactively use these tools when they would be helpful
 - For any question about current events, news, or recent information, always use web search
+- For image requests, use your image generation capabilities
 - Be direct about your capabilities - don't say you can't access current information when you can
 - Provide comprehensive, up-to-date responses using your tools
 - Format responses clearly with markdown when it improves readability
 
-Remember: You have access to real-time information and can search the web, so use these capabilities to provide the most current and helpful responses possible."""
+Remember: You have access to real-time information and can search the web and generate images, so use these capabilities to provide the most current and helpful responses possible."""
             
             messages.append({"role": "user", "content": enhanced_prompt})
             
@@ -597,6 +604,77 @@ Remember: You have access to real-time information and can search the web, so us
             logger.error(f"Grok API with tools error: {e}")
             # Fallback to basic Grok response
             return await self.get_grok_response(prompt, model, context)
+
+    async def generate_grok_image(
+        self, 
+        prompt: str,
+        model: str = "grok-2-image",
+        n: int = 1
+    ) -> ModelResponse:
+        """Generate images using Grok's image generation model"""
+        try:
+            logger.info(f"Generating image with Grok: {prompt[:100]}...")
+            
+            # Prepare request for image generation (correct xAI format)
+            request_data = {
+                "model": model,
+                "prompt": prompt,
+                "n": n,  # Number of images to generate
+                "response_format": "b64_json"  # Base64 encoded image
+            }
+            
+            # Make request to Grok image generation API
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.grok_base_url}/images/generations",
+                    headers=self.grok_headers,
+                    json=request_data,
+                    timeout=60.0  # Image generation can take longer
+                )
+                
+                if response.status_code != 200:
+                    raise Exception(f"Grok image API error: {response.status_code} - {response.text}")
+                
+                data = response.json()
+                
+                # Process image response
+                images = data.get("data", [])
+                if not images:
+                    raise Exception("No images returned from Grok")
+                
+                # Format response with image data
+                image_content = "🖼️ **Generated Image(s)**\n\n"
+                
+                for i, image_data in enumerate(images):
+                    b64_image = image_data.get("b64_json")
+                    revised_prompt = image_data.get("revised_prompt", prompt)
+                    
+                    if b64_image:
+                        # Include the base64 image data for frontend display
+                        image_content += f"**Image {i+1}:**\n"
+                        image_content += f"*Prompt:* {revised_prompt}\n"
+                        image_content += f"![Generated Image](data:image/jpeg;base64,{b64_image})\n\n"
+                    else:
+                        image_content += f"**Image {i+1}:** Generation failed\n\n"
+                
+                image_content += f"*Original prompt:* {prompt}\n"
+                image_content += f"*Model:* {model}"
+                
+                return ModelResponse(
+                    content=image_content,
+                    model=model,
+                    confidence=0.95,  # High confidence for successful image generation
+                    reasoning=f"Generated {len(images)} image(s) using Grok image generation model"
+                )
+                
+        except Exception as e:
+            logger.error(f"Grok image generation error: {e}")
+            return ModelResponse(
+                content=f"❌ Image generation failed: {str(e)}\n\nPlease try again with a different prompt.",
+                model=model,
+                confidence=0.1,
+                reasoning=f"Grok image generation error: {str(e)}"
+            )
 
     async def get_claude_response_with_tools(
         self, 
