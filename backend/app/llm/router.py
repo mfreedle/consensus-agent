@@ -3,7 +3,8 @@ from typing import List, Optional
 
 from app.auth.dependencies import get_current_active_user
 from app.models.user import User
-from app.services.curated_models import curated_models_service
+from app.services.database_curated_models import \
+    database_curated_models_service
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -36,7 +37,7 @@ async def get_available_models(
     """Get list of curated LLM models"""
     
     try:
-        models = curated_models_service.get_models()
+        models = await database_curated_models_service.get_models()
         return models
         
     except Exception as e:
@@ -64,7 +65,7 @@ async def add_curated_model(
         model_data["id"] = model_data["model_id"]
         
         logger.info(f"Adding new model: {model_data}")
-        success = curated_models_service.add_model(model_data)
+        success = await database_curated_models_service.add_model(model_data)
         
         if success:
             return {
@@ -103,7 +104,7 @@ async def update_curated_model(
         model_data = model_request.dict()
         # Map model_id to id for the service
         model_data["id"] = model_data["model_id"]
-        success = curated_models_service.update_model(model_id, model_data)
+        success = await database_curated_models_service.update_model(model_id, model_data)
         
         if success:
             return {
@@ -138,7 +139,7 @@ async def delete_curated_model(
     #     raise HTTPException(status_code=403, detail="Admin access required")
     
     try:
-        success = curated_models_service.delete_model(model_id)
+        success = await database_curated_models_service.delete_model(model_id)
         
         if success:
             return {
@@ -173,7 +174,7 @@ async def toggle_curated_model(
     #     raise HTTPException(status_code=403, detail="Admin access required")
     
     try:
-        success = curated_models_service.toggle_model(model_id, toggle_request.is_active)
+        success = await database_curated_models_service.toggle_model(model_id, toggle_request.is_active)
         
         if success:
             status_text = "activated" if toggle_request.is_active else "deactivated"
