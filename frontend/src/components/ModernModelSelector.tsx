@@ -65,10 +65,28 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const models = await enhancedApiService.getAvailableModels();
-      setAvailableModels(models);
+      const modelsResponse = await enhancedApiService.getAvailableModels();
 
-      // Auto-select first available models if none selected
+      // Ensure we always have an array - handle various response formats
+      let models: LLMModel[] = [];
+      if (Array.isArray(modelsResponse)) {
+        models = modelsResponse;
+      } else if (modelsResponse && typeof modelsResponse === "object") {
+        const responseObj = modelsResponse as any;
+        if (Array.isArray(responseObj.data)) {
+          models = responseObj.data;
+        } else if (Array.isArray(responseObj.models)) {
+          models = responseObj.models;
+        } else {
+          console.warn("Unexpected API response format:", modelsResponse);
+          models = [];
+        }
+      } else {
+        console.warn("Unexpected API response format:", modelsResponse);
+        models = [];
+      }
+
+      setAvailableModels(models); // Auto-select first available models if none selected
       if (modelSelection.selectedModels.length === 0 && models.length > 0) {
         const defaultModels = models
           .filter((m) => m.is_active !== false)
@@ -212,7 +230,8 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
   // Helper function to get model display name
   const getModelDisplayName = useCallback(
     (modelId: string) => {
-      const model = availableModels.find((m) => m.id === modelId);
+      const modelsArray = Array.isArray(availableModels) ? availableModels : [];
+      const model = modelsArray.find((m) => m.id === modelId);
       return (
         model?.display_name ||
         modelId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
@@ -224,7 +243,11 @@ const ModernModelSelector: React.FC<ModernModelSelectorProps> = ({
   // Group models by provider
   const groupedModels = React.useMemo(() => {
     const groups: Record<string, LLMModel[]> = {};
-    availableModels.forEach((model) => {
+
+    // Ensure availableModels is always an array
+    const modelsArray = Array.isArray(availableModels) ? availableModels : [];
+
+    modelsArray.forEach((model) => {
       if (!groups[model.provider]) {
         groups[model.provider] = [];
       }
