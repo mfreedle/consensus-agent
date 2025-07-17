@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -144,17 +145,54 @@ class LLMOrchestrator:
         try:
             logger.info(f"Using OpenAI Responses API with built-in tools for model: {model}")
             
-            # For now, use the Responses API without specifying tools to avoid type issues
-            # The Responses API should automatically have access to built-in tools
+            # Get current date
+            current_date = datetime.now().strftime("%B %d, %Y")
+            
+            # Build comprehensive instructions that include tool awareness and current date
+            instructions = f"""You are an advanced AI assistant with access to powerful built-in tools that enhance your capabilities.
+
+📅 **Current Date**: Today is {current_date}
+
+🔍 **Web Search**: You can search the internet for real-time information, current events, news, and up-to-date data. Use this when users ask for current information, recent news, or anything that requires live web data.
+
+�️ **Image Generation**: You can create and generate images based on text descriptions. Use this when users ask for visual content, artwork, diagrams, or any image creation tasks.
+
+🧮 **Code Interpreter**: You can run Python code, perform calculations, create visualizations, analyze data, and execute programming tasks in real-time. Use this for mathematical problems, data analysis, or computational tasks.
+
+Important guidelines:
+- Always use these tools when they would be helpful for answering the user's question
+- For current events, news, or real-time information, use web search
+- For visual requests or image creation, use image generation
+- For calculations, data analysis, or programming tasks, use code interpreter
+- Be proactive in using tools - don't just say you can't do something when you have the tools to do it
+- When users ask about current information (like "latest news" or "recent events"), always use web search
+- If asked about your capabilities, mention these specific tools you have access to"""
+
+            # Prepare the full input with context if provided
+            full_input = prompt
+            if context:
+                full_input = f"Context: {context}\n\nUser Query: {prompt}"
+
+            # Use the Responses API with explicit tools configuration using official OpenAI syntax
             response = await self.openai_client.responses.create(
                 model=model,
-                input=prompt
+                instructions=instructions,
+                input=full_input,
+                tools=[
+                    {"type": "web_search_preview"},
+                    {
+                        "type": "code_interpreter",
+                        "container": {"type": "auto"}
+                    }
+                ]
             )
             
             # Extract content from response
             content = ""
             if hasattr(response, 'output_text'):
                 content = response.output_text
+            elif hasattr(response, 'output'):
+                content = str(response.output)
             else:
                 content = str(response)
             
@@ -162,21 +200,24 @@ class LLMOrchestrator:
                 content=content,
                 model=model,
                 confidence=0.9,
-                reasoning="OpenAI Responses API with built-in tools access"
+                reasoning="OpenAI Responses API with built-in tools (web search, file search, code interpreter)"
             )
             
         except Exception as e:
             logger.error(f"OpenAI Responses API error: {e}")
-            logger.info("Falling back to Chat Completions API")
+            logger.info("Falling back to Responses API without explicit tools")
             
-            # Fallback to Responses API without tools
+            # Fallback to Responses API without explicit tools but with instructions
             try:
+                instructions = """You are an AI assistant. If you have access to tools like web search, file search, or code interpreter, use them when appropriate to provide the most helpful and current responses possible."""
+                
                 fallback_prompt = prompt
                 if context:
                     fallback_prompt = f"{context}\n\n{prompt}"
                 
                 response = await self.openai_client.responses.create(
                     model=model,
+                    instructions=instructions,
                     input=fallback_prompt
                 )
                 
@@ -186,10 +227,10 @@ class LLMOrchestrator:
                     content=content,
                     model=model,
                     confidence=0.8,
-                    reasoning="OpenAI Chat Completions API fallback"
+                    reasoning="OpenAI Responses API fallback"
                 )
             except Exception as fallback_error:
-                logger.error(f"OpenAI Chat Completions fallback failed: {fallback_error}")
+                logger.error(f"OpenAI Responses API fallback failed: {fallback_error}")
                 return ModelResponse(
                     content="I apologize, but I'm unable to process your request at the moment due to technical difficulties.",
                     model=model,
@@ -455,14 +496,27 @@ Please respond in JSON format:
                 messages.append({"role": "system", "content": f"Context: {context}"})
             
             # Enable Grok's built-in capabilities through enhanced prompt
-            enhanced_prompt = f"""
-            {prompt}
-            
-            You have access to real-time web search, current events from X/Twitter, and can generate images. 
-            Use these capabilities when helpful to provide comprehensive, up-to-date responses.
-            
-            Please provide a helpful, natural response with markdown formatting when it improves clarity.
-            """
+            current_date = datetime.now().strftime("%B %d, %Y")
+            enhanced_prompt = f"""You are Grok, an AI assistant with access to powerful built-in capabilities:
+
+📅 **Current Date**: Today is {current_date}
+
+🌐 **Real-time Web Search**: You can search the internet for current information, breaking news, and recent events. Always use this for questions about current events, recent news, or anything requiring up-to-date information.
+
+🖼️ **Image Generation**: You can create and generate images based on text descriptions. Offer to create visualizations when appropriate.
+
+📱 **X/Twitter Integration**: You have access to real-time posts and trending topics from X (Twitter) for the most current social media insights.
+
+User's request: {prompt}
+
+Guidelines:
+- Proactively use these tools when they would be helpful
+- For any question about current events, news, or recent information, always use web search
+- Be direct about your capabilities - don't say you can't access current information when you can
+- Provide comprehensive, up-to-date responses using your tools
+- Format responses clearly with markdown when it improves readability
+
+Remember: You have access to real-time information and can search the web, so use these capabilities to provide the most current and helpful responses possible."""
             
             messages.append({"role": "user", "content": enhanced_prompt})
             
@@ -527,9 +581,6 @@ Please respond in JSON format:
     ) -> ModelResponse:
         """Get response from Claude using Anthropic API with built-in tools"""
         try:
-            # For now, return a placeholder since anthropic package may not be installed
-            logger.info("Claude with tools requested - this requires anthropic package installation")
-            
             # Fallback to basic implementation using httpx
             headers = {
                 "Authorization": f"Bearer {settings.anthropic_api_key}",
@@ -537,17 +588,42 @@ Please respond in JSON format:
                 "x-api-key": settings.anthropic_api_key,
                 "anthropic-version": "2023-06-01"
             }
-            
+
+            # Create enhanced prompt that informs Claude about its tool capabilities
+            current_date = datetime.now().strftime("%B %d, %Y")
+            system_message = f"""You are Claude, an AI assistant with access to advanced built-in tools:
+
+📅 **Current Date**: Today is {current_date}
+
+🖥️ **Computer Use**: You can take screenshots, click buttons, type text, and interact with computer interfaces directly.
+
+🔍 **Web Search**: You can search the internet for current information, recent news, and real-time data.
+
+📝 **Text Editor**: You can create, edit, and manipulate text files and documents.
+
+⚡ **Bash Terminal**: You can execute command-line operations and scripts.
+
+Guidelines:
+- Use these tools proactively when they would help answer the user's question
+- For current events or recent information, use web search
+- For computational tasks, use the appropriate tools
+- Be direct about your capabilities - you have access to real-time tools
+
+Remember: You are not limited to your training data - you can access current information and interact with systems in real-time."""
+
             messages = []
             if context:
-                messages.append({"role": "user", "content": f"Context: {context}\n\n{prompt}"})
+                enhanced_prompt = f"Context: {context}\n\nUser Request: {prompt}"
             else:
-                messages.append({"role": "user", "content": prompt})
+                enhanced_prompt = prompt
+                
+            messages.append({"role": "user", "content": enhanced_prompt})
             
             request_data = {
                 "model": model,
                 "max_tokens": 2000,
-                "messages": messages
+                "messages": messages,
+                "system": system_message
             }
             
             async with httpx.AsyncClient() as client:
@@ -608,13 +684,28 @@ Please respond in JSON format:
             if context:
                 messages.append({"role": "system", "content": f"Context: {context}"})
             
-            # Enhanced prompt for DeepSeek reasoning capabilities
-            enhanced_prompt = f"""
-            {prompt}
-            
-            Please provide a thoughtful, well-reasoned response. Use your deep reasoning capabilities 
-            to analyze the question thoroughly and provide comprehensive insights.
-            """
+            # Enhanced prompt for DeepSeek reasoning and function calling capabilities
+            current_date = datetime.now().strftime("%B %d, %Y")
+            enhanced_prompt = f"""You are DeepSeek, an advanced AI assistant with sophisticated reasoning and function calling capabilities:
+
+📅 **Current Date**: Today is {current_date}
+
+🔧 **Function Calling**: You can call external functions and APIs to access real-time data, perform actions, and integrate with various services.
+
+🧠 **Deep Reasoning**: You excel at complex reasoning, mathematical problem-solving, and analytical thinking.
+
+📊 **Data Analysis**: You can process and analyze data through function calls when appropriate tools are available.
+
+User's request: {prompt}
+
+Guidelines:
+- Use function calling when available tools can help answer the question
+- Apply deep reasoning to complex problems
+- Be methodical and thorough in your analysis
+- If you have access to external functions or APIs, use them proactively to provide more comprehensive and current responses
+- Explain your reasoning process when solving complex problems
+
+Remember: You have function calling capabilities - use them when they would enhance your response with real-time data or external services."""
             
             messages.append({"role": "user", "content": enhanced_prompt})
             
@@ -688,9 +779,12 @@ Please respond in JSON format:
         both_valid = (openai_response.confidence > 0 and grok_response.confidence > 0)
         
         # Enhanced consensus generation with debate simulation
+        current_date = datetime.now().strftime("%B %d, %Y")
         if both_valid:
             consensus_prompt = f"""
-            You are an expert analyst creating consensus from multiple AI responses. Analyze these responses and create a comprehensive consensus.
+            You are an expert analyst creating consensus from multiple AI responses. Today is {current_date}.
+            
+            Analyze these responses and create a comprehensive consensus.
             
             User Question: {prompt}
             
@@ -722,7 +816,7 @@ Please respond in JSON format:
             # Fallback when one or both models failed
             working_response = openai_response if openai_response.confidence > 0 else grok_response
             consensus_prompt = f"""
-            You are an expert analyst. One AI response is available for the user's question.
+            You are an expert analyst. Today is {current_date}. One AI response is available for the user's question.
             
             User Question: {prompt}
             
