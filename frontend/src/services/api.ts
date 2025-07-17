@@ -1,4 +1,14 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000');
+// Get base URL and ensure we don't double the /api prefix
+const getApiBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    // If the env URL already ends with /api, remove it since our endpoints already include /api
+    return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
+  }
+  return process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T> {
   data?: T;
