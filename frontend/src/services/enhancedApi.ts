@@ -47,7 +47,7 @@ export class EnhancedApiService {
   private baseURL: string;
   private defaultTimeout: number = 30000; // 30 seconds
 
-  constructor(baseURL: string = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000')) {
+  constructor(baseURL: string = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000')) {
     // If the base URL ends with /api, remove it since our endpoints already include /api
     this.baseURL = baseURL.endsWith('/api') ? baseURL.slice(0, -4) : baseURL;
     this.token = localStorage.getItem('auth_token');
@@ -284,7 +284,7 @@ export class EnhancedApiService {
 
   // Chat methods
   async sendMessage(request: SendMessageRequest): Promise<ChatResponse> {
-    return this.request<ChatResponse>('/chat/message', {
+    return this.request<ChatResponse>('/api/chat/message', {
       method: 'POST',
       body: JSON.stringify(request),
       headers: {
@@ -294,13 +294,13 @@ export class EnhancedApiService {
   }
 
   async getChatMessages(sessionId: number): Promise<ChatResponseMessage[]> {
-    return this.request<ChatResponseMessage[]>(`/chat/sessions/${sessionId}/messages`, {
+    return this.request<ChatResponseMessage[]>(`/api/chat/sessions/${sessionId}/messages`, {
       method: 'GET',
     });
   }
 
   async deleteChatSession(sessionId: number): Promise<{message: string}> {
-    return this.request<{message: string}>(`/chat/sessions/${sessionId}`, {
+    return this.request<{message: string}>(`/api/chat/sessions/${sessionId}`, {
       method: 'DELETE',
     });
   }
@@ -314,13 +314,13 @@ export class EnhancedApiService {
 
   // File management methods
   async getUserFiles(): Promise<{files: any[]}> {
-    return this.request<{files: any[]}>('/files', {
+    return this.request<{files: any[]}>('/api/files', {
       method: 'GET',
     });
   }
 
   async deleteFile(fileId: string): Promise<any> {
-    return this.request<any>(`/files/${fileId}`, {
+    return this.request<any>(`/api/files/${fileId}`, {
       method: 'DELETE',
     });
   }
@@ -370,7 +370,7 @@ export class EnhancedApiService {
         reject(error);
       });
 
-      xhr.open('POST', `${this.baseURL}/files/upload`);
+      xhr.open('POST', `${this.baseURL}/api/files/upload`);
       
       if (this.token) {
         xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);

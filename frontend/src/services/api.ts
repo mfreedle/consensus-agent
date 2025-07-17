@@ -5,7 +5,8 @@ const getApiBaseUrl = () => {
     // If the env URL already ends with /api, remove it since our endpoints already include /api
     return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
   }
-  return process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
+  // In production, use /api as base URL, in development use localhost
+  return process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -180,32 +181,32 @@ class ApiService {
     }
   }  // Authentication endpoints
   async login(credentials: LoginRequest): Promise<ApiResponse<TokenResponse>> {
-    return this.request<TokenResponse>('/auth/login', {
+    return this.request<TokenResponse>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
   async register(userData: RegisterRequest): Promise<ApiResponse<AuthResponse>> {
-    return this.request<AuthResponse>('/auth/register', {
+    return this.request<AuthResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
   async getCurrentUser(): Promise<ApiResponse<any>> {
-    return this.request<any>('/auth/me');
+    return this.request<any>('/api/auth/me');
   }
 
   async changePassword(passwordData: PasswordChangeRequest): Promise<ApiResponse<{message: string}>> {
-    return this.request<{message: string}>('/auth/change-password', {
+    return this.request<{message: string}>('/api/auth/change-password', {
       method: 'PUT',
       body: JSON.stringify(passwordData),
     });
   }
 
   async updateProfile(profileData: ProfileUpdateRequest): Promise<ApiResponse<any>> {
-    return this.request<any>('/auth/profile', {
+    return this.request<any>('/api/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
@@ -213,28 +214,28 @@ class ApiService {
 
   // Chat endpoints
   async getChatSessions(): Promise<ApiResponse<ChatSession[]>> {
-    return this.request<ChatSession[]>('/chat/sessions');
+    return this.request<ChatSession[]>('/api/chat/sessions');
   }
 
   async createChatSession(title?: string): Promise<ApiResponse<ChatSession>> {
-    return this.request<ChatSession>('/chat/sessions', {
+    return this.request<ChatSession>('/api/chat/sessions', {
       method: 'POST',
       body: JSON.stringify({ title: title || 'New Chat' }),
     });
   }
 
   async getChatMessages(sessionId: number): Promise<ApiResponse<ChatMessage[]>> {
-    return this.request<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
+    return this.request<ChatMessage[]>(`/api/chat/sessions/${sessionId}/messages`);
   }
 
   async deleteChatSession(sessionId: number): Promise<ApiResponse<{message: string}>> {
-    return this.request<{message: string}>(`/chat/sessions/${sessionId}`, {
+    return this.request<{message: string}>(`/api/chat/sessions/${sessionId}`, {
       method: 'DELETE',
     });
   }
 
   async sendMessage(request: SendMessageRequest): Promise<ApiResponse<ChatResponse>> {
-    return this.request<ChatResponse>('/chat/message', {
+    return this.request<ChatResponse>('/api/chat/message', {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -250,27 +251,27 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.request<any>('/files/upload', {
+    return this.request<any>('/api/files/upload', {
       method: 'POST',
       headers: {}, // Let browser set Content-Type for FormData
       body: formData,
     });
   }  async getUserFiles(): Promise<ApiResponse<{files: any[]}>> {
-    return this.request<{files: any[]}>('/files/');
+    return this.request<{files: any[]}>('/api/files/');
   }
 
   async deleteFile(fileId: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/files/${fileId}`, {
+    return this.request<any>(`/api/files/${fileId}`, {
       method: 'DELETE',
     });
   }
 
   async getFileContent(fileId: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/files/${fileId}/content`);
+    return this.request<any>(`/api/files/${fileId}/content`);
   }
 
   async updateFile(fileId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(`/files/${fileId}`, {
+    return this.request<any>(`/api/files/${fileId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
