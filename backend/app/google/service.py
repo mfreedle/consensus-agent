@@ -28,7 +28,7 @@ class GoogleDriveService:
                 "client_secret": settings.google_client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [settings.google_redirect_uri]
+                "redirect_uris": [settings.google_redirect_uri_resolved]
             }
         }
 
@@ -39,7 +39,7 @@ class GoogleDriveService:
             scopes=self.SCOPES,
             state=state
         )
-        flow.redirect_uri = self.settings.google_redirect_uri
+        flow.redirect_uri = self.settings.google_redirect_uri_resolved
         
         authorization_url, state = flow.authorization_url(
             access_type='offline',
@@ -56,7 +56,7 @@ class GoogleDriveService:
             scopes=self.SCOPES,
             state=state
         )
-        flow.redirect_uri = self.settings.google_redirect_uri
+        flow.redirect_uri = self.settings.google_redirect_uri_resolved
         
         flow.fetch_token(code=authorization_code)
         credentials = flow.credentials

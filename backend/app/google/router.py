@@ -48,6 +48,33 @@ async def google_auth_url(
         )
 
 
+@router.get("/debug/config")
+async def debug_google_config(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Debug endpoint to check Google OAuth configuration"""
+    import os
+    
+    return {
+        "app_env": settings.app_env,
+        "cors_origins": settings.cors_origins,
+        "google_client_id_set": bool(settings.google_client_id),
+        "google_client_secret_set": bool(settings.google_client_secret),
+        "google_redirect_uri_env": settings.google_redirect_uri,
+        "google_redirect_uri_resolved": settings.google_redirect_uri_resolved,
+        "railway_environment": os.getenv('RAILWAY_ENVIRONMENT'),
+        "railway_static_url": os.getenv('RAILWAY_STATIC_URL'),
+        "railway_public_domain": os.getenv('RAILWAY_PUBLIC_DOMAIN'),
+        "environment_variables": {
+            "GOOGLE_CLIENT_ID": bool(os.getenv('GOOGLE_CLIENT_ID')),
+            "GOOGLE_CLIENT_SECRET": bool(os.getenv('GOOGLE_CLIENT_SECRET')),
+            "GOOGLE_REDIRECT_URI": os.getenv('GOOGLE_REDIRECT_URI'),
+            "APP_ENV": os.getenv('APP_ENV'),
+            "CORS_ORIGINS": os.getenv('CORS_ORIGINS'),
+        }
+    }
+
+
 @router.post("/callback", response_model=GoogleTokens)
 async def google_callback(
     callback_data: GoogleOAuthCallback,

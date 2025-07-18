@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 from pydantic_settings import BaseSettings
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     # Google APIs - OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_redirect_uri: str = "http://localhost:3010/google-oauth-callback.html"
+    google_redirect_uri: str = ""
     
     # Google APIs - Service Account (for admin operations)
     google_service_account_file: str = ""
@@ -50,6 +51,22 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]
+    
+    @property
+    def google_redirect_uri_resolved(self) -> str:
+        """Get the appropriate Google OAuth redirect URI based on environment"""
+        if self.google_redirect_uri:
+            return self.google_redirect_uri
+        
+        # Auto-detect based on environment
+        # Check for Railway environment
+        railway_env = os.getenv('RAILWAY_ENVIRONMENT')
+        railway_url = os.getenv('RAILWAY_STATIC_URL') or os.getenv('RAILWAY_PUBLIC_DOMAIN')
+        
+        if railway_env or railway_url or self.app_env == "production" or "railway.app" in self.cors_origins:
+            return "https://consensus-agent.up.railway.app/google-oauth-callback.html"
+        else:
+            return "http://localhost:3010/google-oauth-callback.html"
     
     class Config:
         env_file = ".env"
