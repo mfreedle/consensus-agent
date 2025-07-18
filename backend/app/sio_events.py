@@ -78,7 +78,7 @@ def register_sio_events(sio):
             return ""
     
     @sio.on('connect')
-    async def connect(sid, environ):
+    async def connect(sid, environ, auth):
         print(f"Socket connected: {sid}")
 
     @sio.on('disconnect')
