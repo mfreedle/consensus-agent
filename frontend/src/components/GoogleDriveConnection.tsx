@@ -169,7 +169,13 @@ export const GoogleDriveConnectionWidget: React.FC<
             </button>
           ) : (
             <button
-              onClick={handleConnect}
+              onClick={() => {
+                if (!token) {
+                  setError("You must be logged in to connect Google Drive.");
+                  return;
+                }
+                handleConnect();
+              }}
               disabled={loading}
               className="flex items-center space-x-1 px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
             >
