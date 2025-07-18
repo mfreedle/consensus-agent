@@ -6,7 +6,7 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
-import UnifiedProviderModelManagement from "./UnifiedProviderModelManagement";
+// ...existing code...
 import FileList from "./FileList";
 
 interface AdminPanelProps {
@@ -14,10 +14,10 @@ interface AdminPanelProps {
   onBack?: () => void;
 }
 
-type AdminTab = "profile" | "providers-models" | "knowledge";
+type AdminTab = "profile" | "knowledge";
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>("providers-models");
+  const [activeTab, setActiveTab] = useState<AdminTab>("profile");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
@@ -56,12 +56,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
       label: "Profile",
       icon: UserIcon,
       description: "Manage your account and change password",
-    },
-    {
-      id: "providers-models" as AdminTab,
-      label: "Providers & Models",
-      icon: Database,
-      description: "Manage AI providers, API keys, and available models",
     },
     {
       id: "knowledge" as AdminTab,
@@ -133,12 +127,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
           </div>
         );
 
-      case "providers-models":
-        return (
-          <div className="h-full">
-            <UnifiedProviderModelManagement />
-          </div>
-        );
+      // ...existing code...
 
       case "knowledge":
         return (
