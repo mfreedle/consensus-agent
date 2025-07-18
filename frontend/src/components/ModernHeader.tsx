@@ -46,12 +46,12 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
       <div className="header-right">
         <div
           className={`connection-status ${
-            isSocketConnected ? "connected" : "offline"
+            isSocketConnected ? "connected" : "disconnected"
           }`}
         >
           <div className="status-dot" />
           <span className="status-text">
-            {isSocketConnected ? "Connected" : "Offline"}
+            {isSocketConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
       </div>
