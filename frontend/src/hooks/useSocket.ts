@@ -48,7 +48,7 @@ export const useSocket = ({
     
     if (isAuthenticated && token) {
       console.log('Connecting to Socket.IO...');
-      const socket = socketInstance.connect();
+      const socket = socketInstance.connect(token);
 
       // Set up connection event listeners
       socket.on('connect', () => {

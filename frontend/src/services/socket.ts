@@ -11,7 +11,7 @@ class SocketService {
   private isConnected = false;
   private isConnecting = false;
 
-  connect(): Socket {
+  connect(token?: string): Socket {
     if (this.socket && this.isConnected) {
       console.log('Socket already connected, returning existing socket');
       return this.socket;
@@ -25,7 +25,7 @@ class SocketService {
     this.isConnecting = true;
     console.log('Creating new Socket.IO connection...');
     console.log('Socket URL:', SOCKET_URL);
-    
+
     // Disconnect any existing socket first
     if (this.socket) {
       this.socket.disconnect();
@@ -33,7 +33,9 @@ class SocketService {
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       autoConnect: false,
-    });    this.socket.on('connect', () => {
+      auth: token ? { token } : undefined,
+    });
+    this.socket.on('connect', () => {
       console.log('Socket.IO connected with ID:', this.socket?.id);
       this.isConnected = true;
       this.isConnecting = false;
