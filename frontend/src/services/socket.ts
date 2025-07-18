@@ -70,7 +70,7 @@ class SocketService {
     }
   }
 
-  sendMessage(sessionId: string | null, message: string, token: string, attachedFileIds?: string[], useConsensus?: boolean, selectedModels?: string[]): void {
+  sendMessage(sessionId: string | null, message: string, token: string, attachedFileIds?: string[], useConsensus?: boolean, selectedModels?: string[], userName?: string): void {
     if (this.socket && this.isConnected) {
       this.socket.emit('send_message', {
         session_id: sessionId,
@@ -79,6 +79,7 @@ class SocketService {
         attached_file_ids: attachedFileIds || [],
         use_consensus: useConsensus,
         selected_models: selectedModels || [],
+        user_name: userName || ""
       });
     }
   }

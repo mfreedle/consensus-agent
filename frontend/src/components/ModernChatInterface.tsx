@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Send,
   Loader2,
@@ -33,7 +34,8 @@ interface ModernChatInterfaceProps {
     message: string,
     attachedFileIds?: string[],
     useConsensus?: boolean,
-    selectedModels?: string[]
+    selectedModels?: string[],
+    userName?: string
   ) => boolean;
   isSocketConnected?: boolean;
   modelSelection?: ModelSelectionState;
@@ -72,6 +74,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   onSettings,
   onLogout,
 }) => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [consensusPhase, setConsensusPhase] = useState<
@@ -368,7 +371,8 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
             data.message,
             attachedFileIds,
             useConsensus,
-            modelSelection?.selectedModels
+            modelSelection?.selectedModels,
+            user?.username // Pass user's name as context
           );
           if (socketSent) {
             console.log(
@@ -378,7 +382,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                 : "",
               `use_consensus: ${useConsensus}, models: ${modelSelection?.selectedModels?.join(
                 ", "
-              )}`
+              )}, user: ${user?.username}`
             );
             // DON'T set loading to false immediately - wait for Socket.IO response
             // setIsLoading(false); // ← REMOVED: This was causing the bug
@@ -440,6 +444,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       onSessionCreated,
       addError,
       attachedFiles,
+      user?.username,
     ]
   );
 

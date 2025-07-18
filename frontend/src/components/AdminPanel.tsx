@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   User as UserIcon,
   Database,
@@ -65,6 +66,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
     },
   ];
 
+  // Add state for user's name
+  const { user, login } = useAuth();
+  const [userName, setUserName] = useState(user?.username || "");
+  const handleSaveName = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Update user context with new name
+    if (user) {
+      login({ ...user, username: userName, token: undefined });
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserName(e.target.value);
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "profile":
@@ -74,7 +90,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
             <p className="text-gray-400 text-sm mb-4">
               Update your account information and change your password.
             </p>
-            <form className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 flex flex-col gap-4">
+            <form
+              className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 flex flex-col gap-4"
+              onSubmit={handleSaveName}
+            >
+              <div>
+                <label
+                  className="block text-gray-300 text-sm mb-1"
+                  htmlFor="user-name"
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="user-name"
+                  className="w-full p-2 rounded bg-gray-900 border border-gray-700 text-gray-100"
+                  placeholder="Your name"
+                  value={userName}
+                  onChange={handleNameChange}
+                />
+              </div>
               <div>
                 <label
                   className="block text-gray-300 text-sm mb-1"
@@ -121,7 +156,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ className = "", onBack }) => {
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
               >
-                Change Password
+                Save Changes
               </button>
             </form>
           </div>
