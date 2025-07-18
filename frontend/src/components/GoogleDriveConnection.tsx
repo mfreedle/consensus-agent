@@ -47,7 +47,16 @@ export const GoogleDriveConnectionWidget: React.FC<
       setError(null);
 
       // Get auth URL
-      const authData = await googleDriveService.getAuthUrl(token);
+      let authData;
+      try {
+        authData = await googleDriveService.getAuthUrl(token);
+        console.log("Google OAuth authData:", authData);
+      } catch (err: any) {
+        setError(`Failed to get Google OAuth URL: ${err.message}`);
+        console.error("Google OAuth getAuthUrl error:", err);
+        setLoading(false);
+        return;
+      }
 
       // Set up OAuth listener
       const callbackPromise = googleDriveService.setupOAuthListener();
@@ -60,9 +69,10 @@ export const GoogleDriveConnectionWidget: React.FC<
       );
 
       if (!popup) {
-        throw new Error(
+        setError(
           "Failed to open OAuth popup. Please allow popups for this site."
         );
+        return;
       }
 
       // Wait for callback
@@ -77,6 +87,7 @@ export const GoogleDriveConnectionWidget: React.FC<
       popup.close();
     } catch (err: any) {
       setError(`Connection failed: ${err.message}`);
+      console.error("Google OAuth connection error:", err);
     } finally {
       setLoading(false);
     }
