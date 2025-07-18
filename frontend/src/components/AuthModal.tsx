@@ -18,10 +18,10 @@ interface RegisterForm {
   confirmPassword: string;
 }
 
-type AuthMode = 'login' | 'register';
+type AuthMode = "login" | "register";
 
 const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>("login");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -31,7 +31,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
     handleSubmit,
     formState: { errors },
     reset,
-    watch
+    watch,
   } = useForm<LoginForm & RegisterForm>();
 
   const password = watch("password");
@@ -49,7 +49,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
     setSuccessMessage(null);
 
     try {
-      if (mode === 'login') {
+      if (mode === "login") {
         console.log("Attempting login with:", { username: data.username });
         const result = await apiService.login({
           username: data.username,
@@ -89,7 +89,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
         }
       } else {
         // Registration
-        console.log("Attempting registration with:", { username: data.username, email: data.email });
+        console.log("Attempting registration with:", {
+          username: data.username,
+          email: data.email,
+        });
         const result = await apiService.register({
           username: data.username,
           email: data.email || undefined,
@@ -101,17 +104,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
         if (result.error) {
           console.error("Registration error:", result.error);
           setError(
-            typeof result.error === "string" ? result.error : "Registration failed"
+            typeof result.error === "string"
+              ? result.error
+              : "Registration failed"
           );
         } else if (result.data) {
           setSuccessMessage("Account created successfully! Please login.");
           reset();
-          setMode('login');
+          setMode("login");
         }
       }
     } catch (error) {
       console.error(`${mode} error:`, error);
-      setError(`${mode === 'login' ? 'Login' : 'Registration'} failed. Please try again.`);
+      setError(
+        `${
+          mode === "login" ? "Login" : "Registration"
+        } failed. Please try again.`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -137,22 +146,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
         <div className="flex bg-bg-dark-tertiary rounded-lg p-1 mb-6">
           <button
             type="button"
-            onClick={() => switchMode('login')}
+            onClick={() => switchMode("login")}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              mode === 'login'
-                ? 'bg-primary-teal text-white'
-                : 'text-text-secondary hover:text-text-primary'
+              mode === "login"
+                ? "bg-primary-teal text-white"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             Sign In
           </button>
           <button
             type="button"
-            onClick={() => switchMode('register')}
+            onClick={() => switchMode("register")}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              mode === 'register'
-                ? 'bg-primary-teal text-white'
-                : 'text-text-secondary hover:text-text-primary'
+              mode === "register"
+                ? "bg-primary-teal text-white"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             Sign Up
@@ -166,7 +175,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
               Username
             </label>
             <input
-              {...registerField("username", { required: "Username is required" })}
+              {...registerField("username", {
+                required: "Username is required",
+              })}
               type="text"
               id="username"
               className="form-input"
@@ -180,7 +191,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           </div>
 
           {/* Email Field (Registration only) */}
-          {mode === 'register' && (
+          {mode === "register" && (
             <div className="form-group">
               <label htmlFor="email" className="form-label">
                 Email (Optional)
@@ -189,8 +200,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
                 {...registerField("email", {
                   pattern: {
                     value: /^\S+@\S+$/i,
-                    message: "Please enter a valid email address"
-                  }
+                    message: "Please enter a valid email address",
+                  },
                 })}
                 type="email"
                 id="email"
@@ -211,12 +222,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
               Password
             </label>
             <input
-              {...registerField("password", { 
+              {...registerField("password", {
                 required: "Password is required",
-                minLength: mode === 'register' ? {
-                  value: 6,
-                  message: "Password must be at least 6 characters long"
-                } : undefined
+                minLength:
+                  mode === "register"
+                    ? {
+                        value: 6,
+                        message: "Password must be at least 6 characters long",
+                      }
+                    : undefined,
               })}
               type="password"
               id="password"
@@ -231,7 +245,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           </div>
 
           {/* Confirm Password Field (Registration only) */}
-          {mode === 'register' && (
+          {mode === "register" && (
             <div className="form-group">
               <label htmlFor="confirmPassword" className="form-label">
                 Confirm Password
@@ -239,7 +253,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
               <input
                 {...registerField("confirmPassword", {
                   required: "Please confirm your password",
-                  validate: (value) => value === password || "Passwords do not match"
+                  validate: (value) =>
+                    value === password || "Passwords do not match",
                 })}
                 type="password"
                 id="confirmPassword"
@@ -257,9 +272,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
           {/* Success Message */}
           {successMessage && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-              <p className="text-green-400 text-sm">
-                {successMessage}
-              </p>
+              <p className="text-green-400 text-sm">{successMessage}</p>
             </div>
           )}
 
@@ -281,22 +294,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ onLogin }) => {
             {isLoading ? (
               <>
                 <div className="loading-spinner mr-2"></div>
-                {mode === 'login' ? 'Signing in...' : 'Creating Account...'}
+                {mode === "login" ? "Signing in..." : "Creating Account..."}
               </>
+            ) : mode === "login" ? (
+              "Sign In"
             ) : (
-              mode === 'login' ? 'Sign In' : 'Create Account'
+              "Create Account"
             )}
           </button>
         </form>
 
-        {/* Default Login Info (Login mode only) */}
-        {mode === 'login' && (
-          <div className="mt-6 p-3 bg-primary-teal/10 border border-primary-teal/20 rounded-lg">
-            <p className="text-primary-cyan text-xs text-center">
-              Default login: admin / password123
-            </p>
-          </div>
-        )}
+        {/* ...existing code... */}
       </div>
     </div>
   );
