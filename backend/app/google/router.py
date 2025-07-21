@@ -90,6 +90,13 @@ async def google_callback(
 ):
     """Handle Google OAuth callback and store tokens"""
     
+    # Check if Google OAuth is configured
+    if not settings.google_client_id or not settings.google_client_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Google OAuth is not configured. Please contact administrator."
+        )
+    
     try:
         # Verify state parameter for security
         expected_state = f"user:{current_user.id}"

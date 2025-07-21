@@ -68,8 +68,11 @@ class Settings(BaseSettings):
                 return "https://consensus-agent.up.railway.app/google-oauth-callback.html"
             else:
                 return "http://localhost:3010/google-oauth-callback.html"
-        except Exception:
-            # Fallback to localhost if there's any error
+        except (OSError, ValueError, AttributeError) as e:
+            # Log the specific error but continue with fallback
+            import logging
+            logging.warning(f"Error detecting environment for Google OAuth redirect URI: {e}")
+            # Fallback to localhost if there's any environment detection error
             return "http://localhost:3010/google-oauth-callback.html"
     
     class Config:

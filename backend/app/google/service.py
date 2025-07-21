@@ -22,27 +22,32 @@ class GoogleDriveService:
     
     def __init__(self, settings: Settings):
         self.settings = settings
+        
+        # Validate required Google OAuth settings
+        if not settings.google_client_id:
+            raise ValueError("GOOGLE_CLIENT_ID environment variable is required for Google Drive integration")
+        
+        if not settings.google_client_secret:
+            raise ValueError("GOOGLE_CLIENT_SECRET environment variable is required for Google Drive integration")
+        
+        # Validate redirect URI is properly resolved
         try:
-            self.client_config = {
-                "web": {
-                    "client_id": settings.google_client_id or "",
-                    "client_secret": settings.google_client_secret or "",
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [settings.google_redirect_uri_resolved]
-                }
+            redirect_uri = settings.google_redirect_uri_resolved
+            if not redirect_uri:
+                raise ValueError("Google redirect URI could not be resolved from configuration")
+        except Exception as e:
+            raise ValueError(f"Failed to resolve Google redirect URI: {str(e)}")
+        
+        # Initialize client configuration with validated settings
+        self.client_config = {
+            "web": {
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [redirect_uri]
             }
-        except Exception:
-            # Fallback configuration if there's an error
-            self.client_config = {
-                "web": {
-                    "client_id": "",
-                    "client_secret": "",
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": ["http://localhost:3010/google-oauth-callback.html"]
-                }
-            }
+        }
 
     def get_authorization_url(self, state: Optional[str] = None) -> tuple[str, str]:
         """Generate Google OAuth authorization URL"""
