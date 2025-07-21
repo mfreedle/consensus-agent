@@ -114,6 +114,76 @@ class GoogleDriveService {
   }
 
   /**
+   * Create a new Google Document
+   */
+  async createDocument(token: string, title: string, content: string = "", folderId?: string): Promise<any> {
+    apiService.setToken(token);
+    const response = await apiService.createGoogleDocument({
+      title,
+      content,
+      folder_id: folderId
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data!;
+  }
+
+  /**
+   * Create a new Google Spreadsheet
+   */
+  async createSpreadsheet(token: string, title: string, folderId?: string): Promise<any> {
+    apiService.setToken(token);
+    const response = await apiService.createGoogleSpreadsheet({
+      title,
+      folder_id: folderId
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data!;
+  }
+
+  /**
+   * Create a new Google Presentation
+   */
+  async createPresentation(token: string, title: string, folderId?: string): Promise<any> {
+    apiService.setToken(token);
+    const response = await apiService.createGooglePresentation({
+      title,
+      folder_id: folderId
+    });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data!;
+  }
+
+  /**
+   * Edit file content
+   */
+  async editFile(token: string, fileId: string, content: string): Promise<any> {
+    apiService.setToken(token);
+    const response = await apiService.editGoogleFile(fileId, { content });
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data!;
+  }
+
+  /**
+   * Get file content
+   */
+  async getFileContent(token: string, fileId: string): Promise<GoogleDocumentContent> {
+    apiService.setToken(token);
+    const response = await apiService.getGoogleFileContent(fileId);
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data!;
+  }
+
+  /**
    * Search files in Google Drive
    */
   async searchFiles(token: string, searchQuery: string, options: {

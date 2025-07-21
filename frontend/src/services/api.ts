@@ -295,13 +295,53 @@ class ApiService {
 
   async disconnectGoogle(): Promise<ApiResponse<{message: string}>> {
     return this.request<{message: string}>('/api/google/disconnect', {
-      method: 'POST',
+      method: 'DELETE',
     });
   }
 
   async getGoogleFiles(options?: any): Promise<ApiResponse<any>> {
     const queryString = options ? `?${new URLSearchParams(options).toString()}` : '';
     return this.request<any>(`/api/google/files${queryString}`);
+  }
+
+  // Google Drive file creation and editing
+  async createGoogleDocument(data: {title: string, content?: string, folder_id?: string}): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/google/documents/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createGoogleSpreadsheet(data: {title: string, folder_id?: string}): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/google/spreadsheets/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createGooglePresentation(data: {title: string, folder_id?: string}): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/google/presentations/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async editGoogleFile(fileId: string, data: {content: string}): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/google/files/${fileId}/edit`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async editGoogleSpreadsheet(spreadsheetId: string, data: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/google/spreadsheets/${spreadsheetId}/edit`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGoogleFileContent(fileId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/google/files/${fileId}/content`);
   }
 }
 
