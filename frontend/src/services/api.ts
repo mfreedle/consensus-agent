@@ -276,6 +276,33 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
+  // Google Drive endpoints
+  async getGoogleAuthUrl(): Promise<ApiResponse<{auth_url: string, state: string}>> {
+    return this.request<{auth_url: string, state: string}>('/api/google/auth');
+  }
+
+  async handleGoogleCallback(callbackData: any): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/google/callback', {
+      method: 'POST',
+      body: JSON.stringify(callbackData),
+    });
+  }
+
+  async getGoogleConnectionStatus(): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/google/connection');
+  }
+
+  async disconnectGoogle(): Promise<ApiResponse<{message: string}>> {
+    return this.request<{message: string}>('/api/google/disconnect', {
+      method: 'POST',
+    });
+  }
+
+  async getGoogleFiles(options?: any): Promise<ApiResponse<any>> {
+    const queryString = options ? `?${new URLSearchParams(options).toString()}` : '';
+    return this.request<any>(`/api/google/files${queryString}`);
+  }
 }
 
 export const apiService = new ApiService();

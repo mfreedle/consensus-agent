@@ -58,11 +58,11 @@ class GoogleDriveService {
    */
   async getAuthUrl(token: string): Promise<GoogleAuthURL> {
     apiService.setToken(token);
-    const response = await (apiService as any).request('/google/auth');
+    const response = await apiService.getGoogleAuthUrl();
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data;
+    return response.data!;
   }
 
   /**
@@ -70,14 +70,11 @@ class GoogleDriveService {
    */
   async handleCallback(token: string, callbackData: GoogleOAuthCallback): Promise<GoogleTokens> {
     apiService.setToken(token);
-    const response = await (apiService as any).request('/google/callback', {
-      method: 'POST',
-      body: JSON.stringify(callbackData)
-    });
+    const response = await apiService.handleGoogleCallback(callbackData);
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data;
+    return response.data!;
   }
 
   /**
@@ -85,11 +82,11 @@ class GoogleDriveService {
    */
   async getConnectionStatus(token: string): Promise<GoogleDriveConnection> {
     apiService.setToken(token);
-    const response = await (apiService as any).request('/google/connection');
+    const response = await apiService.getGoogleConnectionStatus();
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data;
+    return response.data!;
   }
 
   /**
@@ -97,13 +94,11 @@ class GoogleDriveService {
    */
   async disconnect(token: string): Promise<{ message: string }> {
     apiService.setToken(token);
-    const response = await (apiService as any).request('/google/disconnect', {
-      method: 'DELETE'
-    });
+    const response = await apiService.disconnectGoogle();
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data;
+    return response.data!;
   }
 
   /**
@@ -111,22 +106,11 @@ class GoogleDriveService {
    */
   async listFiles(token: string, options: ListFilesOptions = {}): Promise<GoogleDriveFileList> {
     apiService.setToken(token);
-    const params = new URLSearchParams();
-    
-    if (options.file_type) {
-      params.append('file_type', options.file_type);
-    }
-    if (options.limit) {
-      params.append('limit', options.limit.toString());
-    }
-
-    const queryString = params.toString();
-    const endpoint = queryString ? `/google/files?${queryString}` : '/google/files';
-    const response = await (apiService as any).request(endpoint);
+    const response = await apiService.getGoogleFiles(options);
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data;
+    return response.data!;
   }
 
   /**
