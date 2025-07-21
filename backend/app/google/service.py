@@ -22,15 +22,27 @@ class GoogleDriveService:
     
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.client_config = {
-            "web": {
-                "client_id": settings.google_client_id,
-                "client_secret": settings.google_client_secret,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [settings.google_redirect_uri_resolved]
+        try:
+            self.client_config = {
+                "web": {
+                    "client_id": settings.google_client_id or "",
+                    "client_secret": settings.google_client_secret or "",
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [settings.google_redirect_uri_resolved]
+                }
             }
-        }
+        except Exception:
+            # Fallback configuration if there's an error
+            self.client_config = {
+                "web": {
+                    "client_id": "",
+                    "client_secret": "",
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost:3010/google-oauth-callback.html"]
+                }
+            }
 
     def get_authorization_url(self, state: Optional[str] = None) -> tuple[str, str]:
         """Generate Google OAuth authorization URL"""

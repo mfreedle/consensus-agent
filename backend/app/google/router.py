@@ -33,6 +33,13 @@ async def google_auth_url(
 ):
     """Get Google OAuth authorization URL"""
     
+    # Check if Google OAuth is configured
+    if not settings.google_client_id or not settings.google_client_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Google OAuth is not configured. Please contact administrator."
+        )
+    
     try:
         # Generate authorization URL with user ID as state for security
         auth_url, state = google_service.get_authorization_url(

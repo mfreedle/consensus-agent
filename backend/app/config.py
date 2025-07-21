@@ -58,14 +58,18 @@ class Settings(BaseSettings):
         if self.google_redirect_uri:
             return self.google_redirect_uri
         
-        # Auto-detect based on environment
-        # Check for Railway environment
-        railway_env = os.getenv('RAILWAY_ENVIRONMENT')
-        railway_url = os.getenv('RAILWAY_STATIC_URL') or os.getenv('RAILWAY_PUBLIC_DOMAIN')
-        
-        if railway_env or railway_url or self.app_env == "production" or "railway.app" in self.cors_origins:
-            return "https://consensus-agent.up.railway.app/google-oauth-callback.html"
-        else:
+        try:
+            # Auto-detect based on environment
+            # Check for Railway environment
+            railway_env = os.getenv('RAILWAY_ENVIRONMENT')
+            railway_url = os.getenv('RAILWAY_STATIC_URL') or os.getenv('RAILWAY_PUBLIC_DOMAIN')
+            
+            if railway_env or railway_url or self.app_env == "production" or "railway.app" in self.cors_origins:
+                return "https://consensus-agent.up.railway.app/google-oauth-callback.html"
+            else:
+                return "http://localhost:3010/google-oauth-callback.html"
+        except Exception:
+            # Fallback to localhost if there's any error
             return "http://localhost:3010/google-oauth-callback.html"
     
     class Config:
