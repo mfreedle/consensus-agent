@@ -343,6 +343,14 @@ class ApiService {
   async getGoogleFileContent(fileId: string): Promise<ApiResponse<any>> {
     return this.request<any>(`/api/google/files/${fileId}/content`);
   }
+
+  async searchGoogleFiles(query: string, options?: {file_type?: string, limit?: number}): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    params.append('q', query);
+    if (options?.file_type) params.append('file_type', options.file_type);
+    if (options?.limit) params.append('limit', options.limit.toString());
+    return this.request<any>(`/api/google/files/search?${params.toString()}`);
+  }
 }
 
 export const apiService = new ApiService();
