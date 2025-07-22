@@ -1,4 +1,4 @@
-import { apiService } from './api';
+import { apiService } from "./api";
 
 export interface GoogleAuthURL {
   auth_url: string;
@@ -58,23 +58,29 @@ class GoogleDriveService {
    */
   async getAuthUrl(token: string): Promise<GoogleAuthURL> {
     apiService.setToken(token);
-    const response = await apiService.getGoogleAuthUrl();
+    const response = await (apiService as any).request("/google/auth");
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
+    return response.data;
   }
 
   /**
    * Handle OAuth callback and exchange code for tokens
    */
-  async handleCallback(token: string, callbackData: GoogleOAuthCallback): Promise<GoogleTokens> {
+  async handleCallback(
+    token: string,
+    callbackData: GoogleOAuthCallback
+  ): Promise<GoogleTokens> {
     apiService.setToken(token);
-    const response = await apiService.handleGoogleCallback(callbackData);
+    const response = await (apiService as any).request("/google/callback", {
+      method: "POST",
+      body: JSON.stringify(callbackData),
+    });
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
+    return response.data;
   }
 
   /**
@@ -82,11 +88,11 @@ class GoogleDriveService {
    */
   async getConnectionStatus(token: string): Promise<GoogleDriveConnection> {
     apiService.setToken(token);
-    const response = await apiService.getGoogleConnectionStatus();
+    const response = await (apiService as any).request("/google/connection");
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
+    return response.data;
   }
 
   /**
@@ -94,108 +100,287 @@ class GoogleDriveService {
    */
   async disconnect(token: string): Promise<{ message: string }> {
     apiService.setToken(token);
-    const response = await apiService.disconnectGoogle();
+    const response = await (apiService as any).request("/google/disconnect", {
+      method: "DELETE",
+    });
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
+    return response.data;
   }
 
   /**
    * List Google Drive files
    */
-  async listFiles(token: string, options: ListFilesOptions = {}): Promise<GoogleDriveFileList> {
+  async listFiles(
+    token: string,
+    options: ListFilesOptions = {}
+  ): Promise<GoogleDriveFileList> {
     apiService.setToken(token);
-    const response = await apiService.getGoogleFiles(options);
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return response.data!;
-  }
+    const params = new URLSearchParams();
 
-  /**
-   * Create a new Google Document
-   */
-  async createDocument(token: string, title: string, content: string = "", folderId?: string): Promise<any> {
-    apiService.setToken(token);
-    const response = await apiService.createGoogleDocument({
-      title,
-      content,
-      folder_id: folderId
-    });
-    if (response.error) {
-      throw new Error(response.error);
+    if (options.file_type) {
+      params.append("file_type", options.file_type);
     }
-    return response.data!;
-  }
+    if (options.limit) {
+      params.append("limit", options.limit.toString());
+    }
 
-  /**
-   * Create a new Google Spreadsheet
-   */
-  async createSpreadsheet(token: string, title: string, folderId?: string): Promise<any> {
-    apiService.setToken(token);
-    const response = await apiService.createGoogleSpreadsheet({
-      title,
-      folder_id: folderId
-    });
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/google/files?${queryString}`
+      : "/google/files";
+    const response = await (apiService as any).request(endpoint);
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
-  }
-
-  /**
-   * Create a new Google Presentation
-   */
-  async createPresentation(token: string, title: string, folderId?: string): Promise<any> {
-    apiService.setToken(token);
-    const response = await apiService.createGooglePresentation({
-      title,
-      folder_id: folderId
-    });
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return response.data!;
-  }
-
-  /**
-   * Edit file content
-   */
-  async editFile(token: string, fileId: string, content: string): Promise<any> {
-    apiService.setToken(token);
-    const response = await apiService.editGoogleFile(fileId, { content });
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return response.data!;
-  }
-
-  /**
-   * Get file content
-   */
-  async getFileContent(token: string, fileId: string): Promise<GoogleDocumentContent> {
-    apiService.setToken(token);
-    const response = await apiService.getGoogleFileContent(fileId);
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return response.data!;
+    return response.data;
   }
 
   /**
    * Search files in Google Drive
    */
-  async searchFiles(token: string, searchQuery: string, options: {
-    file_type?: string;
-    limit?: number;
-  } = {}): Promise<GoogleDriveFileList> {
+  async searchFiles(
+    token: string,
+    searchQuery: string,
+    options: {
+      file_type?: string;
+      limit?: number;
+    } = {}
+  ): Promise<GoogleDriveFileList> {
     apiService.setToken(token);
-    const response = await apiService.searchGoogleFiles(searchQuery, options);
+    const params = new URLSearchParams();
+    params.append("q", searchQuery);
+    if (options.file_type) params.append("file_type", options.file_type);
+    if (options.limit) params.append("limit", options.limit.toString());
+
+    const response = await (apiService as any).request(
+      `/google/files/search?${params.toString()}`
+    );
     if (response.error) {
       throw new Error(response.error);
     }
-    return response.data!;
+    return response.data;
+  }
+
+  /**
+   * List contents of a specific folder
+   */
+  async listFolderContents(
+    token: string,
+    folderId: string,
+    options: {
+      file_type?: string;
+      limit?: number;
+    } = {}
+  ): Promise<GoogleDriveFileList> {
+    apiService.setToken(token);
+    const params = new URLSearchParams();
+    if (options.file_type) params.append("file_type", options.file_type);
+    if (options.limit) params.append("limit", options.limit.toString());
+
+    const response = await (apiService as any).request(
+      `/google/folders/${folderId}/contents?${params.toString()}`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Find a folder by name
+   */
+  async findFolderByName(
+    token: string,
+    folderName: string
+  ): Promise<GoogleDriveFile> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      `/google/folders/find/${encodeURIComponent(folderName)}`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * List all files with their full paths
+   */
+  async listFilesWithPaths(
+    token: string,
+    options: {
+      file_type?: string;
+      limit?: number;
+    } = {}
+  ): Promise<GoogleDriveFileList> {
+    apiService.setToken(token);
+    const params = new URLSearchParams();
+    if (options.file_type) params.append("file_type", options.file_type);
+    if (options.limit) params.append("limit", options.limit.toString());
+
+    const response = await (apiService as any).request(
+      `/google/files/with-paths?${params.toString()}`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Get Google Document content
+   */
+  async getDocumentContent(
+    token: string,
+    fileId: string
+  ): Promise<GoogleDocumentContent> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      `/google/files/${fileId}/content`
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Edit Google Document (placeholder)
+   */
+  async editDocument(
+    token: string,
+    fileId: string,
+    content: string
+  ): Promise<{ message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      `/google/files/${fileId}/edit`,
+      {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Create a new Google Document
+   */
+  async createDocument(
+    token: string,
+    title: string,
+    content: string
+  ): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      "/google/documents/create",
+      {
+        method: "POST",
+        body: JSON.stringify({ title, content }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Create a new Google Spreadsheet
+   */
+  async createSpreadsheet(
+    token: string,
+    title: string
+  ): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      "/google/spreadsheets/create",
+      {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Create a new Google Slides presentation
+   */
+  async createPresentation(
+    token: string,
+    title: string
+  ): Promise<{ file_id: string; web_view_link: string; message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      "/google/presentations/create",
+      {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Edit Google Spreadsheet
+   */
+  async editSpreadsheet(
+    token: string,
+    fileId: string,
+    sheetName: string,
+    rangeName: string,
+    values: string[][]
+  ): Promise<{ message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      `/google/spreadsheets/${fileId}/edit`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          sheet_name: sheetName,
+          range_name: rangeName,
+          values,
+        }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
+  }
+
+  /**
+   * Add slide to Google Presentation
+   */
+  async addSlideToPresentation(
+    token: string,
+    fileId: string,
+    title: string,
+    content: string
+  ): Promise<{ message: string }> {
+    apiService.setToken(token);
+    const response = await (apiService as any).request(
+      `/google/presentations/${fileId}/slides/add`,
+      {
+        method: "POST",
+        body: JSON.stringify({ title, content }),
+      }
+    );
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response.data;
   }
 
   /**
@@ -206,25 +391,25 @@ class GoogleDriveService {
     return new Promise((resolve, reject) => {
       const handleMessage = (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
-        
-        if (event.data.type === 'GOOGLE_OAUTH_SUCCESS') {
-          window.removeEventListener('message', handleMessage);
+
+        if (event.data.type === "GOOGLE_OAUTH_SUCCESS") {
+          window.removeEventListener("message", handleMessage);
           resolve({
             code: event.data.code,
-            state: event.data.state
+            state: event.data.state,
           });
-        } else if (event.data.type === 'GOOGLE_OAUTH_ERROR') {
-          window.removeEventListener('message', handleMessage);
-          reject(new Error(event.data.error || 'OAuth authorization failed'));
+        } else if (event.data.type === "GOOGLE_OAUTH_ERROR") {
+          window.removeEventListener("message", handleMessage);
+          reject(new Error(event.data.error || "OAuth authorization failed"));
         }
       };
 
-      window.addEventListener('message', handleMessage);
+      window.addEventListener("message", handleMessage);
 
       // Cleanup after 5 minutes
       setTimeout(() => {
-        window.removeEventListener('message', handleMessage);
-        reject(new Error('OAuth timeout'));
+        window.removeEventListener("message", handleMessage);
+        reject(new Error("OAuth timeout"));
       }, 5 * 60 * 1000);
     });
   }

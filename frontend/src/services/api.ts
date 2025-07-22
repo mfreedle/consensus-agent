@@ -3,10 +3,12 @@ const getApiBaseUrl = () => {
   const envUrl = process.env.REACT_APP_API_URL;
   if (envUrl) {
     // If the env URL already ends with /api, remove it since our endpoints already include /api
-    return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
+    return envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
   }
   // In production, use /api as base URL, in development use localhost
-  return process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000';
+  return process.env.NODE_ENV === "production"
+    ? "/api"
+    : "http://localhost:8000";
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -62,7 +64,7 @@ export interface ChatSession {
 export interface ChatMessage {
   id: number;
   content: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   timestamp: string;
   session_id: number;
 }
@@ -119,39 +121,40 @@ class ApiService {
 
   constructor() {
     // Load token from localStorage on initialization
-    this.token = localStorage.getItem('auth_token');
+    this.token = localStorage.getItem("auth_token");
   }
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem("auth_token", token);
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('auth_token');
-  }  private async request<T>(
+    localStorage.removeItem("auth_token");
+  }
+  private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string>),
     };
 
     // Only set Content-Type for JSON, let browser set it for FormData
     if (!(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
+      headers["Content-Type"] = "application/json";
     }
 
     // Ensure token is loaded from localStorage if not in memory
     if (!this.token) {
-      this.token = localStorage.getItem('auth_token');
+      this.token = localStorage.getItem("auth_token");
     }
 
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+      headers["Authorization"] = `Bearer ${this.token}`;
     }
 
     try {
@@ -165,104 +168,124 @@ class ApiService {
       if (!response.ok) {
         // Handle FastAPI validation errors
         if (data.detail && Array.isArray(data.detail)) {
-          const errorMessage = data.detail.map((err: any) => err.msg).join(', ');
+          const errorMessage = data.detail
+            .map((err: any) => err.msg)
+            .join(", ");
           return { error: errorMessage };
         }
         return {
-          error: data.detail || data.message || 'An error occurred',
+          error: data.detail || data.message || "An error occurred",
         };
       }
 
       return { data };
     } catch (error) {
       return {
-        error: 'Network error. Please check your connection.',
+        error: "Network error. Please check your connection.",
       };
     }
-  }  // Authentication endpoints
+  } // Authentication endpoints
   async login(credentials: LoginRequest): Promise<ApiResponse<TokenResponse>> {
-    return this.request<TokenResponse>('/api/auth/login', {
-      method: 'POST',
+    return this.request<TokenResponse>("/api/auth/login", {
+      method: "POST",
       body: JSON.stringify(credentials),
     });
   }
 
-  async register(userData: RegisterRequest): Promise<ApiResponse<AuthResponse>> {
-    return this.request<AuthResponse>('/api/auth/register', {
-      method: 'POST',
+  async register(
+    userData: RegisterRequest
+  ): Promise<ApiResponse<AuthResponse>> {
+    return this.request<AuthResponse>("/api/auth/register", {
+      method: "POST",
       body: JSON.stringify(userData),
     });
   }
 
   async getCurrentUser(): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/auth/me');
+    return this.request<any>("/api/auth/me");
   }
 
-  async changePassword(passwordData: PasswordChangeRequest): Promise<ApiResponse<{message: string}>> {
-    return this.request<{message: string}>('/api/auth/change-password', {
-      method: 'PUT',
+  async changePassword(
+    passwordData: PasswordChangeRequest
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>("/api/auth/change-password", {
+      method: "PUT",
       body: JSON.stringify(passwordData),
     });
   }
 
-  async updateProfile(profileData: ProfileUpdateRequest): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/auth/profile', {
-      method: 'PUT',
+  async updateProfile(
+    profileData: ProfileUpdateRequest
+  ): Promise<ApiResponse<any>> {
+    return this.request<any>("/api/auth/profile", {
+      method: "PUT",
       body: JSON.stringify(profileData),
     });
   }
 
   // Chat endpoints
   async getChatSessions(): Promise<ApiResponse<ChatSession[]>> {
-    return this.request<ChatSession[]>('/api/chat/sessions');
+    return this.request<ChatSession[]>("/api/chat/sessions");
   }
 
   async createChatSession(title?: string): Promise<ApiResponse<ChatSession>> {
-    return this.request<ChatSession>('/api/chat/sessions', {
-      method: 'POST',
-      body: JSON.stringify({ title: title || 'New Chat' }),
+    return this.request<ChatSession>("/api/chat/sessions", {
+      method: "POST",
+      body: JSON.stringify({ title: title || "New Chat" }),
     });
   }
 
-  async getChatMessages(sessionId: number): Promise<ApiResponse<ChatMessage[]>> {
-    return this.request<ChatMessage[]>(`/api/chat/sessions/${sessionId}/messages`);
+  async getChatMessages(
+    sessionId: number
+  ): Promise<ApiResponse<ChatMessage[]>> {
+    return this.request<ChatMessage[]>(
+      `/api/chat/sessions/${sessionId}/messages`
+    );
   }
 
-  async deleteChatSession(sessionId: number): Promise<ApiResponse<{message: string}>> {
-    return this.request<{message: string}>(`/api/chat/sessions/${sessionId}`, {
-      method: 'DELETE',
-    });
+  async deleteChatSession(
+    sessionId: number
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/api/chat/sessions/${sessionId}`,
+      {
+        method: "DELETE",
+      }
+    );
   }
 
-  async sendMessage(request: SendMessageRequest): Promise<ApiResponse<ChatResponse>> {
-    return this.request<ChatResponse>('/api/chat/message', {
-      method: 'POST',
+  async sendMessage(
+    request: SendMessageRequest
+  ): Promise<ApiResponse<ChatResponse>> {
+    return this.request<ChatResponse>("/api/chat/message", {
+      method: "POST",
       body: JSON.stringify(request),
     });
   }
 
   // Models endpoints
   async getAvailableModels(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/models');
+    return this.request<any[]>("/api/models");
   }
 
   // Files endpoints  // File management endpoints
   async uploadFile(file: File): Promise<ApiResponse<any>> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    return this.request<any>('/api/files/upload', {
-      method: 'POST',
+    return this.request<any>("/api/files/upload", {
+      method: "POST",
       headers: {}, // Let browser set Content-Type for FormData
       body: formData,
     });
-  }  async getUserFiles(): Promise<ApiResponse<{files: any[]}>> {
-    return this.request<{files: any[]}>('/api/files/');
+  }
+  async getUserFiles(): Promise<ApiResponse<{ files: any[] }>> {
+    return this.request<{ files: any[] }>("/api/files/");
   }
 
   async deleteFile(fileId: string): Promise<ApiResponse<any>> {
     return this.request<any>(`/api/files/${fileId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
@@ -272,84 +295,9 @@ class ApiService {
 
   async updateFile(fileId: string, data: any): Promise<ApiResponse<any>> {
     return this.request<any>(`/api/files/${fileId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
-  }
-
-  // Google Drive endpoints
-  async getGoogleAuthUrl(): Promise<ApiResponse<{auth_url: string, state: string}>> {
-    return this.request<{auth_url: string, state: string}>('/api/google/auth');
-  }
-
-  async handleGoogleCallback(callbackData: any): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/google/callback', {
-      method: 'POST',
-      body: JSON.stringify(callbackData),
-    });
-  }
-
-  async getGoogleConnectionStatus(): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/google/connection');
-  }
-
-  async disconnectGoogle(): Promise<ApiResponse<{message: string}>> {
-    return this.request<{message: string}>('/api/google/disconnect', {
-      method: 'DELETE',
-    });
-  }
-
-  async getGoogleFiles(options?: any): Promise<ApiResponse<any>> {
-    const queryString = options ? `?${new URLSearchParams(options).toString()}` : '';
-    return this.request<any>(`/api/google/files${queryString}`);
-  }
-
-  // Google Drive file creation and editing
-  async createGoogleDocument(data: {title: string, content?: string, folder_id?: string}): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/google/documents/create', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async createGoogleSpreadsheet(data: {title: string, folder_id?: string}): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/google/spreadsheets/create', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async createGooglePresentation(data: {title: string, folder_id?: string}): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/google/presentations/create', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async editGoogleFile(fileId: string, data: {content: string}): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/google/files/${fileId}/edit`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async editGoogleSpreadsheet(spreadsheetId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/google/spreadsheets/${spreadsheetId}/edit`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getGoogleFileContent(fileId: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/google/files/${fileId}/content`);
-  }
-
-  async searchGoogleFiles(query: string, options?: {file_type?: string, limit?: number}): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams();
-    params.append('q', query);
-    if (options?.file_type) params.append('file_type', options.file_type);
-    if (options?.limit) params.append('limit', options.limit.toString());
-    return this.request<any>(`/api/google/files/search?${params.toString()}`);
   }
 }
 
