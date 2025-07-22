@@ -39,7 +39,7 @@ async def test_add_model_api():
             if login_response.status_code == 200:
                 token_data = login_response.json()
                 token = token_data.get("access_token")
-                print(f"✅ Login successful, token received")
+                print("✅ Login successful, token received")
 
                 # Test adding Grok 4 model
                 print("\\n2. 🤖 Testing add Grok 4 model...")
@@ -76,8 +76,8 @@ async def test_add_model_api():
                     print(f"❌ Failed to add model: {add_response.status_code}")
                     try:
                         error_data = add_response.json()
-                        print(f"🚨 Error details: {json.dumps(error_data, indent=2)}")
-                    except:
+                        print(f"🚨 Error details: {json.dumps(error_data, indent=2)}")  # type: ignore
+                    except json.JSONDecodeError:
                         print(f"🚨 Error text: {add_response.text}")
 
                 # Test getting all models to see if it was added

@@ -12,6 +12,8 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
+FILE_ID_REQUIRED_MSG = "File ID is required"
+
 
 class GoogleDriveFunction(BaseModel):
     """Base class for Google Drive function calls"""
@@ -425,7 +427,6 @@ class GoogleDriveTools:
     ) -> GoogleDriveToolResult:
         """Execute a Google Drive function with the given parameters"""
 
-        # Check if user has Google Drive connected
         access_token, refresh_token = self._get_user_tokens(user)
 
         if not access_token:
@@ -435,74 +436,36 @@ class GoogleDriveTools:
                 error="NO_GOOGLE_DRIVE_TOKEN",
             )
 
+        function_map = {
+            "list_google_drive_files": self._list_files,
+            "search_google_drive_files": self._search_files,
+            "list_folder_contents": self._list_folder_contents,
+            "find_folder_by_name": self._find_folder_by_name,
+            "get_file_path": self._get_file_path,
+            "list_all_files_with_paths": self._list_all_files_with_paths,
+            "read_google_document": self._read_document,
+            "read_google_spreadsheet": self._read_spreadsheet,
+            "read_google_presentation": self._read_presentation,
+            "edit_google_document": self._edit_document,
+            "edit_google_spreadsheet": self._edit_spreadsheet,
+            "create_google_document": self._create_document,
+            "create_google_spreadsheet": self._create_spreadsheet,
+            "create_google_presentation": self._create_presentation,
+            "add_slide_to_presentation": self._add_slide,
+            "copy_google_drive_file": self._copy_file,
+            "move_google_drive_file": self._move_file,
+            "delete_google_drive_file": self._delete_file,
+        }
+
         try:
-            if function_name == "list_google_drive_files":
-                return await self._list_files(parameters, access_token, refresh_token)
-            elif function_name == "search_google_drive_files":
-                return await self._search_files(parameters, access_token, refresh_token)
-            elif function_name == "list_folder_contents":
-                return await self._list_folder_contents(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "find_folder_by_name":
-                return await self._find_folder_by_name(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "get_file_path":
-                return await self._get_file_path(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "list_all_files_with_paths":
-                return await self._list_all_files_with_paths(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "read_google_document":
-                return await self._read_document(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "read_google_spreadsheet":
-                return await self._read_spreadsheet(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "read_google_presentation":
-                return await self._read_presentation(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "edit_google_document":
-                return await self._edit_document(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "edit_google_spreadsheet":
-                return await self._edit_spreadsheet(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "create_google_document":
-                return await self._create_document(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "create_google_spreadsheet":
-                return await self._create_spreadsheet(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "create_google_presentation":
-                return await self._create_presentation(
-                    parameters, access_token, refresh_token
-                )
-            elif function_name == "add_slide_to_presentation":
-                return await self._add_slide(parameters, access_token, refresh_token)
-            elif function_name == "copy_google_drive_file":
-                return await self._copy_file(parameters, access_token, refresh_token)
-            elif function_name == "move_google_drive_file":
-                return await self._move_file(parameters, access_token, refresh_token)
-            elif function_name == "delete_google_drive_file":
-                return await self._delete_file(parameters, access_token, refresh_token)
-            else:
+            handler = function_map.get(function_name)
+            if handler is None:
                 return GoogleDriveToolResult(
                     success=False,
                     message=f"Unknown function: {function_name}",
                     error="UNKNOWN_FUNCTION",
                 )
-
+            return await handler(parameters, access_token, refresh_token)
         except Exception as e:
             logger.error(f"Error executing Google Drive function {function_name}: {e}")
             return GoogleDriveToolResult(
@@ -872,7 +835,7 @@ class GoogleDriveTools:
 
         if not file_id:
             return GoogleDriveToolResult(
-                success=False, message="File ID is required", error="MISSING_FILE_ID"
+                success=False, message=FILE_ID_REQUIRED_MSG, error="MISSING_FILE_ID"
             )
 
         path = await self.google_service.get_file_path(
@@ -927,7 +890,7 @@ class GoogleDriveTools:
 
         if not file_id:
             return GoogleDriveToolResult(
-                success=False, message="File ID is required", error="MISSING_FILE_ID"
+                success=False, message=FILE_ID_REQUIRED_MSG, error="MISSING_FILE_ID"
             )
 
         # Handle special case for root folder
@@ -963,7 +926,7 @@ class GoogleDriveTools:
 
         if not file_id:
             return GoogleDriveToolResult(
-                success=False, message="File ID is required", error="MISSING_FILE_ID"
+                success=False, message=FILE_ID_REQUIRED_MSG, error="MISSING_FILE_ID"
             )
 
         if not target_folder_id:
@@ -1004,7 +967,7 @@ class GoogleDriveTools:
 
         if not file_id:
             return GoogleDriveToolResult(
-                success=False, message="File ID is required", error="MISSING_FILE_ID"
+                success=False, message=FILE_ID_REQUIRED_MSG, error="MISSING_FILE_ID"
             )
 
         result = await self.google_service.delete_file(
