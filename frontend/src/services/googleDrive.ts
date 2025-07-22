@@ -58,7 +58,7 @@ class GoogleDriveService {
    */
   async getAuthUrl(token: string): Promise<GoogleAuthURL> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/google/auth");
+    const response = await (apiService as any).request("/api/google/auth");
     if (response.error) {
       throw new Error(response.error);
     }
@@ -73,7 +73,7 @@ class GoogleDriveService {
     callbackData: GoogleOAuthCallback
   ): Promise<GoogleTokens> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/google/callback", {
+    const response = await (apiService as any).request("/api/google/callback", {
       method: "POST",
       body: JSON.stringify(callbackData),
     });
@@ -88,7 +88,7 @@ class GoogleDriveService {
    */
   async getConnectionStatus(token: string): Promise<GoogleDriveConnection> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/google/connection");
+    const response = await (apiService as any).request("/api/google/connection");
     if (response.error) {
       throw new Error(response.error);
     }
@@ -100,7 +100,7 @@ class GoogleDriveService {
    */
   async disconnect(token: string): Promise<{ message: string }> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/google/disconnect", {
+    const response = await (apiService as any).request("/api/google/disconnect", {
       method: "DELETE",
     });
     if (response.error) {
@@ -128,8 +128,8 @@ class GoogleDriveService {
 
     const queryString = params.toString();
     const endpoint = queryString
-      ? `/google/files?${queryString}`
-      : "/google/files";
+      ? `/api/google/files?${queryString}`
+      : "/api/google/files";
     const response = await (apiService as any).request(endpoint);
     if (response.error) {
       throw new Error(response.error);
@@ -155,7 +155,7 @@ class GoogleDriveService {
     if (options.limit) params.append("limit", options.limit.toString());
 
     const response = await (apiService as any).request(
-      `/google/files/search?${params.toString()}`
+      `/api/google/files/search?${params.toString()}`
     );
     if (response.error) {
       throw new Error(response.error);
@@ -180,7 +180,7 @@ class GoogleDriveService {
     if (options.limit) params.append("limit", options.limit.toString());
 
     const response = await (apiService as any).request(
-      `/google/folders/${folderId}/contents?${params.toString()}`
+      `/api/google/folders/${folderId}/contents?${params.toString()}`
     );
     if (response.error) {
       throw new Error(response.error);
@@ -197,7 +197,7 @@ class GoogleDriveService {
   ): Promise<GoogleDriveFile> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      `/google/folders/find/${encodeURIComponent(folderName)}`
+      `/api/google/folders/find/${encodeURIComponent(folderName)}`
     );
     if (response.error) {
       throw new Error(response.error);
@@ -221,7 +221,7 @@ class GoogleDriveService {
     if (options.limit) params.append("limit", options.limit.toString());
 
     const response = await (apiService as any).request(
-      `/google/files/with-paths?${params.toString()}`
+      `/api/google/files/with-paths?${params.toString()}`
     );
     if (response.error) {
       throw new Error(response.error);
@@ -238,7 +238,7 @@ class GoogleDriveService {
   ): Promise<GoogleDocumentContent> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      `/google/files/${fileId}/content`
+      `/api/google/files/${fileId}/content`
     );
     if (response.error) {
       throw new Error(response.error);
@@ -256,7 +256,7 @@ class GoogleDriveService {
   ): Promise<{ message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      `/google/files/${fileId}/edit`,
+      `/api/google/files/${fileId}/edit`,
       {
         method: "POST",
         body: JSON.stringify({ content }),
@@ -278,7 +278,7 @@ class GoogleDriveService {
   ): Promise<{ file_id: string; web_view_link: string; message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      "/google/documents/create",
+      "/api/google/documents/create",
       {
         method: "POST",
         body: JSON.stringify({ title, content }),
@@ -299,7 +299,7 @@ class GoogleDriveService {
   ): Promise<{ file_id: string; web_view_link: string; message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      "/google/spreadsheets/create",
+      "/api/google/spreadsheets/create",
       {
         method: "POST",
         body: JSON.stringify({ title }),
@@ -320,7 +320,7 @@ class GoogleDriveService {
   ): Promise<{ file_id: string; web_view_link: string; message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      "/google/presentations/create",
+      "/api/google/presentations/create",
       {
         method: "POST",
         body: JSON.stringify({ title }),
@@ -344,7 +344,7 @@ class GoogleDriveService {
   ): Promise<{ message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      `/google/spreadsheets/${fileId}/edit`,
+      `/api/google/spreadsheets/${fileId}/edit`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -371,7 +371,7 @@ class GoogleDriveService {
   ): Promise<{ message: string }> {
     apiService.setToken(token);
     const response = await (apiService as any).request(
-      `/google/presentations/${fileId}/slides/add`,
+      `/api/google/presentations/${fileId}/slides/add`,
       {
         method: "POST",
         body: JSON.stringify({ title, content }),

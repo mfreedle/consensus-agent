@@ -2,12 +2,12 @@
 const getApiBaseUrl = () => {
   const envUrl = process.env.REACT_APP_API_URL;
   if (envUrl) {
-    // If the env URL already ends with /api, remove it since our endpoints already include /api
-    return envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+    return envUrl;
   }
-  // In production, use /api as base URL, in development use localhost
+  // In production, use empty string as base URL since our endpoints already include /api
+  // In development use localhost
   return process.env.NODE_ENV === "production"
-    ? "/api"
+    ? ""
     : "http://localhost:8000";
 };
 

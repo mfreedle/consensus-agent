@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
 import {
+  AlertCircle,
+  CheckCircle,
   Cloud,
   CloudOff,
-  Link,
   ExternalLink,
-  CheckCircle,
-  AlertCircle,
+  Link,
   Loader2,
 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { googleDriveService } from "../services/googleDrive";
 
@@ -275,10 +275,14 @@ export const GoogleDriveIntegration: React.FC = () => {
 
           {/* File Type Filter */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="file-type-select"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Filter by file type:
             </label>
             <select
+              id="file-type-select"
               value={fileType}
               onChange={(e) => {
                 setFileType(e.target.value);
