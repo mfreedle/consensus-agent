@@ -395,6 +395,21 @@ class GoogleDriveTools:
             )
         ]
     
+    def get_tool_definitions(self) -> List[Dict[str, Any]]:
+        """Get tool definitions in the format expected by LLM providers"""
+        functions = self.get_available_functions()
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": func.name,
+                    "description": func.description,
+                    "parameters": func.parameters
+                }
+            }
+            for func in functions
+        ]
+    
     async def execute_function(self, function_name: str, parameters: Dict[str, Any], user: User) -> GoogleDriveToolResult:
         """Execute a Google Drive function with the given parameters"""
         
