@@ -1,0 +1,13 @@
+[project]
+name = "open-webui"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "google-api-python-client>=2.177.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.2",
+    "openai>=1.97.1",
+    "openai-agents>=0.2.3",
+    "pydantic>=2.11.7",
+]
