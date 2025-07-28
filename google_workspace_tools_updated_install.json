@@ -1,6 +1,0 @@
-{
-  "name": "Google Workspace Tools (Original + V2)",
-  "description": "OAuth-enabled Google Drive, Docs, Sheets, and Slides integration with improved credential handling and fallback methods",
-  "file": "google_workspace_tools.py",
-  "enabled": true
-}

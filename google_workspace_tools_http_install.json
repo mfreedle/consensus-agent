@@ -1,6 +1,0 @@
-{
-  "name": "Google Workspace Tools (HTTP API)",
-  "description": "OAuth-enabled Google Drive, Docs, Sheets, and Slides integration using direct HTTP API calls to bypass datetime comparison issues",
-  "file": "google_workspace_tools_http.py",
-  "enabled": true
-}
