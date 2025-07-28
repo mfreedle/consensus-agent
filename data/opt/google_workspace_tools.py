@@ -26,6 +26,31 @@ class Tools:
         self.valves = self.Valves()
         self.citation = True
 
+    def _get_redirect_uri(self) -> str:
+        """Get the appropriate redirect URI, auto-detecting Railway environment."""
+        # Check if we're running on Railway
+        railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        if railway_domain:
+            return f"https://{railway_domain}/google-oauth-callback.html"
+
+        # Check environment variable override
+        env_redirect = os.environ.get("GOOGLE_OAUTH_REDIRECT_URI")
+        if env_redirect:
+            return env_redirect
+
+        # Use configured default
+        return self.valves.REDIRECT_URI
+
+    def _ensure_token_directory(self) -> None:
+        """
+        Ensure the directory for storing tokens exists.
+        This is crucial for Railway deployment where directories may not exist initially.
+        """
+        token_dir = os.path.dirname(self.valves.TOKEN_FILE)
+        if not os.path.exists(token_dir):
+            os.makedirs(token_dir, exist_ok=True)
+            print(f"Created token directory: {token_dir}")
+
     def _get_oauth_credentials(self) -> dict:
         """
         Get OAuth client credentials from environment variables or file.
@@ -81,7 +106,7 @@ class Tools:
 
     class Valves(BaseModel):
         GOOGLE_CREDENTIALS_FILE: str = Field(
-            default="data/opt/oauth_credentials.json",
+            default="/app/backend/data/opt/oauth_credentials.json",
             description="The path to the Google OAuth client credentials JSON file (ignored if env vars are set)",
         )
         GOOGLE_CLIENT_ID: str = Field(
@@ -97,7 +122,7 @@ class Tools:
             description="Google Cloud Project ID (alternative to credentials file)",
         )
         TOKEN_FILE: str = Field(
-            default="data/opt/google_token.json",
+            default="/app/backend/data/opt/google_token.json",
             description="The path to store the Google API token",
         )
         REDIRECT_URI: str = Field(
@@ -300,7 +325,7 @@ class Tools:
 
             # Build authorization URL
             scope_string = urllib.parse.quote(" ".join(self.valves.SCOPES))
-            redirect_uri = urllib.parse.quote(self.valves.REDIRECT_URI)
+            redirect_uri = urllib.parse.quote(self._get_redirect_uri())
 
             auth_url = (
                 f"https://accounts.google.com/o/oauth2/auth?"
@@ -346,7 +371,7 @@ class Tools:
                 "client_secret": client_secret,
                 "code": authorization_code,
                 "grant_type": "authorization_code",
-                "redirect_uri": self.valves.REDIRECT_URI,
+                "redirect_uri": self._get_redirect_uri(),
             }
 
             response = requests.post(token_url, data=token_data)
@@ -363,6 +388,9 @@ class Tools:
                     "client_secret": client_secret,
                     "scopes": self.valves.SCOPES,
                 }
+
+                # Ensure token directory exists (crucial for Railway)
+                self._ensure_token_directory()
 
                 # Save token file
                 with open(self.valves.TOKEN_FILE, "w") as f:
@@ -741,8 +769,6 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
                 else:
                     return (
                         "⚠️ **Authentication Issues**\n\n"
-                        "Credentials found but missing access token. Let me help you re-authenticate:\n\n"
-                        + self.get_oauth_authorization_url()
                         "Credentials found but missing access token. Let me help you re-authenticate:\n\n"
                         + self.get_oauth_authorization_url()
                     )

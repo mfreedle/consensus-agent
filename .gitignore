@@ -19,6 +19,8 @@ docker-compose.yml
 .github
 
 # OAuth and sensitive credentials
+.env
+.env.local
 data/opt/oauth_credentials.json
 data/opt/tokens/
 *.token.json
@@ -27,3 +29,4 @@ data/opt/tokens/
 documentation/
 example_functions/
 tests/
+docker-compose.secure.yml
