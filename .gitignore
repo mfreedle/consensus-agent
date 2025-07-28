@@ -17,6 +17,12 @@ client_secrets.json
 docker-compose.yml
 .github
 
+# OAuth and sensitive credentials
+data/opt/oauth_credentials.json
+data/opt/tokens/
+*.token.json
+*_token.json
+
 documentation/
 example_functions/
 tests/
