@@ -12,6 +12,7 @@ wheels/
 data/cache/
 data/vector_db
 data/webui.db
+data/webui.db.backup
 .webui_secret_key
 client_secrets.json
 docker-compose.yml
