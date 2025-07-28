@@ -30,3 +30,5 @@ documentation/
 example_functions/
 tests/
 docker-compose.secure.yml
+
+SECURITY_FIX_README.md
