@@ -518,17 +518,175 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
                             + result
                             + "\n\n"
                             "✅ **Your Google Workspace tools are now ready to use!**\n"
-                            "Try: `list_google_drive_files()` or `create_google_doc('My Document')`"
+                            "Try asking me to:\n"
+                            "• 'Show my Google Drive files'\n" 
+                            "• 'Create a new document called [Title]'\n"
+                            "• 'Search my drive for [keyword]'\n"
+                            "• 'Create a new spreadsheet'"
                         )
                     else:
                         return f"⚠️ OAuth processing failed: {result}"
 
         return ""  # Not an OAuth message
 
+    def process_natural_language_request(self, message: str) -> str:
+        """
+        Process natural language requests for Google Workspace operations.
+        This enables users to interact naturally without knowing function names.
+        
+        :param message: User's natural language request
+        :return: Response from the appropriate function, or empty string if not a Google request
+        """
+        import re
+        
+        message_lower = message.lower().strip()
+        
+        # Drive file listing patterns
+        drive_list_patterns = [
+            r"show.*(my|google).*drive.*files?",
+            r"list.*(my|google).*drive.*files?", 
+            r"what.*files?.*(my|google).*drive",
+            r"see.*(my|google).*drive.*files?",
+            r"browse.*(my|google).*drive",
+            r"(my|google).*drive.*files?",
+        ]
+        
+        for pattern in drive_list_patterns:
+            if re.search(pattern, message_lower):
+                # Extract number if specified
+                num_match = re.search(r'(\d+)', message)
+                max_results = int(num_match.group(1)) if num_match else 10
+                return self.show_my_drive_files(max_results)
+        
+        # Document creation patterns
+        doc_create_patterns = [
+            r"create.*new.*(document|doc)",
+            r"make.*new.*(document|doc)", 
+            r"new.*(google)?.*(document|doc)",
+        ]
+        
+        for pattern in doc_create_patterns:
+            if re.search(pattern, message_lower):
+                # Extract title if specified
+                title_match = re.search(r'(?:called|titled|named)\s+"([^"]+)"', message, re.IGNORECASE)
+                if not title_match:
+                    title_match = re.search(r'(?:called|titled|named)\s+([^.!?]+)', message, re.IGNORECASE)
+                
+                title = title_match.group(1).strip() if title_match else "New Document"
+                return self.create_new_document(title)
+        
+        # Spreadsheet creation patterns
+        sheet_create_patterns = [
+            r"create.*new.*(spreadsheet|sheet)",
+            r"make.*new.*(spreadsheet|sheet)",
+            r"new.*(google)?.*(spreadsheet|sheet)",
+        ]
+        
+        for pattern in sheet_create_patterns:
+            if re.search(pattern, message_lower):
+                # Extract title if specified
+                title_match = re.search(r'(?:called|titled|named)\s+"([^"]+)"', message, re.IGNORECASE)
+                if not title_match:
+                    title_match = re.search(r'(?:called|titled|named)\s+([^.!?]+)', message, re.IGNORECASE)
+                
+                title = title_match.group(1).strip() if title_match else "New Spreadsheet"
+                return self.create_new_spreadsheet(title)
+        
+        # Drive search patterns
+        search_patterns = [
+            r"search.*(my|google).*drive.*for\s+(.+)",
+            r"find.*(my|google).*drive.*(.+)",
+            r"look.*for.*(.+).*(my|google).*drive",
+        ]
+        
+        for pattern in search_patterns:
+            match = re.search(pattern, message_lower)
+            if match:
+                # Extract search query
+                query = match.group(2) if len(match.groups()) >= 2 else match.group(1)
+                query = query.strip().strip('"\'')
+                if query and len(query) > 1:
+                    return self.search_my_drive(query)
+        
+        # Setup/authentication patterns
+        setup_patterns = [
+            r"setup.*google.*(workspace|drive)",
+            r"connect.*google.*(workspace|drive)",
+            r"authenticate.*google",
+            r"help.*setup.*google",
+            r"how.*use.*google.*(workspace|drive)",
+        ]
+        
+        for pattern in setup_patterns:
+            if re.search(pattern, message_lower):
+                return self.help_me_setup_google_workspace()
+        
+        # Reconnection patterns
+        reconnect_patterns = [
+            r"reconnect.*google",
+            r"refresh.*google.*auth",
+            r"fix.*google.*connection",
+            r"google.*not.*working",
+        ]
+        
+        for pattern in reconnect_patterns:
+            if re.search(pattern, message_lower):
+                return self.reconnect_to_google_drive()
+        
+        return ""  # Not a Google Workspace request
+
+    def handle_user_message(self, message: str) -> str:
+        """
+        Universal entry point for handling any user message related to Google Workspace.
+        This function should be called by the AI assistant for any user input.
+        It automatically detects and processes:
+        1. OAuth completion messages
+        2. Natural language Google Workspace requests
+        3. General setup requests
+        
+        :param message: Any message from the user
+        :return: Appropriate response, or empty string if not Google-related
+        """
+        # First, check if it's an OAuth completion message
+        oauth_result = self.process_oauth_message(message)
+        if oauth_result:
+            return oauth_result
+        
+        # Then, check if it's a natural language Google request
+        nl_result = self.process_natural_language_request(message)
+        if nl_result:
+            return nl_result
+        
+        # If nothing else matched, check if they're asking about Google Workspace in general
+        message_lower = message.lower()
+        google_keywords = ['google', 'drive', 'docs', 'sheets', 'workspace', 'document', 'spreadsheet']
+        
+        if any(keyword in message_lower for keyword in google_keywords):
+            # Might be a Google-related question, provide general guidance
+            return (
+                "🤖 **Google Workspace Assistant Ready!**\n\n"
+                "I can help you with Google Workspace! Here's what you can ask me:\n\n"
+                "**📁 Google Drive:**\n"
+                "• 'Show my Google Drive files'\n"
+                "• 'Search my drive for [keyword]'\n\n"
+                "**📄 Google Docs:**\n"
+                "• 'Create a new document called [Title]'\n"
+                "• 'Read document [document_id]'\n\n"
+                "**📊 Google Sheets:**\n"
+                "• 'Create a new spreadsheet called [Title]'\n\n"
+                "**🔧 Setup:**\n"
+                "• 'Help me setup Google Workspace'\n"
+                "• 'Connect to Google Drive'\n\n"
+                "Just talk to me naturally - I'll understand what you want to do! 😊"
+            )
+        
+        return ""  # Not a Google Workspace request
+
     def authenticate_google_workspace(self) -> str:
         """
         Check Google Workspace authentication status and provide guidance.
-        This is the main function users should call first.
+        This is the main function users should call first, but now also includes
+        automatic natural language processing.
 
         :return: Status message with next steps for users.
         """
@@ -547,38 +705,44 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
 
                 if has_token:
                     return (
-                        "✅ **Authentication Available**\n\n"
-                        "Google Workspace credentials are loaded. You can now try using Google Workspace tools:\n"
-                        "• `list_google_drive_files()` - Browse Drive files\n"
-                        "• `create_google_doc('Title')` - Create new docs\n"
-                        "• `create_google_sheet('Title')` - Create new sheets\n"
-                        "• `search_google_drive('query')` - Search Drive\n"
-                        "• `get_google_doc_content('doc_id')` - Read document content\n\n"
-                        f"{'✅ Refresh token available for automatic renewal' if has_refresh_token else '⚠️ No refresh token - may need re-authentication if expired'}"
+                        "✅ **Google Workspace Authentication Ready**\n\n"
+                        "Your Google Workspace is connected and ready to use! You can now:\n\n"
+                        "**📁 Google Drive:**\n"
+                        "• Say: 'Show my Google Drive files'\n"
+                        "• Say: 'Search my drive for [keyword]'\n\n"
+                        "**📄 Google Docs:**\n" 
+                        "• Say: 'Create a new document called [Title]'\n"
+                        "• Say: 'Read document [document_id]'\n\n"
+                        "**📊 Google Sheets:**\n"
+                        "• Say: 'Create a new spreadsheet called [Title]'\n\n"
+                        f"{'✅ Automatic token renewal available' if has_refresh_token else '⚠️ Manual re-authentication may be needed if token expires'}\n\n"
+                        "💡 **Tip:** Just talk to me naturally - I'll understand what you want to do with Google Workspace!"
                     )
                 else:
                     return (
                         "⚠️ **Authentication Issues**\n\n"
-                        "Credentials found but missing access token. Please re-authenticate:\n\n"
-                        "1. Call `get_oauth_authorization_url()` to get a new authorization link\n"
-                        "2. Follow the link to re-authorize access\n"
-                        "3. Call `complete_oauth_setup('your_code')` with the authorization code"
+                        "Credentials found but missing access token. Let me help you re-authenticate:\n\n"
+                        + self.get_oauth_authorization_url()
                     )
             else:
                 return (
-                    "🔐 **First Time Setup Required**\n\n"
-                    "Welcome! To use Google Workspace tools, you need to authenticate with Google first.\n\n"
-                    "**Quick Start:**\n"
-                    "1. Call `get_user_setup_instructions()` for detailed setup guide\n"
-                    "2. Or call `get_oauth_authorization_url()` to start authentication now\n\n"
-                    "This is a one-time setup that takes about 2 minutes!"
+                    "🔐 **Welcome to Google Workspace Integration!**\n\n"
+                    "To get started with Google Drive, Docs, and Sheets, I need to connect to your Google account.\n\n"
+                    "**Quick Setup (takes 2 minutes):**\n"
+                    "1. I'll give you a Google authorization link\n"
+                    "2. You'll sign in and grant permissions\n"
+                    "3. Copy the success message and paste it back here\n"
+                    "4. I'll handle the rest automatically!\n\n"
+                    "Ready to start? Here's your authorization link:\n\n" +
+                    self.get_oauth_authorization_url()
                 )
 
         except Exception as e:
             return (
                 f"❌ **Authentication Error**\n\n"
                 f"Error: {str(e)}\n\n"
-                f"Try calling `get_user_setup_instructions()` for setup help."
+                "Let me try to get you a fresh authorization link:\n\n" +
+                self.get_oauth_authorization_url()
             )
 
     def list_google_drive_files(
@@ -1061,4 +1225,269 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
                 "\n**Recommendation:** Use the approach marked as WORKING above.",
                 "\n**Note:** For HTTP API approach, install google_workspace_tools_http.py separately.",
             ]
+        )
+
+    # ================================
+    # SMART USER-FRIENDLY WRAPPERS
+    # ================================
+    
+    def _ensure_authenticated(self) -> tuple[bool, str]:
+        """
+        Internal helper to ensure user is authenticated before any Google operation.
+        Automatically initiates OAuth if needed.
+        
+        :return: Tuple of (is_authenticated, message_for_user)
+        """
+        # Check current authentication status
+        auth_status = self.authenticate_google_workspace()
+        
+        # If already authenticated, return success
+        if "✅" in auth_status and "Authentication Available" in auth_status:
+            return True, ""
+        
+        # If needs authentication, return the OAuth flow message
+        return False, auth_status
+    
+    def show_my_drive_files(self, max_results: int = 10) -> str:
+        """
+        Natural language interface: Show the user's Google Drive files.
+        Automatically handles authentication if needed.
+        
+        :param max_results: Maximum number of files to show (default: 10)
+        :return: User-friendly response with files or authentication instructions
+        """
+        # Auto-check authentication
+        is_auth, auth_message = self._ensure_authenticated()
+        
+        if not is_auth:
+            return (
+                "I'll help you access your Google Drive files! First, I need to set up "
+                "Google authentication for you.\n\n" + auth_message
+            )
+        
+        # User is authenticated, get the files
+        try:
+            result = self.list_google_drive_files(max_results=max_results)
+            
+            if result.startswith("[") or result.startswith("{"):
+                # Parse JSON and make it user-friendly
+                import json
+                files = json.loads(result)
+                
+                if not files:
+                    return "Your Google Drive appears to be empty or I couldn't find any files."
+                
+                response = f"📁 **Your Google Drive Files** (showing {len(files)} files):\n\n"
+                for i, file in enumerate(files, 1):
+                    name = file.get('name', 'Unknown')
+                    file_type = file.get('mimeType', '').split('.')[-1] if file.get('mimeType') else 'file'
+                    modified = file.get('modifiedTime', '').split('T')[0] if file.get('modifiedTime') else 'Unknown'
+                    
+                    response += f"{i}. **{name}** ({file_type})\n"
+                    response += f"   Last modified: {modified}\n"
+                    if file.get('webViewLink'):
+                        response += f"   [📂 Open in Google Drive]({file['webViewLink']})\n"
+                    response += "\n"
+                
+                return response
+            else:
+                return f"📁 **Google Drive Files:**\n\n{result}"
+                
+        except Exception as e:
+            return f"❌ I encountered an error accessing your Google Drive: {str(e)}\n\nTry saying 'help me reconnect to Google Drive' to refresh your authentication."
+    
+    def create_new_document(self, title: str, content: str = "") -> str:
+        """
+        Natural language interface: Create a new Google Document.
+        Automatically handles authentication if needed.
+        
+        :param title: The title for the new document
+        :param content: Initial content for the document (optional)
+        :return: User-friendly response with document creation status
+        """
+        # Auto-check authentication
+        is_auth, auth_message = self._ensure_authenticated()
+        
+        if not is_auth:
+            return (
+                f"I'll help you create a new Google Document titled '{title}'! "
+                "First, I need to set up Google authentication for you.\n\n" + auth_message
+            )
+        
+        # User is authenticated, create the document
+        try:
+            result = self.create_google_doc(title, content)
+            
+            if result.startswith("{"):
+                # Parse JSON response
+                import json
+                doc_info = json.loads(result)
+                
+                response = f"✅ **Document Created Successfully!**\n\n"
+                response += f"📄 **{doc_info.get('title', title)}**\n"
+                response += f"Document ID: `{doc_info.get('documentId', 'Unknown')}`\n\n"
+                
+                if doc_info.get('webViewLink'):
+                    response += f"[📝 Open Document in Google Docs]({doc_info['webViewLink']})\n\n"
+                
+                if content:
+                    response += f"The document has been created with your initial content. You can now edit it in Google Docs!"
+                else:
+                    response += f"The document has been created and is ready for you to add content!"
+                
+                return response
+            else:
+                return f"✅ **Document Created!**\n\n{result}"
+                
+        except Exception as e:
+            return f"❌ I encountered an error creating your Google Document: {str(e)}\n\nTry saying 'help me reconnect to Google Drive' to refresh your authentication."
+    
+    def create_new_spreadsheet(self, title: str, data: Optional[List[List[str]]] = None) -> str:
+        """
+        Natural language interface: Create a new Google Spreadsheet.
+        Automatically handles authentication if needed.
+        
+        :param title: The title for the new spreadsheet
+        :param data: Initial data as rows and columns (optional)
+        :return: User-friendly response with spreadsheet creation status
+        """
+        # Auto-check authentication
+        is_auth, auth_message = self._ensure_authenticated()
+        
+        if not is_auth:
+            return (
+                f"I'll help you create a new Google Spreadsheet titled '{title}'! "
+                "First, I need to set up Google authentication for you.\n\n" + auth_message
+            )
+        
+        # User is authenticated, create the spreadsheet
+        try:
+            result = self.create_google_sheet(title, data)
+            
+            if result.startswith("{"):
+                # Parse JSON response
+                import json
+                sheet_info = json.loads(result)
+                
+                response = f"✅ **Spreadsheet Created Successfully!**\n\n"
+                response += f"📊 **{sheet_info.get('title', title)}**\n"
+                response += f"Spreadsheet ID: `{sheet_info.get('spreadsheetId', 'Unknown')}`\n\n"
+                
+                if sheet_info.get('webViewLink'):
+                    response += f"[📈 Open Spreadsheet in Google Sheets]({sheet_info['webViewLink']})\n\n"
+                
+                if data:
+                    response += f"The spreadsheet has been created with your initial data ({len(data)} rows). You can now edit it in Google Sheets!"
+                else:
+                    response += f"The spreadsheet has been created and is ready for you to add data!"
+                
+                return response
+            else:
+                return f"✅ **Spreadsheet Created!**\n\n{result}"
+                
+        except Exception as e:
+            return f"❌ I encountered an error creating your Google Spreadsheet: {str(e)}\n\nTry saying 'help me reconnect to Google Drive' to refresh your authentication."
+    
+    def search_my_drive(self, query: str, max_results: int = 10) -> str:
+        """
+        Natural language interface: Search the user's Google Drive.
+        Automatically handles authentication if needed.
+        
+        :param query: What to search for
+        :param max_results: Maximum number of results to return
+        :return: User-friendly response with search results
+        """
+        # Auto-check authentication
+        is_auth, auth_message = self._ensure_authenticated()
+        
+        if not is_auth:
+            return (
+                f"I'll help you search your Google Drive for '{query}'! "
+                "First, I need to set up Google authentication for you.\n\n" + auth_message
+            )
+        
+        # User is authenticated, search drive
+        try:
+            result = self.search_google_drive(query, max_results)
+            
+            if result.startswith("[") or result.startswith("{"):
+                # Parse JSON and make it user-friendly
+                import json
+                files = json.loads(result)
+                
+                if not files:
+                    return f"🔍 **Search Results for '{query}':**\n\nNo files found matching your search. Try different keywords or check your spelling."
+                
+                response = f"🔍 **Search Results for '{query}'** (found {len(files)} files):\n\n"
+                for i, file in enumerate(files, 1):
+                    name = file.get('name', 'Unknown')
+                    file_type = file.get('mimeType', '').split('.')[-1] if file.get('mimeType') else 'file'
+                    modified = file.get('modifiedTime', '').split('T')[0] if file.get('modifiedTime') else 'Unknown'
+                    
+                    response += f"{i}. **{name}** ({file_type})\n"
+                    response += f"   Last modified: {modified}\n"
+                    if file.get('webViewLink'):
+                        response += f"   [📂 Open in Google Drive]({file['webViewLink']})\n"
+                    response += "\n"
+                
+                return response
+            else:
+                return f"🔍 **Search Results for '{query}':**\n\n{result}"
+                
+        except Exception as e:
+            return f"❌ I encountered an error searching your Google Drive: {str(e)}\n\nTry saying 'help me reconnect to Google Drive' to refresh your authentication."
+    
+    def read_document_content(self, document_id: str) -> str:
+        """
+        Natural language interface: Read content from a Google Document.
+        Automatically handles authentication if needed.
+        
+        :param document_id: The ID of the document to read
+        :return: User-friendly response with document content
+        """
+        # Auto-check authentication
+        is_auth, auth_message = self._ensure_authenticated()
+        
+        if not is_auth:
+            return (
+                "I'll help you read that Google Document! "
+                "First, I need to set up Google authentication for you.\n\n" + auth_message
+            )
+        
+        # User is authenticated, read the document
+        try:
+            content = self.get_google_doc_content(document_id)
+            
+            if content and not content.startswith("❌"):
+                response = f"📄 **Document Content:**\n\n"
+                response += f"```\n{content}\n```\n\n"
+                response += f"Document ID: `{document_id}`"
+                return response
+            else:
+                return f"📄 **Document Content:**\n\n{content}"
+                
+        except Exception as e:
+            return f"❌ I encountered an error reading the Google Document: {str(e)}\n\nMake sure the document ID is correct and you have access to it."
+    
+    def help_me_setup_google_workspace(self) -> str:
+        """
+        Natural language interface: Complete setup guide for Google Workspace.
+        This is the main entry point for new users.
+        
+        :return: Comprehensive setup instructions
+        """
+        return self.quick_start_google_workspace()
+    
+    def reconnect_to_google_drive(self) -> str:
+        """
+        Natural language interface: Help user reconnect to Google Drive.
+        Useful when authentication has expired or there are connection issues.
+        
+        :return: Re-authentication instructions
+        """
+        return (
+            "🔄 **Reconnecting to Google Drive**\n\n"
+            "I'll help you refresh your Google authentication. This usually fixes "
+            "connection issues and expired tokens.\n\n" + 
+            self.get_oauth_authorization_url()
         )
