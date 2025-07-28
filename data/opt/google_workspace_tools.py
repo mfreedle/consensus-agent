@@ -1038,9 +1038,15 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
         """
         Search for files in Google Drive with comprehensive error handling.
 
-        :param query: Search query (file name, content, etc.).
+        :param query: Search query. Can be:
+            - Simple text: "proposal" (searches name and content)
+            - Google Drive API query: "mimeType='application/vnd.google-apps.document' and name contains 'Proposal'"
+            - Common examples:
+                * Find Google Docs: "mimeType='application/vnd.google-apps.document'"
+                * Find by name: "name contains 'Proposal'"
+                * Find recent docs: "mimeType='application/vnd.google-apps.document' and name contains 'meeting'"
         :param max_results: Maximum number of results to return.
-        :return: JSON string containing search results.
+        :return: JSON string containing search results, sorted by most recent first.
         """
         try:
             # First, try to get a clean token by refreshing it if we have a refresh token
@@ -1093,11 +1099,20 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
                 service = build("drive", "v3", credentials=creds)
 
             # Search for files
+            # Check if query is already a valid Google Drive API query (contains operators like 'and', 'or', '=')
+            if any(operator in query.lower() for operator in ['and', 'or', 'mimetype=', 'name=', 'title=', 'contains']):
+                # Use the query as-is since it's already formatted for Google Drive API
+                search_query = query
+            else:
+                # Simple search term, wrap it with name/fullText search
+                search_query = f"name contains '{query}' or fullText contains '{query}'"
+            
             results = (
                 service.files()
                 .list(
-                    q=f"name contains '{query}' or fullText contains '{query}'",
+                    q=search_query,
                     pageSize=max_results,
+                    orderBy="modifiedTime desc",  # Sort by most recently modified first
                     fields="nextPageToken, files(id, name, mimeType, modifiedTime, webViewLink)",
                 )
                 .execute()
