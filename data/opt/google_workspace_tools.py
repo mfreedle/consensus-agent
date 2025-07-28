@@ -26,10 +26,64 @@ class Tools:
         self.valves = self.Valves()
         self.citation = True
 
+    def _get_oauth_credentials(self) -> dict:
+        """
+        Get OAuth client credentials from environment variables or file.
+        Environment variables take precedence over file.
+        
+        :return: Dictionary containing client_id, client_secret, and project_id
+        """
+        # Check if environment variables are set (preferred for production/Railway)
+        if self.valves.GOOGLE_CLIENT_ID and self.valves.GOOGLE_CLIENT_SECRET:
+            return {
+                "client_id": self.valves.GOOGLE_CLIENT_ID,
+                "client_secret": self.valves.GOOGLE_CLIENT_SECRET,
+                "project_id": self.valves.GOOGLE_PROJECT_ID or "default",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
+            }
+        
+        # Fall back to file-based credentials
+        if not os.path.exists(self.valves.GOOGLE_CREDENTIALS_FILE):
+            raise FileNotFoundError("OAuth credentials not found in environment variables or file")
+        
+        with open(self.valves.GOOGLE_CREDENTIALS_FILE, "r") as f:
+            credentials = json.load(f)
+        
+        # Handle both "installed" and "web" credential formats
+        if "installed" in credentials:
+            cred_data = credentials["installed"]
+        elif "web" in credentials:
+            cred_data = credentials["web"]
+        else:
+            raise ValueError("Invalid credentials format. Expected 'installed' or 'web' key.")
+        
+        return {
+            "client_id": cred_data["client_id"],
+            "client_secret": cred_data["client_secret"],
+            "project_id": cred_data.get("project_id", "default"),
+            "auth_uri": cred_data.get("auth_uri", "https://accounts.google.com/o/oauth2/auth"),
+            "token_uri": cred_data.get("token_uri", "https://oauth2.googleapis.com/token"),
+            "auth_provider_x509_cert_url": cred_data.get("auth_provider_x509_cert_url", "https://www.googleapis.com/oauth2/v1/certs")
+        }
+
     class Valves(BaseModel):
         GOOGLE_CREDENTIALS_FILE: str = Field(
             default="data/opt/oauth_credentials.json",
-            description="The path to the Google OAuth client credentials JSON file",
+            description="The path to the Google OAuth client credentials JSON file (ignored if env vars are set)",
+        )
+        GOOGLE_CLIENT_ID: str = Field(
+            default="",
+            description="Google OAuth Client ID (alternative to credentials file)",
+        )
+        GOOGLE_CLIENT_SECRET: str = Field(
+            default="",
+            description="Google OAuth Client Secret (alternative to credentials file)",
+        )
+        GOOGLE_PROJECT_ID: str = Field(
+            default="",
+            description="Google Cloud Project ID (alternative to credentials file)",
         )
         TOKEN_FILE: str = Field(
             default="data/opt/google_token.json",
@@ -229,14 +283,9 @@ class Tools:
         :return: Authorization URL that users can visit to grant permissions.
         """
         try:
-            # Load client credentials
-            if not os.path.exists(self.valves.GOOGLE_CREDENTIALS_FILE):
-                return "❌ OAuth credentials file not found. Please contact administrator to set up Google API credentials."
-
-            with open(self.valves.GOOGLE_CREDENTIALS_FILE, "r") as f:
-                credentials = json.load(f)
-
-            client_id = credentials["installed"]["client_id"]
+            # Load client credentials (from env vars or file)
+            credentials = self._get_oauth_credentials()
+            client_id = credentials["client_id"]
 
             # Build authorization URL
             scope_string = urllib.parse.quote(" ".join(self.valves.SCOPES))
@@ -274,12 +323,10 @@ class Tools:
         try:
             import requests
 
-            # Load client credentials
-            with open(self.valves.GOOGLE_CREDENTIALS_FILE, "r") as f:
-                credentials = json.load(f)
-
-            client_id = credentials["installed"]["client_id"]
-            client_secret = credentials["installed"]["client_secret"]
+            # Load client credentials (from env vars or file)
+            credentials = self._get_oauth_credentials()
+            client_id = credentials["client_id"]
+            client_secret = credentials["client_secret"]
 
             # Exchange authorization code for tokens
             token_url = "https://oauth2.googleapis.com/token"
