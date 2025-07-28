@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Google OAuth Callback</title>
+    <script>
+      // Extract the code and state from the URL
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+
+      function displayAuthSuccess(code, state) {
+        const fullMessage = `Complete authentication with code: ${code}`;
+        document.getElementById("result").innerHTML = `
+          <h3>✅ Authentication Successful!</h3>
+          <p>Your Google authentication has been completed successfully!</p>
+          <div style="background: #e8f5e8; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #4caf50;">
+            <strong>✓ OAuth completed</strong><br>
+            <small>User ID: ${state || "Default"}</small>
+          </div>
+          <div style="background: #fff3cd; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
+            <strong>⚠️ Manual Step Required:</strong><br>
+            Copy the complete message below and paste it in the chat:<br><br>
+            <textarea style="width: 100%; height: 60px; padding: 8px; font-family: monospace; background: #f8f9fa; resize: vertical;" readonly onclick="this.select()">${fullMessage}</textarea>
+          </div>
+          <div style="background: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #2196f3;">
+            <strong>Next Steps:</strong><br>
+            1. Click "Copy Complete Message" below<br>
+            2. Return to the Open WebUI chat<br>
+            3. Paste the message and press Enter
+          </div>
+          <button onclick="copyToClipboard('${fullMessage}')" style="padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">Copy Complete Message</button>
+          <button onclick="window.close()" style="padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Close Window</button>
+        `;
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(function () {
+            alert(
+              "Complete message copied to clipboard! Now paste it in the chat."
+            );
+          })
+          .catch(function () {
+            // Fallback for older browsers
+            const textarea = document.querySelector("textarea");
+            textarea.select();
+            document.execCommand("copy");
+            alert(
+              "Complete message copied to clipboard! Now paste it in the chat."
+            );
+          });
+      }
+
+      window.onload = function () {
+        const code = getQueryParam("code");
+        const state = getQueryParam("state");
+        const error = getQueryParam("error");
+
+        if (error) {
+          document.getElementById("result").innerHTML = `
+            <h3>❌ Authentication Failed</h3>
+            <p><strong>Error:</strong> ${error}</p>
+            <p>Please try again or contact support.</p>
+          `;
+        } else if (code) {
+          document.getElementById("result").textContent =
+            "Processing authentication...";
+          displayAuthSuccess(code, state);
+        } else {
+          document.getElementById("result").innerHTML = `
+            <h3>⚠️ No Authorization Code Found</h3>
+            <p>The OAuth callback did not receive the expected authorization code.</p>
+            <p>Please try the authentication process again.</p>
+          `;
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <h2>Google OAuth Callback</h2>
+    <div id="result">Processing...</div>
+  </body>
+</html>

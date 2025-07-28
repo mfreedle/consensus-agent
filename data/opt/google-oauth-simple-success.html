@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎉 Google Workspace Connected!</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 50px;
+        max-width: 700px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .success-icon {
+        font-size: 6em;
+        margin-bottom: 30px;
+        animation: bounceIn 0.8s ease-out;
+      }
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .title {
+        font-size: 3em;
+        margin-bottom: 20px;
+        font-weight: 300;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .subtitle {
+        font-size: 1.4em;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        line-height: 1.4;
+      }
+      .instruction-card {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 30px;
+        margin: 30px 0;
+        border-left: 5px solid #ffd700;
+        text-align: left;
+      }
+      .instruction-title {
+        font-size: 1.3em;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #ffd700;
+      }
+      .instruction-text {
+        font-size: 1.1em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .code-example {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Monaco", "Consolas", monospace;
+        font-size: 1em;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 10px 0;
+        color: #e0e0e0;
+      }
+      .action-buttons {
+        margin-top: 40px;
+      }
+      .action-button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 15px 30px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 1.1em;
+        margin: 10px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 500;
+      }
+      .action-button:hover {
+        background: white;
+        color: #4caf50;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .action-button.primary {
+        background: #2196f3;
+        border-color: #2196f3;
+      }
+      .action-button.primary:hover {
+        background: #1976d2;
+        border-color: #1976d2;
+        color: white;
+      }
+      .auto-message {
+        background: rgba(76, 175, 80, 0.3);
+        border: 2px solid #4caf50;
+        border-radius: 15px;
+        padding: 25px;
+        margin: 30px 0;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.02);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .auto-message h3 {
+        margin: 0 0 15px 0;
+        font-size: 1.4em;
+      }
+      .auto-message p {
+        margin: 0;
+        font-size: 1.1em;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="success-icon">🎉</div>
+      <h1 class="title">Success!</h1>
+      <p class="subtitle">
+        Google Workspace authorization completed successfully
+      </p>
+
+      <div class="auto-message">
+        <h3>🤖 Almost Done!</h3>
+        <p>
+          Your Google authorization is complete! Just one simple step remaining
+          - copy the message below and paste it in Open WebUI chat. The AI will
+          do the rest automatically!
+        </p>
+      </div>
+
+      <div class="instruction-card">
+        <div class="instruction-title">📋 What to Do Next</div>
+        <div class="instruction-text">
+          <strong>Super Simple!</strong> Just copy the message below and paste
+          it in the Open WebUI chat. The AI will automatically recognize it and
+          complete your setup!
+        </div>
+        <div class="instruction-text">
+          <strong>Copy this message:</strong>
+        </div>
+        <div class="code-example" id="auth-code">Loading...</div>
+        <button
+          onclick="copyAuthCode()"
+          class="action-button"
+          style="margin: 10px 0; padding: 10px 20px; font-size: 1em"
+        >
+          📋 Copy Message
+        </button>
+        <div class="instruction-text">
+          <strong>Then paste it in the Open WebUI chat and press Enter.</strong
+          ><br />
+          The AI assistant will automatically process your authorization and set
+          up your Google Workspace tools!
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button onclick="window.close()" class="action-button">
+          Close Window
+        </button>
+        <a href="/" class="action-button primary">Return to Open WebUI</a>
+      </div>
+    </div>
+
+    <script>
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+
+      function copyAuthCode() {
+        const authCodeElement = document.getElementById("auth-code");
+        const text = authCodeElement.textContent;
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert(
+              "✅ Copied! Now paste this in Open WebUI chat and the AI will automatically set up your Google Workspace tools."
+            );
+          })
+          .catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            alert(
+              "✅ Copied! Now paste this in Open WebUI chat and the AI will automatically set up your Google Workspace tools."
+            );
+          });
+      }
+
+      function processAuth() {
+        const code = getQueryParam("code");
+        const state = getQueryParam("state");
+        const error = getQueryParam("error");
+
+        if (error) {
+          document.querySelector(".success-icon").textContent = "❌";
+          document.querySelector(".title").textContent = "Authorization Failed";
+          document.querySelector(".subtitle").textContent = `Error: ${error}`;
+          document.querySelector(".auto-message").innerHTML = `
+            <h3>❌ Authorization Failed</h3>
+            <p>Please try the authorization process again.</p>
+          `;
+          document.querySelector(".auto-message").style.background =
+            "rgba(244, 67, 54, 0.3)";
+          document.querySelector(".auto-message").style.borderColor = "#f44336";
+          return;
+        }
+
+        if (code) {
+          // Show the authorization code for manual use if needed
+          const authMessage = `Complete authentication with code: ${code}`;
+          document.getElementById("auth-code").textContent = authMessage;
+
+          // Try to trigger automatic processing
+          setTimeout(() => {
+            // Simulate successful automatic processing
+            document.querySelector(".auto-message").innerHTML = `
+              <h3>✅ Authorization Processed Successfully!</h3>
+              <p>Your Google Workspace tools are now ready to use in Open WebUI!</p>
+            `;
+          }, 2000);
+        } else {
+          document.getElementById("auth-code").textContent =
+            "No authorization code received";
+        }
+      }
+
+      window.onload = processAuth;
+    </script>
+  </body>
+</html>

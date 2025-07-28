@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎉 Google OAuth Success!</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 600px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .success-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+      }
+      .title {
+        font-size: 2em;
+        margin-bottom: 20px;
+        font-weight: 300;
+      }
+      .message {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        line-height: 1.6;
+      }
+      .auto-complete {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #fff;
+      }
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 12px 24px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 1.1em;
+        margin: 10px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .button:hover {
+        background: white;
+        color: #4caf50;
+      }
+      .code-display {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        word-break: break-all;
+        margin: 15px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .step-complete {
+        color: #4caf50;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="success-icon">✅</div>
+      <h1 class="title">Google OAuth Complete!</h1>
+
+      <div id="content">
+        <div class="message">
+          Your Google Workspace authorization was successful!
+        </div>
+
+        <div class="auto-complete">
+          <div id="status">
+            <div class="loading"></div>
+            <strong>Processing authorization automatically...</strong>
+          </div>
+          <div id="auth-code" class="code-display" style="display: none"></div>
+        </div>
+
+        <div id="next-steps" style="display: none">
+          <p><strong>🎊 Setup Complete!</strong></p>
+          <p>You can now close this window and return to Open WebUI.</p>
+          <p>Your Google Workspace tools are ready to use!</p>
+          <a href="#" onclick="window.close()" class="button">Close Window</a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+
+      async function processAuthorization() {
+        const code = getQueryParam("code");
+        const state = getQueryParam("state");
+        const error = getQueryParam("error");
+
+        if (error) {
+          document.getElementById("status").innerHTML = `
+            <strong style="color: #ff6b6b;">❌ Authorization Failed</strong><br>
+            Error: ${error}<br>
+            Please try again.
+          `;
+          return;
+        }
+
+        if (!code) {
+          document.getElementById("status").innerHTML = `
+            <strong style="color: #ffa726;">⚠️ No Authorization Code</strong><br>
+            Please try the authorization process again.
+          `;
+          return;
+        }
+
+        // Show the authorization code
+        document.getElementById("auth-code").style.display = "block";
+        document.getElementById(
+          "auth-code"
+        ).textContent = `Authorization Code: ${code}`;
+
+        // Step 1: Try automatic processing via local storage / session
+        try {
+          // Store the auth code for the Open WebUI session
+          const authData = {
+            code: code,
+            state: state || "default",
+            timestamp: Date.now(),
+            processed: false,
+          };
+
+          // Store in localStorage for Open WebUI to pick up
+          localStorage.setItem(
+            "google_oauth_pending",
+            JSON.stringify(authData)
+          );
+
+          // Also try sessionStorage
+          sessionStorage.setItem(
+            "google_oauth_pending",
+            JSON.stringify(authData)
+          );
+
+          document.getElementById("status").innerHTML = `
+            <strong class="step-complete">✓ Step 1: Authorization code received</strong><br>
+            <strong class="step-complete">✓ Step 2: Code stored for automatic processing</strong><br>
+            <div class="loading"></div> <strong>Step 3: Waiting for Open WebUI to process...</strong>
+          `;
+
+          // Check if processing completed (poll for a few seconds)
+          let attempts = 0;
+          const checkInterval = setInterval(() => {
+            attempts++;
+            const stored = localStorage.getItem("google_oauth_pending");
+            if (stored) {
+              const data = JSON.parse(stored);
+              if (data.processed) {
+                clearInterval(checkInterval);
+                document.getElementById("status").innerHTML = `
+                  <strong class="step-complete">✅ Authorization Complete!</strong><br>
+                  Google Workspace access has been configured successfully.
+                `;
+                document.getElementById("next-steps").style.display = "block";
+                return;
+              }
+            }
+
+            if (attempts > 10) {
+              // After 10 seconds, show manual option
+              clearInterval(checkInterval);
+              showManualOption(code);
+            }
+          }, 1000);
+        } catch (error) {
+          console.log("Auto-processing setup failed:", error);
+          showManualOption(code);
+        }
+      }
+
+      function showManualOption(code) {
+        const message = `Complete authentication with code: ${code}`;
+        document.getElementById("status").innerHTML = `
+          <strong style="color: #ffa726;">⚠️ Automatic processing not available</strong><br>
+          Please complete manually in Open WebUI chat:
+        `;
+
+        const codeDiv = document.getElementById("auth-code");
+        codeDiv.innerHTML = `
+          <div style="margin-bottom: 10px;">Copy this message and paste it in Open WebUI chat:</div>
+          <textarea style="width: 100%; height: 60px; padding: 8px; background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 5px; font-family: monospace;" readonly onclick="this.select()">${message}</textarea>
+          <button onclick="copyToClipboard('${message}')" style="margin-top: 10px; padding: 8px 16px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer;">📋 Copy Message</button>
+        `;
+      }
+
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert("✅ Copied! Now paste in Open WebUI chat and press Enter.");
+          })
+          .catch(() => {
+            const textarea = document.querySelector("textarea");
+            textarea.select();
+            document.execCommand("copy");
+            alert("✅ Copied! Now paste in Open WebUI chat and press Enter.");
+          });
+      }
+
+      // Start processing when page loads
+      window.onload = processAuthorization;
+    </script>
+  </body>
+</html>

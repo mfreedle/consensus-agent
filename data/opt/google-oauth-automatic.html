@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎉 Google OAuth - Processing...</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 600px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid #fff;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .success {
+        color: #4caf50;
+        font-size: 3em;
+        margin: 20px 0;
+      }
+      .error {
+        color: #f44336;
+        font-size: 2em;
+        margin: 20px 0;
+      }
+      .status {
+        font-size: 1.2em;
+        margin: 20px 0;
+      }
+      .details {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-family: monospace;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔐 Google OAuth Processing</h1>
+      <div id="status">
+        <div class="spinner"></div>
+        <div class="status">Processing your authorization...</div>
+      </div>
+    </div>
+
+    <script>
+      // Extract authorization code and state from URL
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+
+      // Update status display
+      function updateStatus(icon, title, message, isError = false) {
+        document.getElementById("status").innerHTML = `
+          <div class="${isError ? "error" : "success"}">${icon}</div>
+          <div class="status">${title}</div>
+          <div class="details">${message}</div>
+        `;
+      }
+
+      // Send authorization code to Open WebUI backend
+      async function processAuthCode(code, state) {
+        try {
+          updateStatus(
+            "⏳",
+            "Connecting to Open WebUI...",
+            "Sending authorization code to backend"
+          );
+
+          // Try to send the auth code to Open WebUI's function calling endpoint
+          const response = await fetch("/api/v1/functions/call", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization:
+                "Bearer " + (localStorage.getItem("token") || "anonymous"),
+            },
+            body: JSON.stringify({
+              name: "complete_oauth_setup",
+              args: {
+                auth_code: code,
+                state: state || "default",
+              },
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            updateStatus(
+              "✅",
+              "Success!",
+              "Google Workspace access configured successfully!<br>" +
+                "You can now close this window and return to Open WebUI.<br>" +
+                "Try calling: authenticate_google_workspace()"
+            );
+          } else {
+            // Fallback: Show manual instructions
+            showManualInstructions(code);
+          }
+        } catch (error) {
+          console.log(
+            "Auto-processing failed, showing manual instructions:",
+            error
+          );
+          showManualInstructions(code);
+        }
+      }
+
+      // Fallback: Show manual copy/paste instructions
+      function showManualInstructions(code) {
+        const message = `Complete authentication with code: ${code}`;
+        updateStatus(
+          "📋",
+          "Manual Step Required",
+          `Auto-processing not available. Please copy and paste this message in Open WebUI chat:<br><br>
+          <textarea style="width: 100%; height: 60px; padding: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px;" readonly onclick="this.select()">${message}</textarea>
+          <br><br>
+          <button onclick="copyToClipboard('${message}')" style="padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">Copy Message</button>`
+        );
+      }
+
+      // Copy to clipboard helper
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert("Copied to clipboard! Now paste in Open WebUI chat.");
+          })
+          .catch(() => {
+            // Fallback for older browsers
+            const textarea = document.querySelector("textarea");
+            textarea.select();
+            document.execCommand("copy");
+            alert("Copied to clipboard! Now paste in Open WebUI chat.");
+          });
+      }
+
+      // Main processing logic
+      window.onload = function () {
+        const code = getQueryParam("code");
+        const state = getQueryParam("state");
+        const error = getQueryParam("error");
+
+        if (error) {
+          updateStatus(
+            "❌",
+            "Authorization Failed",
+            `Error: ${error}<br>Please try the authorization process again.`,
+            true
+          );
+        } else if (code) {
+          // Try automatic processing first
+          processAuthCode(code, state);
+        } else {
+          updateStatus(
+            "⚠️",
+            "No Authorization Code",
+            "The OAuth callback did not receive an authorization code.<br>Please try the authentication process again.",
+            true
+          );
+        }
+      };
+    </script>
+  </body>
+</html>

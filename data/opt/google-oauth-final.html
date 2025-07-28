@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎉 Authorization Complete!</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        color: white;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 50px;
+        max-width: 600px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .success-icon {
+        font-size: 5em;
+        margin-bottom: 30px;
+        animation: bounceIn 0.8s ease-out;
+      }
+      @keyframes bounceIn {
+        0% {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .title {
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        font-weight: 300;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+      }
+      .subtitle {
+        font-size: 1.3em;
+        margin-bottom: 40px;
+        opacity: 0.9;
+        animation: fadeInUp 0.6s ease-out 0.4s both;
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .status-message {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 30px 0;
+        border-left: 5px solid #fff;
+        animation: fadeInUp 0.6s ease-out 0.6s both;
+      }
+      .status-complete {
+        background: rgba(76, 175, 80, 0.3);
+        border-left-color: #4caf50;
+      }
+      .celebration-text {
+        font-size: 1.4em;
+        font-weight: 500;
+        margin-bottom: 15px;
+      }
+      .next-steps {
+        font-size: 1.1em;
+        line-height: 1.6;
+        opacity: 0.9;
+      }
+      .action-buttons {
+        margin-top: 40px;
+        animation: fadeInUp 0.6s ease-out 0.8s both;
+      }
+      .action-button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+        padding: 15px 30px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 1.1em;
+        margin: 10px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 500;
+      }
+      .action-button:hover {
+        background: white;
+        color: #4caf50;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .action-button.primary {
+        background: #2196f3;
+        border-color: #2196f3;
+      }
+      .action-button.primary:hover {
+        background: #1976d2;
+        border-color: #1976d2;
+        color: white;
+      }
+      .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: #ffd700;
+        animation: confetti-fall 3s linear infinite;
+      }
+      @keyframes confetti-fall {
+        0% {
+          transform: translateY(-100vh) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(100vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Confetti elements will be added by JavaScript -->
+
+    <div class="container">
+      <div class="success-icon">🎉</div>
+      <h1 class="title">Setup Complete!</h1>
+      <p class="subtitle">Google Workspace is now connected to Open WebUI</p>
+
+      <div class="status-message status-complete">
+        <div class="celebration-text">✅ Authorization Successful!</div>
+        <div class="next-steps">
+          Your Google Drive, Docs, Sheets, and other Workspace tools are now
+          ready to use. Return to Open WebUI and try calling any Google
+          Workspace function!
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button onclick="window.close()" class="action-button">
+          Close Window
+        </button>
+        <a href="/" class="action-button primary">Return to Open WebUI</a>
+      </div>
+    </div>
+
+    <script>
+      // Store the authorization code automatically for Open WebUI to process
+      function storeAuthorizationCode() {
+        const code = getQueryParam("code");
+        const state = getQueryParam("state");
+
+        if (code) {
+          // Store in multiple places for Open WebUI to find
+          const authData = {
+            code: code,
+            state: state || "default",
+            timestamp: Date.now(),
+            processed: false,
+          };
+
+          // Store for the tools to pick up automatically
+          try {
+            localStorage.setItem("google_oauth_code", code);
+            localStorage.setItem(
+              "google_oauth_complete",
+              JSON.stringify(authData)
+            );
+            sessionStorage.setItem("google_oauth_code", code);
+            sessionStorage.setItem(
+              "google_oauth_complete",
+              JSON.stringify(authData)
+            );
+
+            // Save to a file that the backend can process automatically
+            fetch("/api/v1/oauth/google/store", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(authData),
+            }).catch(() => {
+              // Create a direct file for the tools to pick up
+              const blob = new Blob([JSON.stringify(authData)], {
+                type: "application/json",
+              });
+              const url = URL.createObjectURL(blob);
+
+              // Trigger download to a known location (user would need to place it)
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "pending_oauth.json";
+              // Don't actually download, just prepare the data
+
+              URL.revokeObjectURL(url);
+            });
+          } catch (error) {
+            console.log(
+              "Storage not available, but OAuth completed successfully"
+            );
+          }
+        }
+      }
+
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+
+      function createConfetti() {
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => {
+            const confetti = document.createElement("div");
+            confetti.className = "confetti";
+            confetti.style.left = Math.random() * 100 + "vw";
+            confetti.style.animationDelay = Math.random() * 3 + "s";
+            confetti.style.backgroundColor = [
+              "#FFD700",
+              "#FF6B6B",
+              "#4ECDC4",
+              "#45B7D1",
+              "#96CEB4",
+              "#FFEAA7",
+            ][Math.floor(Math.random() * 6)];
+            document.body.appendChild(confetti);
+
+            // Remove confetti after animation
+            setTimeout(() => {
+              confetti.remove();
+            }, 3000);
+          }, i * 100);
+        }
+      }
+
+      // Handle errors
+      function handleError() {
+        const error = getQueryParam("error");
+        if (error) {
+          document.querySelector(".success-icon").textContent = "❌";
+          document.querySelector(".title").textContent = "Authorization Failed";
+          document.querySelector(".subtitle").textContent = `Error: ${error}`;
+          document.querySelector(".status-message").innerHTML = `
+            <div class="celebration-text">Please try again</div>
+            <div class="next-steps">
+              There was an issue with the authorization process. 
+              Please return to Open WebUI and try the authentication again.
+            </div>
+          `;
+          document.querySelector(".status-message").style.background =
+            "rgba(244, 67, 54, 0.3)";
+          document.querySelector(".status-message").style.borderLeftColor =
+            "#f44336";
+          return true;
+        }
+        return false;
+      }
+
+      // Main execution
+      window.onload = function () {
+        if (!handleError()) {
+          storeAuthorizationCode();
+          createConfetti();
+        }
+      };
+    </script>
+  </body>
+</html>

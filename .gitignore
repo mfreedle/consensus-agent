@@ -9,8 +9,14 @@ wheels/
 # Virtual environments
 .venv
 .mypy_cache
-data/
+data/cache/
+data/vector_db
+data/webui.db
 .webui_secret_key
 client_secrets.json
 docker-compose.yml
 .github
+
+documentation/
+example_functions/
+tests/
