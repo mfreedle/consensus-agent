@@ -30,7 +30,7 @@ class Tools:
         """
         Get OAuth client credentials from environment variables or file.
         Environment variables take precedence over file.
-        
+
         :return: Dictionary containing client_id, client_secret, and project_id
         """
         # Check if environment variables are set (preferred for production/Railway)
@@ -41,31 +41,42 @@ class Tools:
                 "project_id": self.valves.GOOGLE_PROJECT_ID or "default",
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             }
-        
+
         # Fall back to file-based credentials
         if not os.path.exists(self.valves.GOOGLE_CREDENTIALS_FILE):
-            raise FileNotFoundError("OAuth credentials not found in environment variables or file")
-        
+            raise FileNotFoundError(
+                "OAuth credentials not found in environment variables or file"
+            )
+
         with open(self.valves.GOOGLE_CREDENTIALS_FILE, "r") as f:
             credentials = json.load(f)
-        
+
         # Handle both "installed" and "web" credential formats
         if "installed" in credentials:
             cred_data = credentials["installed"]
         elif "web" in credentials:
             cred_data = credentials["web"]
         else:
-            raise ValueError("Invalid credentials format. Expected 'installed' or 'web' key.")
-        
+            raise ValueError(
+                "Invalid credentials format. Expected 'installed' or 'web' key."
+            )
+
         return {
             "client_id": cred_data["client_id"],
             "client_secret": cred_data["client_secret"],
             "project_id": cred_data.get("project_id", "default"),
-            "auth_uri": cred_data.get("auth_uri", "https://accounts.google.com/o/oauth2/auth"),
-            "token_uri": cred_data.get("token_uri", "https://oauth2.googleapis.com/token"),
-            "auth_provider_x509_cert_url": cred_data.get("auth_provider_x509_cert_url", "https://www.googleapis.com/oauth2/v1/certs")
+            "auth_uri": cred_data.get(
+                "auth_uri", "https://accounts.google.com/o/oauth2/auth"
+            ),
+            "token_uri": cred_data.get(
+                "token_uri", "https://oauth2.googleapis.com/token"
+            ),
+            "auth_provider_x509_cert_url": cred_data.get(
+                "auth_provider_x509_cert_url",
+                "https://www.googleapis.com/oauth2/v1/certs",
+            ),
         }
 
     class Valves(BaseModel):
