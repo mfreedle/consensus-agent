@@ -3,15 +3,18 @@
 ## 🚀 Railway Deployment (Production)
 
 Railway **only** uses these files:
+
 - ✅ `Dockerfile` - Defines the container build
 - ✅ `startup.sh` - Runs OAuth deployment + starts Open WebUI
 - ✅ Environment variables set in Railway dashboard
 
 **Railway ignores:**
+
 - ❌ `docker-compose.yml` (in .gitignore)
 - ❌ `.env` files (not used in Railway)
 
 ### Railway Environment Variables to Set:
+
 ```bash
 GOOGLE_DRIVE_CLIENT_ID=your-client-id
 GOOGLE_DRIVE_CLIENT_SECRET=your-client-secret
@@ -22,6 +25,7 @@ WEBUI_SECRET_KEY=your-secret-key
 ## 🏠 Local Development Options
 
 ### Option 1: Use Docker Compose (Recommended)
+
 ```bash
 # Use the secure version with .env file
 cp .env.template .env
@@ -30,6 +34,7 @@ docker-compose -f docker-compose.secure.yml up --build
 ```
 
 ### Option 2: Manual Docker Build (Exactly Like Railway)
+
 ```bash
 # Build the same way Railway does
 docker build -t open-webui-local .

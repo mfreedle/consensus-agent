@@ -1100,13 +1100,23 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
 
             # Search for files
             # Check if query is already a valid Google Drive API query (contains operators like 'and', 'or', '=')
-            if any(operator in query.lower() for operator in ['and', 'or', 'mimetype=', 'name=', 'title=', 'contains']):
+            if any(
+                operator in query.lower()
+                for operator in [
+                    "and",
+                    "or",
+                    "mimetype=",
+                    "name=",
+                    "title=",
+                    "contains",
+                ]
+            ):
                 # Use the query as-is since it's already formatted for Google Drive API
                 search_query = query
             else:
                 # Simple search term, wrap it with name/fullText search
                 search_query = f"name contains '{query}' or fullText contains '{query}'"
-            
+
             results = (
                 service.files()
                 .list(
