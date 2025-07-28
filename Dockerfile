@@ -6,6 +6,9 @@ RUN pip install --upgrade pip --upgrade google-auth-oauthlib --upgrade google-ap
 COPY deploy_oauth_callback.sh /app/deploy_oauth_callback.sh
 RUN chmod +x /app/deploy_oauth_callback.sh
 
+# Copy the OAuth callback page to the image
+COPY data/opt/google-oauth-callback.html /app/google-oauth-callback.html
+
 # Create a startup script that deploys OAuth callback and starts Open WebUI
 COPY startup.sh /app/startup.sh
 RUN chmod +x /app/startup.sh
