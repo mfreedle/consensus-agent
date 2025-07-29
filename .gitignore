@@ -33,3 +33,4 @@ docker-compose.secure.yml
 
 SECURITY_FIX_README.md
 test_database_storage.py
+webui.db
