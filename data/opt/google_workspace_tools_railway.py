@@ -378,6 +378,35 @@ class Tools:
         except Exception as e:
             raise FileNotFoundError(f"OAuth credentials not found: {str(e)}")
 
+    def _get_api_key(self) -> Optional[str]:
+        """
+        Get Google API Key for public API access.
+        This can improve rate limits and enable some public API features.
+        """
+        # Priority 1: Environment variable (Railway)
+        api_key = os.environ.get("GOOGLE_DRIVE_API_KEY") or os.environ.get(
+            "GOOGLE_API_KEY"
+        )
+        if api_key:
+            return api_key
+
+        # Priority 2: Valve configuration
+        if self.valves.GOOGLE_API_KEY:
+            return self.valves.GOOGLE_API_KEY
+
+        return None
+
+    def _build_service_with_api_key(self, service_name: str, version: str):
+        """
+        Build a Google API service using API key (for public access only).
+        This is useful for operations that don't require user authentication.
+        """
+        api_key = self._get_api_key()
+        if api_key:
+            return build(service_name, version, developerKey=api_key)
+        else:
+            return build(service_name, version)
+
     class Valves(BaseModel):
         model_config = {"arbitrary_types_allowed": True}
 
@@ -396,6 +425,10 @@ class Tools:
         GOOGLE_PROJECT_ID: str = Field(
             default="",
             description="Google Cloud Project ID (Railway environment variable)",
+        )
+        GOOGLE_API_KEY: str = Field(
+            default="",
+            description="Google API Key for public API access (optional, enhances rate limits)",
         )
         TOKEN_FILE: str = Field(
             default="/app/backend/data/opt/google_token.json",
