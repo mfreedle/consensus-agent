@@ -46,3 +46,6 @@ node_modules/
 backend/uploads/
 things_to_fix.md
 test_utility_debug_scripts/
+
+.vscode/
+.uv-cache/
