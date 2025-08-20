@@ -6,9 +6,7 @@ const getApiBaseUrl = () => {
   }
   // In production, use empty string as base URL since our endpoints already include /api
   // In development use localhost
-  return process.env.NODE_ENV === "production"
-    ? ""
-    : "http://localhost:8000";
+  return process.env.NODE_ENV === "production" ? "" : "http://localhost:8000";
 };
 
 const API_BASE_URL = getApiBaseUrl();

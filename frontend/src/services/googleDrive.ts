@@ -88,7 +88,9 @@ class GoogleDriveService {
    */
   async getConnectionStatus(token: string): Promise<GoogleDriveConnection> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/api/google/connection");
+    const response = await (apiService as any).request(
+      "/api/google/connection"
+    );
     if (response.error) {
       throw new Error(response.error);
     }
@@ -100,9 +102,12 @@ class GoogleDriveService {
    */
   async disconnect(token: string): Promise<{ message: string }> {
     apiService.setToken(token);
-    const response = await (apiService as any).request("/api/google/disconnect", {
-      method: "DELETE",
-    });
+    const response = await (apiService as any).request(
+      "/api/google/disconnect",
+      {
+        method: "DELETE",
+      }
+    );
     if (response.error) {
       throw new Error(response.error);
     }
