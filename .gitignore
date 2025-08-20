@@ -34,3 +34,15 @@ docker-compose.secure.yml
 SECURITY_FIX_README.md
 test_database_storage.py
 webui.db
+
+# Added after repo realignment (2025-08-20)
+UI_UX_screenshots/
+agent_mark.db
+backend/agent_mark.db
+credentials/
+documentation_fixes/
+frontend/node_modules/
+node_modules/
+backend/uploads/
+things_to_fix.md
+test_utility_debug_scripts/
