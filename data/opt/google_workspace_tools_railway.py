@@ -487,62 +487,11 @@ class Tools:
                 # Google Tasks
                 "https://www.googleapis.com/auth/tasks",
                 "https://www.googleapis.com/auth/tasks.readonly",
-                
-                # Google Keep (Notes)
-                "https://www.googleapis.com/auth/keep",
-                "https://www.googleapis.com/auth/keep.readonly",
-                
+                             
                 # Google Forms
                 "https://www.googleapis.com/auth/forms.body",
                 "https://www.googleapis.com/auth/forms.body.readonly",
-                "https://www.googleapis.com/auth/forms.responses.readonly",
-                
-                # Google Sites
-                "https://www.googleapis.com/auth/sites",
-                "https://www.googleapis.com/auth/sites.readonly",
-                
-                # Google Apps Script
-                "https://www.googleapis.com/auth/script.external_request",
-                "https://www.googleapis.com/auth/script.scriptapp",
-                "https://www.googleapis.com/auth/script.send_mail",
-                "https://www.googleapis.com/auth/script.storage",
-                
-                # Google Classroom (if applicable)
-                "https://www.googleapis.com/auth/classroom.courses",
-                "https://www.googleapis.com/auth/classroom.courses.readonly",
-                "https://www.googleapis.com/auth/classroom.rosters",
-                "https://www.googleapis.com/auth/classroom.rosters.readonly",
-                "https://www.googleapis.com/auth/classroom.profile.emails",
-                "https://www.googleapis.com/auth/classroom.profile.photos",
-                "https://www.googleapis.com/auth/classroom.coursework.me",
-                "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
-                "https://www.googleapis.com/auth/classroom.coursework.students",
-                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
-                "https://www.googleapis.com/auth/classroom.announcements",
-                "https://www.googleapis.com/auth/classroom.announcements.readonly",
-                
-                # Google Admin SDK (for workspace admins)
-                "https://www.googleapis.com/auth/admin.directory.user",
-                "https://www.googleapis.com/auth/admin.directory.user.readonly",
-                "https://www.googleapis.com/auth/admin.directory.group",
-                "https://www.googleapis.com/auth/admin.directory.group.readonly",
-                "https://www.googleapis.com/auth/admin.directory.domain",
-                "https://www.googleapis.com/auth/admin.directory.domain.readonly",
-                "https://www.googleapis.com/auth/admin.directory.orgunit",
-                "https://www.googleapis.com/auth/admin.directory.orgunit.readonly",
-                
-                # Google Analytics (if workspace includes this)
-                "https://www.googleapis.com/auth/analytics.readonly",
-                "https://www.googleapis.com/auth/analytics",
-                
-                # Google Cloud Storage (if integrated)
-                "https://www.googleapis.com/auth/devstorage.read_only",
-                "https://www.googleapis.com/auth/devstorage.read_write",
-                
-                # User info (helpful for identification)
-                "https://www.googleapis.com/auth/userinfo.email",
-                "https://www.googleapis.com/auth/userinfo.profile",
-                "openid",
+                "https://www.googleapis.com/auth/forms.responses.readonly",                
             ],
             description="Comprehensive Google API scopes for full Google Workspace access - includes Drive, Gmail, Calendar, Docs, Sheets, Slides, Contacts, Tasks, Keep, Forms, Sites, Apps Script, Classroom, Admin SDK, and more",
         )

@@ -733,8 +733,6 @@ If you encounter any issues, call `authenticate_google_workspace()` to check you
         Check Google Workspace authentication status and provide guidance.
         This is the main function users should call first, but now also includes
         automatic natural language processing.
-        This is the main function users should call first, but now also includes
-        automatic natural language processing.
 
         :return: Status message with next steps for users.
         """
