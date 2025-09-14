@@ -492,23 +492,7 @@ class Tools:
 
     def delete_sheet(sheet_id: str):
         return {"id": sheet_id, "status": "deleted"}
-
-    ## Google Slides Wrappers
-    def get_presentation(presentation_id: str):
-        return {"id": presentation_id, "slides": ["slide1", "slide2"]}
-
-    def create_presentation(title: str):
-        return {"id": "pres123", "name": title}
-
-    def append_slide(presentation_id: str, layout: str = "TITLE_AND_BODY"):
-        return {"id": presentation_id, "new_slide_id": "slide3"}
-
-    def insert_text_in_slide(presentation_id: str, slide_id: str, text: str):
-        return {"id": presentation_id, "slide_id": slide_id, "inserted_text": text}
-
-    def delete_slide(presentation_id: str, slide_id: str):
-        return {"presentation_id": presentation_id, "removed": slide_id}
-
+    
     def summarize_sheet(self, sheet_id: str, range: str = "A1:E5") -> str:
         """
         Summarize contents of a Google Sheet.
@@ -540,6 +524,22 @@ class Tools:
         return f"Summary of Sheet '{sheet_id}' (first few rows):\n" + "\n".join(
             summary_lines
         )
+
+    ## Google Slides Wrappers
+    def get_presentation(presentation_id: str):
+        return {"id": presentation_id, "slides": ["slide1", "slide2"]}
+
+    def create_presentation(title: str):
+        return {"id": "pres123", "name": title}
+
+    def append_slide(presentation_id: str, layout: str = "TITLE_AND_BODY"):
+        return {"id": presentation_id, "new_slide_id": "slide3"}
+
+    def insert_text_in_slide(presentation_id: str, slide_id: str, text: str):
+        return {"id": presentation_id, "slide_id": slide_id, "inserted_text": text}
+
+    def delete_slide(presentation_id: str, slide_id: str):
+        return {"presentation_id": presentation_id, "removed": slide_id}  
 
     ## Gmail Wrappers
     def list_recent_emails(query: str = None):
